@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,6 +62,42 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				// Custom colors for Rare Education
+				rare: {
+					blue: {
+						50: '#E6F1F8',
+						100: '#CCE4F2',
+						200: '#99C9E5',
+						300: '#66AED8',
+						400: '#3393CB',
+						500: '#0078BE', // Primary blue
+						600: '#0060A0',
+						700: '#004882',
+						800: '#003064',
+						900: '#001846',
+					},
+					teal: {
+						50: '#E6F6F8',
+						100: '#CCEEF2',
+						200: '#99DCE5',
+						300: '#66CBD8',
+						400: '#33B9CB',
+						500: '#00A8BE', // Secondary teal
+						600: '#008798',
+						700: '#006672',
+						800: '#00444C',
+						900: '#002226',
+					},
+					red: {
+						500: '#E53935', // For alerts and errors
+					},
+					green: {
+						500: '#43A047', // For success states
+					},
+					yellow: {
+						500: '#FFB300', // For warnings
+					},
 				}
 			},
 			borderRadius: {
