@@ -2,13 +2,13 @@
 import React from "react";
 import { cn } from "@/lib/utils";
 
-interface Column<T> {
+export interface Column<T> {
   header: string;
-  accessorKey: keyof T;
+  accessorKey: keyof T | 'actions';
   cell?: (row: T) => React.ReactNode;
 }
 
-interface DataTableProps<T> {
+export interface DataTableProps<T> {
   columns: Column<T>[];
   data: T[];
   className?: string;
@@ -49,7 +49,9 @@ export default function DataTable<T>({
                     >
                       {column.cell
                         ? column.cell(row)
-                        : String(row[column.accessorKey])}
+                        : column.accessorKey !== 'actions' 
+                          ? String(row[column.accessorKey as keyof T])
+                          : null}
                     </td>
                   ))}
                 </tr>

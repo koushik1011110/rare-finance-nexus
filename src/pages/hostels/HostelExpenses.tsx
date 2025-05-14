@@ -13,6 +13,10 @@ import {
   SelectTrigger,
   SelectValue, 
 } from "@/components/ui/select";
+import DetailViewModal from "@/components/shared/DetailViewModal";
+import EditModal from "@/components/shared/EditModal";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 // Define the type for hostel expenses data
 interface HostelExpense {
@@ -80,41 +84,40 @@ const hostelExpensesData: HostelExpense[] = [
   },
 ];
 
-// Correctly typed columns
-const columns = [
-  { header: "University", accessorKey: "university" as const },
-  { header: "Month", accessorKey: "month" as const },
-  { header: "Building Rent", accessorKey: "buildingRent" as const },
-  { header: "Food", accessorKey: "food" as const },
-  { header: "Staff Salary", accessorKey: "staffSalary" as const },
-  { header: "Maintenance", accessorKey: "maintenance" as const },
-  { header: "Furniture", accessorKey: "furniture" as const },
-  { header: "Other Costs", accessorKey: "otherCosts" as const },
-  { header: "Monthly Total", accessorKey: "monthlyTotal" as const },
-  {
-    header: "Actions",
-    accessorKey: "actions" as const,
-    cell: () => (
-      <div className="flex space-x-2">
-        <Button variant="outline" size="sm">
-          View
-        </Button>
-        <Button variant="outline" size="sm">
-          Edit
-        </Button>
-      </div>
-    ),
-  },
-];
-
 const HostelExpenses = () => {
   const [selectedUniversity, setSelectedUniversity] = useState<string>("all");
+  const [viewModalOpen, setViewModalOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [selectedExpense, setSelectedExpense] = useState<HostelExpense | null>(null);
+  const [editedExpense, setEditedExpense] = useState<HostelExpense | null>(null);
   
   const filteredData = selectedUniversity === "all" 
     ? hostelExpensesData
     : hostelExpensesData.filter(expense => 
         expense.university === selectedUniversity
       );
+
+  const handleViewExpense = (expense: HostelExpense) => {
+    setSelectedExpense(expense);
+    setViewModalOpen(true);
+  };
+
+  const handleEditExpense = (expense: HostelExpense) => {
+    setSelectedExpense(expense);
+    setEditedExpense({...expense});
+    setEditModalOpen(true);
+  };
+
+  const handleSaveEdit = () => {
+    if (editedExpense) {
+      // In a real application, you would update the data in your database here
+      toast({
+        title: "Changes Saved",
+        description: `Hostel expense for ${editedExpense.university} has been updated.`,
+      });
+      setEditModalOpen(false);
+    }
+  };
 
   const handleAddExpense = () => {
     toast({
@@ -131,6 +134,41 @@ const HostelExpenses = () => {
   };
 
   const universities = [...new Set(hostelExpensesData.map(item => item.university))];
+
+  // Correctly typed columns with the actions column
+  const columns = [
+    { header: "University", accessorKey: "university" as const },
+    { header: "Month", accessorKey: "month" as const },
+    { header: "Building Rent", accessorKey: "buildingRent" as const },
+    { header: "Food", accessorKey: "food" as const },
+    { header: "Staff Salary", accessorKey: "staffSalary" as const },
+    { header: "Maintenance", accessorKey: "maintenance" as const },
+    { header: "Furniture", accessorKey: "furniture" as const },
+    { header: "Other Costs", accessorKey: "otherCosts" as const },
+    { header: "Monthly Total", accessorKey: "monthlyTotal" as const },
+    {
+      header: "Actions",
+      accessorKey: "actions" as const,
+      cell: (row: HostelExpense) => (
+        <div className="flex space-x-2">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => handleViewExpense(row)}
+          >
+            View
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => handleEditExpense(row)}
+          >
+            Edit
+          </Button>
+        </div>
+      ),
+    },
+  ];
 
   return (
     <MainLayout>
@@ -175,6 +213,139 @@ const HostelExpenses = () => {
       <div className="rounded-lg border bg-card shadow-sm">
         <DataTable columns={columns} data={filteredData} />
       </div>
+
+      {/* View Modal */}
+      {selectedExpense && (
+        <DetailViewModal
+          title={`Hostel Expense Details - ${selectedExpense.university}`}
+          isOpen={viewModalOpen}
+          onClose={() => setViewModalOpen(false)}
+        >
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">University</p>
+              <p className="text-lg">{selectedExpense.university}</p>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Month</p>
+              <p className="text-lg">{selectedExpense.month}</p>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Building Rent</p>
+              <p className="text-lg">{selectedExpense.buildingRent}</p>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Food</p>
+              <p className="text-lg">{selectedExpense.food}</p>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Staff Salary</p>
+              <p className="text-lg">{selectedExpense.staffSalary}</p>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Maintenance</p>
+              <p className="text-lg">{selectedExpense.maintenance}</p>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Furniture</p>
+              <p className="text-lg">{selectedExpense.furniture}</p>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Other Costs</p>
+              <p className="text-lg">{selectedExpense.otherCosts}</p>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Monthly Total</p>
+              <p className="text-lg font-bold">{selectedExpense.monthlyTotal}</p>
+            </div>
+          </div>
+        </DetailViewModal>
+      )}
+
+      {/* Edit Modal */}
+      {editedExpense && (
+        <EditModal
+          title={`Edit Hostel Expense - ${editedExpense.university}`}
+          isOpen={editModalOpen}
+          onClose={() => setEditModalOpen(false)}
+          onSave={handleSaveEdit}
+        >
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="university">University</Label>
+              <Input 
+                id="university" 
+                value={editedExpense.university} 
+                onChange={(e) => setEditedExpense({...editedExpense, university: e.target.value})}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="month">Month</Label>
+              <Input 
+                id="month" 
+                value={editedExpense.month} 
+                onChange={(e) => setEditedExpense({...editedExpense, month: e.target.value})}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="buildingRent">Building Rent</Label>
+              <Input 
+                id="buildingRent" 
+                value={editedExpense.buildingRent} 
+                onChange={(e) => setEditedExpense({...editedExpense, buildingRent: e.target.value})}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="food">Food</Label>
+              <Input 
+                id="food" 
+                value={editedExpense.food} 
+                onChange={(e) => setEditedExpense({...editedExpense, food: e.target.value})}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="staffSalary">Staff Salary</Label>
+              <Input 
+                id="staffSalary" 
+                value={editedExpense.staffSalary} 
+                onChange={(e) => setEditedExpense({...editedExpense, staffSalary: e.target.value})}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="maintenance">Maintenance</Label>
+              <Input 
+                id="maintenance" 
+                value={editedExpense.maintenance} 
+                onChange={(e) => setEditedExpense({...editedExpense, maintenance: e.target.value})}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="furniture">Furniture</Label>
+              <Input 
+                id="furniture" 
+                value={editedExpense.furniture} 
+                onChange={(e) => setEditedExpense({...editedExpense, furniture: e.target.value})}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="otherCosts">Other Costs</Label>
+              <Input 
+                id="otherCosts" 
+                value={editedExpense.otherCosts} 
+                onChange={(e) => setEditedExpense({...editedExpense, otherCosts: e.target.value})}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="monthlyTotal">Monthly Total</Label>
+              <Input 
+                id="monthlyTotal" 
+                value={editedExpense.monthlyTotal} 
+                onChange={(e) => setEditedExpense({...editedExpense, monthlyTotal: e.target.value})}
+              />
+            </div>
+          </div>
+        </EditModal>
+      )}
     </MainLayout>
   );
 };
