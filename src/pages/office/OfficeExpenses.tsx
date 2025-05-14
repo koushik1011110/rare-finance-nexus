@@ -4,8 +4,7 @@ import MainLayout from "@/components/layout/MainLayout";
 import PageHeader from "@/components/shared/PageHeader";
 import DataTable from "@/components/ui/DataTable";
 import { Button } from "@/components/ui/button";
-import { Plus, Download, Upload } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { Plus, Download } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import {
   Select,
@@ -15,8 +14,22 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+// Define the type for office expenses data
+interface OfficeExpense {
+  id: string;
+  location: string;
+  month: string;
+  rent: string;
+  utilities: string;
+  internet: string;
+  marketing: string;
+  travel: string;
+  miscellaneous: string;
+  monthlyTotal: string;
+}
+
 // Sample data for office expenses
-const officeExpensesData = [
+const officeExpensesData: OfficeExpense[] = [
   {
     id: "1",
     location: "London Office",
@@ -67,19 +80,20 @@ const officeExpensesData = [
   },
 ];
 
+// Correctly typed columns
 const columns = [
-  { header: "Office Location", accessorKey: "location" },
-  { header: "Month", accessorKey: "month" },
-  { header: "Rent", accessorKey: "rent" },
-  { header: "Utilities", accessorKey: "utilities" },
-  { header: "Internet", accessorKey: "internet" },
-  { header: "Marketing", accessorKey: "marketing" },
-  { header: "Travel", accessorKey: "travel" },
-  { header: "Miscellaneous", accessorKey: "miscellaneous" },
-  { header: "Monthly Total", accessorKey: "monthlyTotal" },
+  { header: "Office Location", accessorKey: "location" as const },
+  { header: "Month", accessorKey: "month" as const },
+  { header: "Rent", accessorKey: "rent" as const },
+  { header: "Utilities", accessorKey: "utilities" as const },
+  { header: "Internet", accessorKey: "internet" as const },
+  { header: "Marketing", accessorKey: "marketing" as const },
+  { header: "Travel", accessorKey: "travel" as const },
+  { header: "Miscellaneous", accessorKey: "miscellaneous" as const },
+  { header: "Monthly Total", accessorKey: "monthlyTotal" as const },
   {
     header: "Actions",
-    accessorKey: "actions",
+    accessorKey: "actions" as const,
     cell: () => (
       <div className="flex space-x-2">
         <Button variant="outline" size="sm">
