@@ -1,12 +1,14 @@
-
 import React, { useState } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import PageHeader from "@/components/shared/PageHeader";
 import DataTable from "@/components/ui/DataTable";
 import { Button } from "@/components/ui/button";
-import { Plus, Download, Upload, FileText } from "lucide-react";
+import { Plus, Download, Upload, Eye, Edit } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
+import DetailViewModal from "@/components/shared/DetailViewModal";
+import EditModal from "@/components/shared/EditModal";
+import AgentForm, { AgentFormData } from "@/components/forms/AgentForm";
 
 // Sample data for agents
 const agentsData = [
@@ -64,50 +66,32 @@ const agentsData = [
   },
 ];
 
-const columns = [
-  { header: "Agent Name", accessorKey: "name" },
-  { header: "Contact Person", accessorKey: "contactPerson" },
-  { header: "Email", accessorKey: "email" },
-  { header: "Location", accessorKey: "location" },
-  { header: "Students Count", accessorKey: "studentsCount" },
-  { header: "Commission Rate", accessorKey: "commission" },
-  { header: "Total Received", accessorKey: "totalReceived" },
-  { header: "Commission Due", accessorKey: "commissionDue" },
-  {
-    header: "Status",
-    accessorKey: "status",
-    cell: (row: any) => (
-      <span
-        className={`rounded-full px-2 py-1 text-xs font-medium ${
-          row.status === "Active"
-            ? "bg-green-100 text-green-800"
-            : "bg-red-100 text-red-800"
-        }`}
-      >
-        {row.status}
-      </span>
-    ),
-  },
-  {
-    header: "Actions",
-    accessorKey: "actions",
-    cell: () => (
-      <div className="flex space-x-2">
-        <Button variant="outline" size="sm">
-          View
-        </Button>
-        <Button variant="outline" size="sm">
-          Edit
-        </Button>
-      </div>
-    ),
-  },
-];
+interface Agent {
+  id: string;
+  name: string;
+  contactPerson: string;
+  email: string;
+  phone: string;
+  location: string;
+  studentsCount: number;
+  commission: string;
+  totalReceived: string;
+  commissionDue: string;
+  status: string;
+}
 
 const AgentManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [agents, setAgents] = useState<Agent[]>(agentsData);
+  
+  // Modal states
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [currentAgent, setCurrentAgent] = useState<Agent | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const filteredData = agentsData.filter(
+  const filteredData = agents.filter(
     (agent) =>
       agent.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       agent.contactPerson.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -115,11 +99,76 @@ const AgentManagement = () => {
       agent.location.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const handleViewAgent = (agent: Agent) => {
+    setCurrentAgent(agent);
+    setIsViewModalOpen(true);
+  };
+
+  const handleEditAgent = (agent: Agent) => {
+    setCurrentAgent(agent);
+    setIsEditModalOpen(true);
+  };
+
   const handleAddAgent = () => {
-    toast({
-      title: "Feature Coming Soon",
-      description: "Add agent functionality will be available shortly.",
-    });
+    setIsAddModalOpen(true);
+  };
+
+  const handleSaveAgent = (formData: AgentFormData) => {
+    setIsSubmitting(true);
+    
+    // Simulating API call
+    setTimeout(() => {
+      if (formData.id) {
+        // Update existing agent
+        setAgents(
+          agents.map((agent) =>
+            agent.id === formData.id
+              ? {
+                  ...agent,
+                  name: formData.name,
+                  contactPerson: formData.contactPerson,
+                  email: formData.email,
+                  phone: formData.phone,
+                  location: formData.location,
+                  commission: formData.commission,
+                  status: formData.status,
+                }
+              : agent
+          )
+        );
+        
+        toast({
+          title: "Agent Updated",
+          description: `${formData.name} has been updated successfully.`,
+        });
+      } else {
+        // Add new agent
+        const newAgent: Agent = {
+          id: Date.now().toString(),
+          name: formData.name,
+          contactPerson: formData.contactPerson,
+          email: formData.email,
+          phone: formData.phone,
+          location: formData.location,
+          studentsCount: 0,
+          commission: formData.commission,
+          totalReceived: "$0",
+          commissionDue: "$0",
+          status: formData.status,
+        };
+        
+        setAgents([newAgent, ...agents]);
+        
+        toast({
+          title: "Agent Added",
+          description: `${formData.name} has been added successfully.`,
+        });
+      }
+      
+      setIsSubmitting(false);
+      setIsAddModalOpen(false);
+      setIsEditModalOpen(false);
+    }, 1000);
   };
 
   const handleImport = () => {
@@ -135,6 +184,48 @@ const AgentManagement = () => {
       description: "Export functionality will be available shortly.",
     });
   };
+
+  const columns = [
+    { header: "Agent Name", accessorKey: "name" },
+    { header: "Contact Person", accessorKey: "contactPerson" },
+    { header: "Email", accessorKey: "email" },
+    { header: "Location", accessorKey: "location" },
+    { header: "Students Count", accessorKey: "studentsCount" },
+    { header: "Commission Rate", accessorKey: "commission" },
+    { header: "Total Received", accessorKey: "totalReceived" },
+    { header: "Commission Due", accessorKey: "commissionDue" },
+    {
+      header: "Status",
+      accessorKey: "status",
+      cell: (row: any) => (
+        <span
+          className={`rounded-full px-2 py-1 text-xs font-medium ${
+            row.status === "Active"
+              ? "bg-green-100 text-green-800"
+              : "bg-red-100 text-red-800"
+          }`}
+        >
+          {row.status}
+        </span>
+      ),
+    },
+    {
+      header: "Actions",
+      accessorKey: "actions",
+      cell: (row: Agent) => (
+        <div className="flex space-x-2">
+          <Button variant="outline" size="sm" onClick={() => handleViewAgent(row)}>
+            <Eye className="mr-2 h-4 w-4" />
+            View
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => handleEditAgent(row)}>
+            <Edit className="mr-2 h-4 w-4" />
+            Edit
+          </Button>
+        </div>
+      ),
+    },
+  ];
 
   return (
     <MainLayout>
@@ -171,6 +262,96 @@ const AgentManagement = () => {
       <div className="rounded-lg border bg-card shadow-sm">
         <DataTable columns={columns} data={filteredData} />
       </div>
+      
+      {/* Add Agent Modal */}
+      <EditModal
+        title="Add New Agent"
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        onSave={() => {}} // Form has its own submit handler
+      >
+        <AgentForm 
+          onSubmit={handleSaveAgent}
+          isSubmitting={isSubmitting}
+        />
+      </EditModal>
+      
+      {/* View Agent Modal */}
+      {currentAgent && (
+        <DetailViewModal
+          title={`Agent: ${currentAgent.name}`}
+          isOpen={isViewModalOpen}
+          onClose={() => setIsViewModalOpen(false)}
+        >
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div>
+              <h3 className="font-semibold">Agent Name</h3>
+              <p>{currentAgent.name}</p>
+            </div>
+            <div>
+              <h3 className="font-semibold">Contact Person</h3>
+              <p>{currentAgent.contactPerson}</p>
+            </div>
+            <div>
+              <h3 className="font-semibold">Email</h3>
+              <p>{currentAgent.email}</p>
+            </div>
+            <div>
+              <h3 className="font-semibold">Phone</h3>
+              <p>{currentAgent.phone}</p>
+            </div>
+            <div>
+              <h3 className="font-semibold">Location</h3>
+              <p>{currentAgent.location}</p>
+            </div>
+            <div>
+              <h3 className="font-semibold">Students Count</h3>
+              <p>{currentAgent.studentsCount}</p>
+            </div>
+            <div>
+              <h3 className="font-semibold">Commission Rate</h3>
+              <p>{currentAgent.commission}</p>
+            </div>
+            <div>
+              <h3 className="font-semibold">Total Received</h3>
+              <p>{currentAgent.totalReceived}</p>
+            </div>
+            <div>
+              <h3 className="font-semibold">Commission Due</h3>
+              <p>{currentAgent.commissionDue}</p>
+            </div>
+            <div>
+              <h3 className="font-semibold">Status</h3>
+              <p>{currentAgent.status}</p>
+            </div>
+          </div>
+        </DetailViewModal>
+      )}
+      
+      {/* Edit Agent Modal */}
+      {currentAgent && (
+        <EditModal
+          title={`Edit Agent: ${currentAgent.name}`}
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+          onSave={() => {}} // Form has its own submit handler
+        >
+          <AgentForm 
+            initialData={{
+              id: currentAgent.id,
+              name: currentAgent.name,
+              contactPerson: currentAgent.contactPerson,
+              email: currentAgent.email,
+              phone: currentAgent.phone,
+              location: currentAgent.location,
+              commission: currentAgent.commission,
+              status: currentAgent.status as "Active" | "Inactive",
+            }}
+            onSubmit={handleSaveAgent}
+            isSubmitting={isSubmitting}
+          />
+        </EditModal>
+      )}
     </MainLayout>
   );
 };
