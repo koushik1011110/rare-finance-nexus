@@ -1,9 +1,9 @@
 
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { 
   BarChart3, Users, GraduationCap, Building2, Home, ClipboardList, 
-  Briefcase, DollarSign, LineChart, Settings, Menu, X, Download 
+  Briefcase, DollarSign, LineChart, Settings, Menu, X, Download, User 
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -12,12 +12,21 @@ type NavItem = {
   title: string;
   href: string;
   icon: React.ElementType;
+  subItems?: { title: string; href: string }[];
 };
 
 const navItems: NavItem[] = [
   { title: "Dashboard", href: "/", icon: BarChart3 },
+  { 
+    title: "Students", 
+    href: "/students", 
+    icon: GraduationCap,
+    subItems: [
+      { title: "Direct Students", href: "/students/direct" },
+      { title: "Agent Students", href: "/students/agent" },
+    ]
+  },
   { title: "Agents", href: "/agents", icon: Users },
-  { title: "Students", href: "/students", icon: GraduationCap },
   { title: "Universities", href: "/universities", icon: Building2 },
   { title: "Hostels", href: "/hostels", icon: Home },
   { title: "Office Expenses", href: "/office-expenses", icon: ClipboardList },
@@ -33,6 +42,16 @@ interface MainLayoutProps {
 
 export default function MainLayout({ children }: MainLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [expandedItems, setExpandedItems] = useState<string[]>([]);
+  const location = useLocation();
+  
+  const toggleExpand = (title: string) => {
+    setExpandedItems(prev => 
+      prev.includes(title) 
+        ? prev.filter(item => item !== title) 
+        : [...prev, title]
+    );
+  };
   
   return (
     <div className="flex h-screen overflow-hidden bg-background">
@@ -60,18 +79,65 @@ export default function MainLayout({ children }: MainLayoutProps) {
           <ul className="space-y-1">
             {navItems.map((item) => (
               <li key={item.title}>
-                <Link
-                  to={item.href}
-                  className={cn(
-                    "flex items-center rounded-md px-3 py-2 text-sm font-medium hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-                    window.location.pathname === item.href
-                      ? "bg-sidebar-primary text-sidebar-primary-foreground"
-                      : "text-sidebar-foreground"
-                  )}
-                >
-                  <item.icon className="mr-3 h-5 w-5" />
-                  {item.title}
-                </Link>
+                {item.subItems ? (
+                  <>
+                    <button
+                      onClick={() => toggleExpand(item.title)}
+                      className={cn(
+                        "flex w-full items-center rounded-md px-3 py-2 text-sm font-medium hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                        expandedItems.includes(item.title) || location.pathname.startsWith(item.href)
+                          ? "bg-sidebar-primary text-sidebar-primary-foreground"
+                          : "text-sidebar-foreground"
+                      )}
+                    >
+                      <item.icon className="mr-3 h-5 w-5" />
+                      {item.title}
+                      <span className="ml-auto">
+                        {expandedItems.includes(item.title) ? (
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M18 15l-6-6-6 6"/>
+                          </svg>
+                        ) : (
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M6 9l6 6 6-6"/>
+                          </svg>
+                        )}
+                      </span>
+                    </button>
+                    {(expandedItems.includes(item.title) || location.pathname.startsWith(item.href)) && (
+                      <ul className="ml-6 mt-1 space-y-1">
+                        {item.subItems.map((subItem) => (
+                          <li key={subItem.title}>
+                            <Link
+                              to={subItem.href}
+                              className={cn(
+                                "flex items-center rounded-md px-3 py-2 text-sm font-medium hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                                location.pathname === subItem.href
+                                  ? "bg-sidebar-primary text-sidebar-primary-foreground"
+                                  : "text-sidebar-foreground"
+                              )}
+                            >
+                              {subItem.title}
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </>
+                ) : (
+                  <Link
+                    to={item.href}
+                    className={cn(
+                      "flex items-center rounded-md px-3 py-2 text-sm font-medium hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                      location.pathname === item.href
+                        ? "bg-sidebar-primary text-sidebar-primary-foreground"
+                        : "text-sidebar-foreground"
+                    )}
+                  >
+                    <item.icon className="mr-3 h-5 w-5" />
+                    {item.title}
+                  </Link>
+                )}
               </li>
             ))}
           </ul>
@@ -96,9 +162,8 @@ export default function MainLayout({ children }: MainLayoutProps) {
               <Download className="mr-2 h-4 w-4" />
               Export
             </Button>
-            <Button variant="default" size="sm">
-              <span className="sr-only sm:not-sr-only sm:ml-2">New Transaction</span>
-              <span className="sm:hidden">+</span>
+            <Button variant="outline" size="sm">
+              <User className="h-4 w-4" />
             </Button>
           </div>
         </header>
