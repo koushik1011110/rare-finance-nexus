@@ -27,8 +27,26 @@ const navItems: NavItem[] = [
     ]
   },
   { title: "Agents", href: "/agents", icon: Users },
-  { title: "Universities", href: "/universities", icon: Building2 },
-  { title: "Hostels", href: "/hostels", icon: Home },
+  { 
+    title: "Universities", 
+    href: "/universities", 
+    icon: Building2,
+    subItems: [
+      { title: "Tashkent State Medical University", href: "/universities/tashkent" },
+      { title: "Samarkand State Medical University", href: "/universities/samarkand" },
+      { title: "Bukhara State Medical Institute", href: "/universities/bukhara" },
+      { title: "Qarshi State University", href: "/universities/qarshi" },
+    ]
+  },
+  { 
+    title: "Hostels", 
+    href: "/hostels", 
+    icon: Home,
+    subItems: [
+      { title: "Hostel Management", href: "/hostels/management" },
+      { title: "Hostel Expenses", href: "/hostels/expenses" },
+    ]
+  },
   { title: "Office Expenses", href: "/office-expenses", icon: ClipboardList },
   { title: "Salary Management", href: "/salary", icon: Briefcase },
   { title: "Personal Expenses", href: "/personal-expenses", icon: DollarSign },

@@ -1,73 +1,73 @@
 
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
 import PageHeader from "@/components/shared/PageHeader";
 import DataTable from "@/components/ui/DataTable";
 import { Button } from "@/components/ui/button";
-import { Plus, Download, Upload, Eye, Edit } from "lucide-react";
+import { Plus, Download, Upload, Edit } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
-import DetailViewModal from "@/components/shared/DetailViewModal";
 import EditModal from "@/components/shared/EditModal";
 import UniversityForm, { UniversityFormData } from "@/components/forms/UniversityForm";
 
 // Sample data for universities
 const universitiesData = [
   {
-    id: "1",
-    name: "London University",
-    studentCount: 25,
-    totalFeesExpected: "$300,000",
-    amountPaid: "$220,000",
-    amountPending: "$80,000",
-    lastPayment: "2025-04-15",
+    id: "tashkent",
+    name: "Tashkent State Medical University",
+    studentCount: 42,
+    totalFeesExpected: "$630,000",
+    amountPaid: "$420,000",
+    amountPending: "$210,000",
+    lastPayment: "2025-05-01",
     status: "Active",
-    location: "London, UK",
-    contactPerson: "Dr. Robert Johnson",
-    email: "admin@londonuniversity.edu",
-    phone: "+44 20 7123 4567",
+    location: "Tashkent, Uzbekistan",
+    contactPerson: "Dr. Alisher Navoiy",
+    email: "admin@tsmu.edu.uz",
+    phone: "+998 71 123 4567",
   },
   {
-    id: "2",
-    name: "Oxford University",
-    studentCount: 18,
-    totalFeesExpected: "$270,000",
-    amountPaid: "$180,000",
-    amountPending: "$90,000",
+    id: "samarkand",
+    name: "Samarkand State Medical University",
+    studentCount: 35,
+    totalFeesExpected: "$525,000",
+    amountPaid: "$350,000",
+    amountPending: "$175,000",
+    lastPayment: "2025-04-28",
+    status: "Active",
+    location: "Samarkand, Uzbekistan",
+    contactPerson: "Prof. Bobur Mirzayev",
+    email: "admin@sammi.uz",
+    phone: "+998 66 234 5678",
+  },
+  {
+    id: "bukhara",
+    name: "Bukhara State Medical Institute",
+    studentCount: 28,
+    totalFeesExpected: "$420,000",
+    amountPaid: "$420,000",
+    amountPending: "$0",
+    lastPayment: "2025-04-15",
+    status: "Paid",
+    location: "Bukhara, Uzbekistan",
+    contactPerson: "Dr. Nodira Azizova",
+    email: "admin@bsmi.uz",
+    phone: "+998 65 223 4455",
+  },
+  {
+    id: "qarshi",
+    name: "Qarshi State University",
+    studentCount: 22,
+    totalFeesExpected: "$330,000",
+    amountPaid: "$220,000",
+    amountPending: "$110,000",
     lastPayment: "2025-04-10",
     status: "Active",
-    location: "Oxford, UK",
-    contactPerson: "Prof. Sarah Williams",
-    email: "admin@oxford.edu",
-    phone: "+44 18 6527 8901",
-  },
-  {
-    id: "3",
-    name: "Cambridge University",
-    studentCount: 15,
-    totalFeesExpected: "$225,000",
-    amountPaid: "$225,000",
-    amountPending: "$0",
-    lastPayment: "2025-04-05",
-    status: "Paid",
-    location: "Cambridge, UK",
-    contactPerson: "Dr. Michael Brown",
-    email: "admin@cambridge.edu",
-    phone: "+44 12 2333 4455",
-  },
-  {
-    id: "4",
-    name: "Harvard University",
-    studentCount: 10,
-    totalFeesExpected: "$200,000",
-    amountPaid: "$120,000",
-    amountPending: "$80,000",
-    lastPayment: "2025-03-28",
-    status: "Active",
-    location: "Cambridge, MA, USA",
-    contactPerson: "Prof. Lisa Johnson",
-    email: "admin@harvard.edu",
-    phone: "+1 617 495 1000",
+    location: "Qarshi, Uzbekistan",
+    contactPerson: "Prof. Aziza Karimova",
+    email: "admin@qsu.uz",
+    phone: "+998 75 221 3344",
   },
 ];
 
@@ -87,12 +87,12 @@ interface University {
 }
 
 const Universities = () => {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [universities, setUniversities] = useState<University[]>(universitiesData);
   
   // Modal states
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [currentUniversity, setCurrentUniversity] = useState<University | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -103,8 +103,7 @@ const Universities = () => {
   );
 
   const handleViewUniversity = (university: University) => {
-    setCurrentUniversity(university);
-    setIsViewModalOpen(true);
+    navigate(`/universities/${university.id}`);
   };
 
   const handleEditUniversity = (university: University) => {
@@ -146,7 +145,7 @@ const Universities = () => {
       } else {
         // Add new university
         const newUniversity: University = {
-          id: Date.now().toString(),
+          id: formData.name.toLowerCase().replace(/\s+/g, '-'),
           name: formData.name,
           location: formData.location,
           contactPerson: formData.contactPerson,
@@ -189,7 +188,18 @@ const Universities = () => {
   };
 
   const columns = [
-    { header: "University Name", accessorKey: "name" },
+    { 
+      header: "University Name", 
+      accessorKey: "name",
+      cell: (row: any) => (
+        <span 
+          className="text-primary hover:underline cursor-pointer"
+          onClick={() => handleViewUniversity(row)}
+        >
+          {row.name}
+        </span>
+      )
+    },
     { header: "Student Count", accessorKey: "studentCount" },
     { header: "Total Fees Expected", accessorKey: "totalFeesExpected" },
     { header: "Amount Paid", accessorKey: "amountPaid" },
@@ -214,16 +224,10 @@ const Universities = () => {
       header: "Actions",
       accessorKey: "actions",
       cell: (row: University) => (
-        <div className="flex space-x-2">
-          <Button variant="outline" size="sm" onClick={() => handleViewUniversity(row)}>
-            <Eye className="mr-2 h-4 w-4" />
-            View
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => handleEditUniversity(row)}>
-            <Edit className="mr-2 h-4 w-4" />
-            Edit
-          </Button>
-        </div>
+        <Button variant="outline" size="sm" onClick={() => handleEditUniversity(row)}>
+          <Edit className="mr-2 h-4 w-4" />
+          Edit
+        </Button>
       ),
     },
   ];
@@ -276,62 +280,6 @@ const Universities = () => {
           isSubmitting={isSubmitting}
         />
       </EditModal>
-      
-      {/* View University Modal */}
-      {currentUniversity && (
-        <DetailViewModal
-          title={`University: ${currentUniversity.name}`}
-          isOpen={isViewModalOpen}
-          onClose={() => setIsViewModalOpen(false)}
-        >
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div>
-              <h3 className="font-semibold">University Name</h3>
-              <p>{currentUniversity.name}</p>
-            </div>
-            <div>
-              <h3 className="font-semibold">Location</h3>
-              <p>{currentUniversity.location}</p>
-            </div>
-            <div>
-              <h3 className="font-semibold">Contact Person</h3>
-              <p>{currentUniversity.contactPerson}</p>
-            </div>
-            <div>
-              <h3 className="font-semibold">Email</h3>
-              <p>{currentUniversity.email}</p>
-            </div>
-            <div>
-              <h3 className="font-semibold">Phone</h3>
-              <p>{currentUniversity.phone}</p>
-            </div>
-            <div>
-              <h3 className="font-semibold">Student Count</h3>
-              <p>{currentUniversity.studentCount}</p>
-            </div>
-            <div>
-              <h3 className="font-semibold">Total Fees Expected</h3>
-              <p>{currentUniversity.totalFeesExpected}</p>
-            </div>
-            <div>
-              <h3 className="font-semibold">Amount Paid</h3>
-              <p>{currentUniversity.amountPaid}</p>
-            </div>
-            <div>
-              <h3 className="font-semibold">Amount Pending</h3>
-              <p>{currentUniversity.amountPending}</p>
-            </div>
-            <div>
-              <h3 className="font-semibold">Last Payment</h3>
-              <p>{currentUniversity.lastPayment}</p>
-            </div>
-            <div>
-              <h3 className="font-semibold">Status</h3>
-              <p>{currentUniversity.status}</p>
-            </div>
-          </div>
-        </DetailViewModal>
-      )}
       
       {/* Edit University Modal */}
       {currentUniversity && (

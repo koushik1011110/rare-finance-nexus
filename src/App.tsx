@@ -16,9 +16,11 @@ import AgentManagement from "./pages/agents/AgentManagement";
 
 // University Section
 import Universities from "./pages/universities/Universities";
+import UniversityDetail from "./pages/universities/UniversityDetail";
 
 // Hostel Expenses
 import HostelExpenses from "./pages/hostels/HostelExpenses";
+import HostelManagement from "./pages/hostels/HostelManagement";
 
 // Office Expenses
 import OfficeExpenses from "./pages/office/OfficeExpenses";
@@ -55,9 +57,11 @@ const App = () => (
           
           {/* University Section */}
           <Route path="/universities" element={<Universities />} />
+          <Route path="/universities/:universityId" element={<UniversityDetail />} />
           
           {/* Hostel Expenses */}
-          <Route path="/hostels" element={<HostelExpenses />} />
+          <Route path="/hostels/management" element={<HostelManagement />} />
+          <Route path="/hostels/expenses" element={<HostelExpenses />} />
           
           {/* Office Expenses */}
           <Route path="/office-expenses" element={<OfficeExpenses />} />
