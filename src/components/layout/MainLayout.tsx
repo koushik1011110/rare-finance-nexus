@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { 
   BarChart3, Users, GraduationCap, Building2, Home, ClipboardList, 
-  Briefcase, DollarSign, LineChart, Settings, Menu, X, Download, User 
+  Briefcase, DollarSign, LineChart, Settings, Menu, X, Download, User, ChevronLeft, ChevronRight
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -52,30 +52,37 @@ export default function MainLayout({ children }: MainLayoutProps) {
         : [...prev, title]
     );
   };
+
+  const toggleSidebar = () => {
+    setSidebarOpen(prev => !prev);
+  };
   
   return (
     <div className="flex h-screen overflow-hidden bg-background">
       {/* Sidebar */}
       <aside 
         className={cn(
-          "fixed inset-y-0 left-0 z-20 flex w-64 flex-col border-r bg-sidebar transition-transform duration-300 ease-in-out lg:static lg:translate-x-0",
-          sidebarOpen ? "translate-x-0" : "-translate-x-full"
+          "fixed inset-y-0 left-0 z-20 flex flex-col border-r bg-sidebar transition-all duration-300 ease-in-out lg:static",
+          sidebarOpen ? "w-64" : "w-16",
+          !sidebarOpen && "items-center",
+          "translate-x-0 lg:translate-x-0"
         )}
       >
         <div className="flex h-16 items-center justify-between border-b px-4">
-          <div className="flex items-center">
-            <span className="text-xl font-semibold text-rare-blue-500">Rare Education</span>
-          </div>
           <Button 
             variant="ghost" 
-            size="icon" 
-            className="lg:hidden"
-            onClick={() => setSidebarOpen(false)}
+            size="icon"
+            onClick={toggleSidebar}
+            className="flex items-center justify-center"
           >
-            <X className="h-5 w-5" />
+            {sidebarOpen ? (
+              <ChevronLeft className="h-5 w-5" />
+            ) : (
+              <ChevronRight className="h-5 w-5" />
+            )}
           </Button>
         </div>
-        <nav className="flex-1 overflow-y-auto p-2">
+        <nav className={cn("flex-1 overflow-y-auto p-2", !sidebarOpen && "w-full")}>
           <ul className="space-y-1">
             {navItems.map((item) => (
               <li key={item.title}>
@@ -87,24 +94,29 @@ export default function MainLayout({ children }: MainLayoutProps) {
                         "flex w-full items-center rounded-md px-3 py-2 text-sm font-medium hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
                         expandedItems.includes(item.title) || location.pathname.startsWith(item.href)
                           ? "bg-sidebar-primary text-sidebar-primary-foreground"
-                          : "text-sidebar-foreground"
+                          : "text-sidebar-foreground",
+                        !sidebarOpen && "justify-center px-1"
                       )}
                     >
-                      <item.icon className="mr-3 h-5 w-5" />
-                      {item.title}
-                      <span className="ml-auto">
-                        {expandedItems.includes(item.title) ? (
-                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M18 15l-6-6-6 6"/>
-                          </svg>
-                        ) : (
-                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M6 9l6 6 6-6"/>
-                          </svg>
-                        )}
-                      </span>
+                      <item.icon className={cn("h-5 w-5", sidebarOpen ? "mr-3" : "mr-0")} />
+                      {sidebarOpen && (
+                        <>
+                          {item.title}
+                          <span className="ml-auto">
+                            {expandedItems.includes(item.title) ? (
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M18 15l-6-6-6 6"/>
+                              </svg>
+                            ) : (
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M6 9l6 6 6-6"/>
+                              </svg>
+                            )}
+                          </span>
+                        </>
+                      )}
                     </button>
-                    {(expandedItems.includes(item.title) || location.pathname.startsWith(item.href)) && (
+                    {(sidebarOpen && (expandedItems.includes(item.title) || location.pathname.startsWith(item.href))) && (
                       <ul className="ml-6 mt-1 space-y-1">
                         {item.subItems.map((subItem) => (
                           <li key={subItem.title}>
@@ -131,11 +143,13 @@ export default function MainLayout({ children }: MainLayoutProps) {
                       "flex items-center rounded-md px-3 py-2 text-sm font-medium hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
                       location.pathname === item.href
                         ? "bg-sidebar-primary text-sidebar-primary-foreground"
-                        : "text-sidebar-foreground"
+                        : "text-sidebar-foreground",
+                      !sidebarOpen && "justify-center px-1"
                     )}
+                    title={!sidebarOpen ? item.title : undefined}
                   >
-                    <item.icon className="mr-3 h-5 w-5" />
-                    {item.title}
+                    <item.icon className={cn("h-5 w-5", sidebarOpen ? "mr-3" : "mr-0")} />
+                    {sidebarOpen && item.title}
                   </Link>
                 )}
               </li>
@@ -151,11 +165,12 @@ export default function MainLayout({ children }: MainLayoutProps) {
             <Button 
               variant="ghost" 
               size="icon"
-              className="lg:hidden"
-              onClick={() => setSidebarOpen(true)}
+              className="lg:hidden mr-2"
+              onClick={() => setSidebarOpen(!sidebarOpen)}
             >
               <Menu className="h-5 w-5" />
             </Button>
+            <span className="text-xl font-semibold text-rare-blue-500">Rare Education</span>
           </div>
           <div className="flex items-center space-x-2">
             <Button variant="outline" size="sm" className="hidden sm:flex">
