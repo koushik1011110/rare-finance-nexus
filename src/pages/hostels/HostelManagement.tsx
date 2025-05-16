@@ -117,13 +117,15 @@ const HostelManagement = () => {
       </div>
       
       <div className="mb-6">
-        <Input
-          placeholder="Search hostels..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="max-w-sm"
-          prefix={<Search className="h-4 w-4 text-muted-foreground" />}
-        />
+        <div className="relative max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search hostels..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
       </div>
       
       <div className="rounded-lg border bg-card shadow-sm">
