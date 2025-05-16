@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { 
@@ -7,6 +6,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import ThemeToggle from "@/components/theme/ThemeToggle";
 
 type NavItem = {
   title: string;
@@ -190,7 +190,8 @@ export default function MainLayout({ children }: MainLayoutProps) {
             </Button>
             <span className="text-xl font-semibold text-rare-blue-500">Rare Education</span>
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-4">
+            <ThemeToggle />
             <Button variant="outline" size="sm" className="hidden sm:flex">
               <Download className="mr-2 h-4 w-4" />
               Export
