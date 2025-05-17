@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { 
@@ -59,7 +60,7 @@ interface MainLayoutProps {
 }
 
 export default function MainLayout({ children }: MainLayoutProps) {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false); // Set default to false (collapsed)
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const location = useLocation();
   
@@ -87,6 +88,15 @@ export default function MainLayout({ children }: MainLayoutProps) {
         )}
       >
         <div className="flex h-16 items-center justify-between border-b px-4">
+          {sidebarOpen && (
+            <div className="flex items-center">
+              <img 
+                src="/lovable-uploads/71c812f6-bbaf-4f30-abe2-481ec95372da.png" 
+                alt="Rare Education Logo" 
+                className="h-8 mr-2" 
+              />
+            </div>
+          )}
           <Button 
             variant="ghost" 
             size="icon"
@@ -188,7 +198,14 @@ export default function MainLayout({ children }: MainLayoutProps) {
             >
               <Menu className="h-5 w-5" />
             </Button>
-            <span className="text-xl font-semibold text-rare-blue-500">Rare Education</span>
+            <div className="flex items-center">
+              <img 
+                src="/lovable-uploads/71c812f6-bbaf-4f30-abe2-481ec95372da.png" 
+                alt="Rare Education Logo" 
+                className="h-8 mr-2" 
+              />
+              <span className="text-xl font-semibold text-rare-blue-500">Rare Education</span>
+            </div>
           </div>
           <div className="flex items-center space-x-4">
             <ThemeToggle />

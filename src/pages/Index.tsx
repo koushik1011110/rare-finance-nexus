@@ -7,6 +7,7 @@ import AlertCard, { Alert } from "@/components/dashboard/AlertCard";
 import PageHeader from "@/components/shared/PageHeader";
 import DataTable from "@/components/ui/DataTable";
 import { Button } from "@/components/ui/button";
+import SearchFilter from "@/components/dashboard/SearchFilter";
 import { DollarSign, CreditCard, TrendingUp, AlertCircle, Download, FileText } from "lucide-react";
 
 // Sample data for the dashboard
@@ -112,6 +113,21 @@ const transactionColumns = [
 import { cn } from "@/lib/utils";
 
 const Index = () => {
+  const handleSearch = (query: string) => {
+    console.log("Search query:", query);
+    // Implement search functionality
+  };
+
+  const handleFilterChange = (filterType: string, value: string) => {
+    console.log(`Filter ${filterType}:`, value);
+    // Implement filter functionality
+  };
+
+  const handleDateRangeChange = (range: any) => {
+    console.log("Date range:", range);
+    // Implement date filter functionality
+  };
+
   return (
     <MainLayout>
       <PageHeader 
@@ -129,6 +145,13 @@ const Index = () => {
             </Button>
           </>
         }
+      />
+      
+      {/* Search and Filter */}
+      <SearchFilter 
+        onSearch={handleSearch}
+        onFilterChange={handleFilterChange}
+        onDateRangeChange={handleDateRangeChange}
       />
       
       {/* Stats Overview */}
