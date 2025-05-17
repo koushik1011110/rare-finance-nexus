@@ -8,7 +8,13 @@ import PageHeader from "@/components/shared/PageHeader";
 import DataTable from "@/components/ui/DataTable";
 import { Button } from "@/components/ui/button";
 import SearchFilter from "@/components/dashboard/SearchFilter";
-import { DollarSign, CreditCard, TrendingUp, AlertCircle, Download, FileText } from "lucide-react";
+import { 
+  DollarSign, CreditCard, TrendingUp, AlertCircle, Download, FileText, 
+  Home as HomeIcon, Briefcase
+} from "lucide-react";
+import AnimatedCounter from "@/components/dashboard/AnimatedCounter";
+import PieChart from "@/components/dashboard/PieChart";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 // Sample data for the dashboard
 const cashFlowData = [
@@ -27,6 +33,13 @@ const sourceData = [
   { name: "Hostel Fees", income: 9000 },
   { name: "Application Fees", income: 4500 },
   { name: "Other Services", income: 3200 },
+];
+
+const universityPaymentsData = [
+  { name: "Tashkent State Medical", value: 580000, color: "#0088FE" },
+  { name: "Samarkand State Medical", value: 420000, color: "#00C49F" },
+  { name: "Bukhara State Medical", value: 340000, color: "#FFBB28" },
+  { name: "Qarshi State University", value: 280000, color: "#FF8042" }
 ];
 
 const alerts: Alert[] = [
@@ -57,7 +70,7 @@ const recentTransactions = [
     id: "T1",
     date: "Aug 10, 2025",
     description: "University of London - Fee Payment",
-    amount: "$12,500",
+    amount: "₹12,500",
     status: "Completed",
     category: "University Fee",
   },
@@ -65,7 +78,7 @@ const recentTransactions = [
     id: "T2",
     date: "Aug 8, 2025",
     description: "Student: John Smith - Course Fee",
-    amount: "$3,200",
+    amount: "₹3,200",
     status: "Completed",
     category: "Student Fee",
   },
@@ -73,7 +86,7 @@ const recentTransactions = [
     id: "T3",
     date: "Aug 5, 2025",
     description: "Agent: Global Education - Commission",
-    amount: "$1,800",
+    amount: "₹1,800",
     status: "Pending",
     category: "Agent Commission",
   },
@@ -81,7 +94,7 @@ const recentTransactions = [
     id: "T4",
     date: "Aug 2, 2025",
     description: "Office Rent - Downtown Branch",
-    amount: "$2,500",
+    amount: "₹2,500",
     status: "Completed",
     category: "Office Expense",
   },
@@ -154,35 +167,94 @@ const Index = () => {
         onDateRangeChange={handleDateRangeChange}
       />
       
-      {/* Stats Overview */}
-      <div className="dashboard-grid mb-6">
-        <StatCard
-          title="Total Income"
-          value="$56,800"
-          change={{ value: 12, isPositive: true }}
-          icon={<DollarSign className="h-5 w-5" />}
-          variant="income"
-        />
-        <StatCard
-          title="Total Expenses"
-          value="$24,500"
-          change={{ value: 8, isPositive: false }}
-          icon={<CreditCard className="h-5 w-5" />}
-          variant="expense"
-        />
-        <StatCard
-          title="Amount Receivable"
-          value="$18,200"
-          change={{ value: 5, isPositive: true }}
-          icon={<TrendingUp className="h-5 w-5" />}
-          variant="receivable"
-        />
-        <StatCard
-          title="University Fees Due"
-          value="$32,400"
-          icon={<AlertCircle className="h-5 w-5" />}
-          variant="due"
-        />
+      {/* Redesigned Dashboard Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+        {/* Total Revenue Collected - Large card with animated counter */}
+        <Card className="col-span-full md:col-span-2 lg:col-span-1">
+          <CardHeader>
+            <CardTitle>Total Revenue Collected</CardTitle>
+            <CardDescription>Overall revenue for current period</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <AnimatedCounter value={1250000} prefix="₹" className="text-5xl text-green-600" />
+          </CardContent>
+        </Card>
+
+        {/* Total Due from Students - Alert-style (Red) card */}
+        <Card className="border-l-4 border-red-500 bg-red-50 dark:bg-red-900/20">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center">
+              <AlertCircle className="mr-2 h-5 w-5 text-red-500" />
+              Total Due from Students
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-red-600 dark:text-red-400">₹245,800</div>
+            <p className="mt-2 text-sm text-red-600 dark:text-red-400">
+              15 students with outstanding payments
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Paid to Universities - Light themed card with pie chart */}
+        <Card className="col-span-full md:col-span-2 lg:col-span-1 bg-slate-50 dark:bg-slate-900/50">
+          <CardHeader className="pb-2">
+            <CardTitle>Paid to Universities</CardTitle>
+            <CardDescription>Distribution of payments</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold mb-2">₹1,620,000</div>
+            <PieChart data={universityPaymentsData} height={220} />
+          </CardContent>
+        </Card>
+
+        {/* Agent Commission Pending - Gradient background card */}
+        <Card className="overflow-hidden">
+          <div className="bg-gradient-to-r from-purple-500 to-blue-500 p-6 text-white">
+            <h3 className="text-lg font-medium mb-1">Agent Commission Pending</h3>
+            <div className="text-3xl font-bold">₹87,200</div>
+            <div className="mt-4 flex gap-2">
+              <span className="inline-flex items-center rounded-md bg-white/20 px-2 py-1 text-xs font-medium text-white">
+                5 Agents
+              </span>
+              <span className="inline-flex items-center rounded-md bg-white/20 px-2 py-1 text-xs font-medium text-white">
+                Due in 7 days
+              </span>
+            </div>
+          </div>
+        </Card>
+
+        {/* Total Hostel Expenses - Card with icon */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center text-lg">
+              <HomeIcon className="mr-2 h-5 w-5 text-blue-500" />
+              Total Hostel Expenses
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">₹124,500</div>
+            <p className="text-sm text-muted-foreground mt-1">
+              For the current month
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Staff Salaries - Simple card */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center text-lg">
+              <Briefcase className="mr-2 h-5 w-5 text-green-500" />
+              Staff Salaries (This Month)
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">₹184,700</div>
+            <p className="text-sm text-muted-foreground mt-1">
+              12 staff members
+            </p>
+          </CardContent>
+        </Card>
       </div>
       
       {/* Charts */}
