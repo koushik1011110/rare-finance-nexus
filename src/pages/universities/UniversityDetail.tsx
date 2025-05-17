@@ -1,3 +1,4 @@
+
 import React from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
@@ -127,8 +128,8 @@ const UniversityDetail = () => {
   
   // Calculate percentage for the progress indicator
   const totalFees = parseInt(university.totalFeesExpected.replace(/[^\d]/g, ''));
-  const paidAmount = parseInt(university.amountPaid.replace(/[^\d]/g, '));
-  const pendingAmount = parseInt(university.amountPending.replace(/[^\d]/g, '));
+  const paidAmount = parseInt(university.amountPaid.replace(/[^\d]/g, ''));
+  const pendingAmount = parseInt(university.amountPending.replace(/[^\d]/g, ''));
   const paymentPercentage = Math.round((paidAmount / totalFees) * 100);
   
   // Create data for the pie chart
