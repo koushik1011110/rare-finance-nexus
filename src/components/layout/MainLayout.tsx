@@ -60,7 +60,7 @@ interface MainLayoutProps {
 }
 
 export default function MainLayout({ children }: MainLayoutProps) {
-  const [sidebarOpen, setSidebarOpen] = useState(false); // Default to collapsed
+  const [sidebarOpen, setSidebarOpen] = useState(false); // Set default to false (collapsed)
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const location = useLocation();
   
@@ -204,7 +204,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                 alt="Rare Education Logo" 
                 className="h-8 mr-2" 
               />
-              <span className="text-xl font-semibold text-rare-blue-500">Rare Edu Dashboard</span>
+              <span className="text-xl font-semibold text-rare-blue-500">Rare Education</span>
             </div>
           </div>
           <div className="flex items-center space-x-4">
