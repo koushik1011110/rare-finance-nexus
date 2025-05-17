@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { 
@@ -202,9 +201,8 @@ export default function MainLayout({ children }: MainLayoutProps) {
               <img 
                 src="/lovable-uploads/71c812f6-bbaf-4f30-abe2-481ec95372da.png" 
                 alt="Rare Education Logo" 
-                className="h-8 mr-2" 
+                className="h-8" 
               />
-              <span className="text-xl font-semibold text-rare-blue-500">Rare Education</span>
             </div>
           </div>
           <div className="flex items-center space-x-4">

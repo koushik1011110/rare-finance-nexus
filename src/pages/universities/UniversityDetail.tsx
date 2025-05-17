@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
@@ -9,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import EditModal from "@/components/shared/EditModal";
 import UniversityForm, { UniversityFormData } from "@/components/forms/UniversityForm";
 import { toast } from "@/hooks/use-toast";
+import UniversityPieChart from "@/components/dashboard/UniversityPieChart";
 
 // Sample university data
 const universitiesData = {
@@ -127,8 +127,23 @@ const UniversityDetail = () => {
   
   // Calculate percentage for the progress indicator
   const totalFees = parseInt(university.totalFeesExpected.replace(/[^\d]/g, ''));
-  const paidAmount = parseInt(university.amountPaid.replace(/[^\d]/g, ''));
+  const paidAmount = parseInt(university.amountPaid.replace(/[^\d]/g, '));
+  const pendingAmount = parseInt(university.amountPending.replace(/[^\d]/g, '));
   const paymentPercentage = Math.round((paidAmount / totalFees) * 100);
+  
+  // Create data for the pie chart
+  const paymentStatusData = [
+    { 
+      name: "Amount Paid", 
+      value: paidAmount, 
+      color: "#4CAF50" 
+    },
+    { 
+      name: "Amount Pending", 
+      value: pendingAmount, 
+      color: "#FF9800" 
+    },
+  ];
   
   return (
     <MainLayout>
@@ -260,25 +275,21 @@ const UniversityDetail = () => {
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="md:col-span-1">
           <CardHeader>
             <CardTitle>Payment Status</CardTitle>
             <CardDescription>Fee collection progress</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium">Amount Paid</span>
-              <span className="text-sm font-medium">{paymentPercentage}%</span>
+            <div className="h-[250px] w-full mb-4">
+              <UniversityPieChart
+                title=""
+                data={paymentStatusData}
+                className="border-0 shadow-none p-0"
+              />
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-2.5">
-              <div
-                className={`h-2.5 rounded-full ${
-                  paymentPercentage === 100 ? "bg-green-500" : "bg-blue-500"
-                }`}
-                style={{ width: `${paymentPercentage}%` }}
-              ></div>
-            </div>
-            <div className="mt-6 space-y-3">
+            
+            <div className="mt-4 space-y-3">
               <div className="flex justify-between">
                 <span className="text-sm text-muted-foreground">Total Expected:</span>
                 <span className="font-medium">{university.totalFeesExpected}</span>

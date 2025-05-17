@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
@@ -10,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
 import EditModal from "@/components/shared/EditModal";
 import UniversityForm, { UniversityFormData } from "@/components/forms/UniversityForm";
+import UniversityPieChart from "@/components/dashboard/UniversityPieChart";
 
 // Sample data for universities
 const universitiesData = [
@@ -96,6 +96,43 @@ const Universities = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [currentUniversity, setCurrentUniversity] = useState<University | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Create data for pie chart
+  const paymentStatusData = [
+    { 
+      name: "Paid", 
+      value: 420000, // From Bukhara State Medical Institute
+      color: "#4CAF50" 
+    },
+    { 
+      name: "Pending", 
+      value: 495000, // Sum of pending amounts from other universities
+      color: "#FF9800" 
+    },
+  ];
+
+  const universityPaymentData = [
+    { 
+      name: "Tashkent", 
+      value: 420000, 
+      color: "#1E88E5" 
+    },
+    { 
+      name: "Samarkand", 
+      value: 350000, 
+      color: "#7E57C2" 
+    },
+    { 
+      name: "Bukhara", 
+      value: 420000, 
+      color: "#43A047" 
+    },
+    { 
+      name: "Qarshi", 
+      value: 220000, 
+      color: "#F9A825" 
+    },
+  ];
 
   const filteredData = universities.filter(
     (university) =>
@@ -254,6 +291,19 @@ const Universities = () => {
           </>
         }
       />
+
+      <div className="grid grid-cols-1 gap-6 mb-6 lg:grid-cols-2">
+        <UniversityPieChart 
+          title="Payment Status"
+          description="Paid vs Pending Amounts"
+          data={paymentStatusData}
+        />
+        <UniversityPieChart 
+          title="University Payments"
+          description="Amount Paid to Each University"
+          data={universityPaymentData}
+        />
+      </div>
 
       <div className="mb-6">
         <Input
