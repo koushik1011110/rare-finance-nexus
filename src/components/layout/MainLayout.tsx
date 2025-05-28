@@ -24,6 +24,7 @@ const navItems: NavItem[] = [
     subItems: [
       { title: "Direct Students", href: "/students/direct" },
       { title: "Agent Students", href: "/students/agent" },
+      { title: "Student Admission", href: "/students/admission" },
     ]
   },
   { title: "Agents", href: "/agents", icon: Users },
@@ -50,6 +51,16 @@ const navItems: NavItem[] = [
   { title: "Office Expenses", href: "/office-expenses", icon: ClipboardList },
   { title: "Salary Management", href: "/salary", icon: Briefcase },
   { title: "Personal Expenses", href: "/personal-expenses", icon: DollarSign },
+  { 
+    title: "Fees Collection", 
+    href: "/fees", 
+    icon: DollarSign,
+    subItems: [
+      { title: "Fees Type", href: "/fees/types" },
+      { title: "Fees Master", href: "/fees/master" },
+      { title: "Collect Fees", href: "/fees/collect" },
+    ]
+  },
   { title: "Reports", href: "/reports", icon: LineChart },
   { title: "Settings", href: "/settings", icon: Settings },
 ];
