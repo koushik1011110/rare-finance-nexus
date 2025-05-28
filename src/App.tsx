@@ -10,6 +10,7 @@ import NotFound from "./pages/NotFound";
 // Student Module
 import DirectStudents from "./pages/students/DirectStudents";
 import AgentStudents from "./pages/students/AgentStudents";
+import StudentAdmission from "./pages/students/StudentAdmission";
 
 // Agent Management
 import AgentManagement from "./pages/agents/AgentManagement";
@@ -31,6 +32,11 @@ import SalaryManagement from "./pages/salary/SalaryManagement";
 // Personal Expenses
 import PersonalExpenses from "./pages/personal/PersonalExpenses";
 
+// Fees Collection Module
+import FeesType from "./pages/fees/FeesType";
+import FeesMaster from "./pages/fees/FeesMaster";
+import CollectFees from "./pages/fees/CollectFees";
+
 // Reports Section
 import Reports from "./pages/reports/Reports";
 
@@ -51,6 +57,7 @@ const App = () => (
           {/* Student Module */}
           <Route path="/students/direct" element={<DirectStudents />} />
           <Route path="/students/agent" element={<AgentStudents />} />
+          <Route path="/students/admission" element={<StudentAdmission />} />
           
           {/* Agent Management */}
           <Route path="/agents" element={<AgentManagement />} />
@@ -71,6 +78,11 @@ const App = () => (
           
           {/* Personal Expenses */}
           <Route path="/personal-expenses" element={<PersonalExpenses />} />
+          
+          {/* Fees Collection Module */}
+          <Route path="/fees/types" element={<FeesType />} />
+          <Route path="/fees/master" element={<FeesMaster />} />
+          <Route path="/fees/collect" element={<CollectFees />} />
           
           {/* Reports Section */}
           <Route path="/reports" element={<Reports />} />
