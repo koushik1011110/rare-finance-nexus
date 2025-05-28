@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import PageHeader from "@/components/shared/PageHeader";
@@ -92,8 +93,8 @@ const FeesMaster = () => {
   });
 
   const [searchFilters, setSearchFilters] = useState({
-    course: "",
-    batch: "",
+    course: "all",
+    batch: "all",
     name: "",
   });
 
@@ -132,8 +133,8 @@ const FeesMaster = () => {
     }
 
     const filtered = students.filter(student => {
-      const matchesCourse = !searchFilters.course || student.course === searchFilters.course;
-      const matchesBatch = !searchFilters.batch || student.batch === searchFilters.batch;
+      const matchesCourse = searchFilters.course === "all" || student.course === searchFilters.course;
+      const matchesBatch = searchFilters.batch === "all" || student.batch === searchFilters.batch;
       const matchesName = !searchFilters.name || student.name.toLowerCase().includes(searchFilters.name.toLowerCase());
       
       return matchesCourse && matchesBatch && matchesName;
@@ -217,7 +218,7 @@ const FeesMaster = () => {
 
     // Reset form and hide table
     setFormData({ feeType: "", amount: "" });
-    setSearchFilters({ course: "", batch: "", name: "" });
+    setSearchFilters({ course: "all", batch: "all", name: "" });
     setSelectedStudents([]);
     setShowStudentTable(false);
     setFilteredStudents([]);
@@ -426,7 +427,7 @@ const FeesMaster = () => {
                         <SelectValue placeholder="All courses" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">All courses</SelectItem>
+                        <SelectItem value="all">All courses</SelectItem>
                         {courses.map((course) => (
                           <SelectItem key={course} value={course}>
                             {course}
@@ -443,7 +444,7 @@ const FeesMaster = () => {
                         <SelectValue placeholder="All batches" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">All batches</SelectItem>
+                        <SelectItem value="all">All batches</SelectItem>
                         {batches.map((batch) => (
                           <SelectItem key={batch} value={batch}>
                             {batch}
