@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { 
@@ -16,7 +17,16 @@ type NavItem = {
 };
 
 const navItems: NavItem[] = [
-  { title: "Dashboard", href: "/", icon: BarChart3 },
+  { 
+    title: "Dashboard", 
+    href: "/", 
+    icon: BarChart3,
+    subItems: [
+      { title: "Fees Type", href: "/fees/types" },
+      { title: "Fees Master", href: "/fees/master" },
+      { title: "Collect Fees", href: "/fees/collect" },
+    ]
+  },
   { 
     title: "Students", 
     href: "/students", 
@@ -51,16 +61,6 @@ const navItems: NavItem[] = [
   { title: "Office Expenses", href: "/office-expenses", icon: ClipboardList },
   { title: "Salary Management", href: "/salary", icon: Briefcase },
   { title: "Personal Expenses", href: "/personal-expenses", icon: DollarSign },
-  { 
-    title: "Fees Collection", 
-    href: "/fees", 
-    icon: DollarSign,
-    subItems: [
-      { title: "Fees Type", href: "/fees/types" },
-      { title: "Fees Master", href: "/fees/master" },
-      { title: "Collect Fees", href: "/fees/collect" },
-    ]
-  },
   { title: "Reports", href: "/reports", icon: LineChart },
   { title: "Settings", href: "/settings", icon: Settings },
 ];
