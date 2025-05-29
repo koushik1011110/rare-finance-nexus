@@ -1,4 +1,5 @@
 
+
 import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { 
@@ -20,11 +21,20 @@ const navItems: NavItem[] = [
   { 
     title: "Dashboard", 
     href: "/", 
-    icon: BarChart3,
+    icon: BarChart3
+  },
+  { 
+    title: "Fees Collection", 
+    href: "/fees", 
+    icon: DollarSign,
     subItems: [
       { title: "Fees Type", href: "/fees/types" },
       { title: "Fees Master", href: "/fees/master" },
       { title: "Collect Fees", href: "/fees/collect" },
+      { title: "Fees Report", href: "/fees/report" },
+      { title: "Student Ledger", href: "/fees/student-ledger" },
+      { title: "Due Report", href: "/fees/due-report" },
+      { title: "Payment History", href: "/fees/payment-history" },
     ]
   },
   { 
