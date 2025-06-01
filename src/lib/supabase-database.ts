@@ -52,7 +52,10 @@ export const studentsAPI = {
       throw error;
     }
     
-    return data || [];
+    return (data || []).map(student => ({
+      ...student,
+      status: student.status as 'active' | 'inactive' | 'completed'
+    }));
   },
 
   create: async (studentData: Omit<Student, 'id' | 'created_at' | 'updated_at'>): Promise<Student> => {
@@ -67,7 +70,10 @@ export const studentsAPI = {
       throw error;
     }
     
-    return data;
+    return {
+      ...data,
+      status: data.status as 'active' | 'inactive' | 'completed'
+    };
   },
 
   update: async (id: number, studentData: Partial<Omit<Student, 'id' | 'created_at' | 'updated_at'>>): Promise<Student> => {
@@ -83,7 +89,10 @@ export const studentsAPI = {
       throw error;
     }
     
-    return data;
+    return {
+      ...data,
+      status: data.status as 'active' | 'inactive' | 'completed'
+    };
   },
 
   delete: async (id: number): Promise<void> => {
