@@ -54,9 +54,91 @@ export type Database = {
         }
         Relationships: []
       }
+      fee_collections: {
+        Row: {
+          amount_paid: number
+          created_at: string | null
+          fee_type_id: number
+          id: number
+          notes: string | null
+          payment_date: string
+          payment_method: string | null
+          receipt_number: string | null
+          student_id: number
+          updated_at: string | null
+        }
+        Insert: {
+          amount_paid: number
+          created_at?: string | null
+          fee_type_id: number
+          id?: number
+          notes?: string | null
+          payment_date?: string
+          payment_method?: string | null
+          receipt_number?: string | null
+          student_id: number
+          updated_at?: string | null
+        }
+        Update: {
+          amount_paid?: number
+          created_at?: string | null
+          fee_type_id?: number
+          id?: number
+          notes?: string | null
+          payment_date?: string
+          payment_method?: string | null
+          receipt_number?: string | null
+          student_id?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fee_collections_fee_type_id_fkey"
+            columns: ["fee_type_id"]
+            isOneToOne: false
+            referencedRelation: "fee_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fee_collections_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fee_types: {
+        Row: {
+          amount: number
+          created_at: string | null
+          description: string | null
+          id: number
+          is_active: boolean | null
+          name: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          description?: string | null
+          id?: number
+          is_active?: boolean | null
+          name: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          description?: string | null
+          id?: number
+          is_active?: boolean | null
+          name?: string
+        }
+        Relationships: []
+      }
       students: {
         Row: {
           academic_session_id: number | null
+          admission_number: string | null
           course_id: number | null
           created_at: string | null
           date_of_birth: string
@@ -73,6 +155,7 @@ export type Database = {
         }
         Insert: {
           academic_session_id?: number | null
+          admission_number?: string | null
           course_id?: number | null
           created_at?: string | null
           date_of_birth: string
@@ -89,6 +172,7 @@ export type Database = {
         }
         Update: {
           academic_session_id?: number | null
+          admission_number?: string | null
           course_id?: number | null
           created_at?: string | null
           date_of_birth?: string
@@ -150,7 +234,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      generate_admission_number: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      generate_receipt_number: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never

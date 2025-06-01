@@ -2,92 +2,51 @@
 import React, { useState, useEffect } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import PageHeader from "@/components/shared/PageHeader";
-import DataTable from "@/components/ui/DataTable";
 import { Button } from "@/components/ui/button";
-import { Plus, Download, Upload, Eye, Edit, Trash2 } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { toast } from "@/hooks/use-toast";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import DataTable, { Column } from "@/components/ui/DataTable";
+import { Badge } from "@/components/ui/badge";
 import DetailViewModal from "@/components/shared/DetailViewModal";
 import EditModal from "@/components/shared/EditModal";
 import SupabaseDirectStudentForm, { SupabaseDirectStudentFormData } from "@/components/forms/SupabaseDirectStudentForm";
-import { studentsAPI, universitiesAPI, coursesAPI, academicSessionsAPI, Student } from "@/lib/supabase-database";
-
-interface DirectStudentDisplay {
-  id: number;
-  name: string;
-  course: string;
-  phoneNumber: string;
-  email: string;
-  university: string;
-  status: string;
-  fatherName: string;
-  motherName: string;
-  dateOfBirth: string;
-  academicSession: string;
-  university_id: number;
-  course_id: number;
-  academic_session_id: number;
-}
+import { toast } from "@/hooks/use-toast";
+import { Plus, Edit, Trash, Eye } from "lucide-react";
+import { studentsAPI, universitiesAPI, coursesAPI, academicSessionsAPI, Student, University, Course, AcademicSession } from "@/lib/supabase-database";
 
 const DirectStudents = () => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [students, setStudents] = useState<DirectStudentDisplay[]>([]);
-  const [loading, setLoading] = useState(true);
-  
-  // Modal states
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [students, setStudents] = useState<Student[]>([]);
+  const [universities, setUniversities] = useState<University[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [academicSessions, setAcademicSessions] = useState<AcademicSession[]>([]);
+  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [currentStudent, setCurrentStudent] = useState<DirectStudentDisplay | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadStudents();
+    loadData();
   }, []);
 
-  const loadStudents = async () => {
+  const loadData = async () => {
     try {
       setLoading(true);
-      const [studentsData, universities, courses, sessions] = await Promise.all([
+      const [studentsData, universitiesData, coursesData, sessionsData] = await Promise.all([
         studentsAPI.getAll(),
         universitiesAPI.getAll(),
         coursesAPI.getAll(),
         academicSessionsAPI.getAll(),
       ]);
 
-      const displayStudents: DirectStudentDisplay[] = studentsData.map((student: Student) => {
-        const university = universities.find(u => u.id === student.university_id);
-        const course = courses.find(c => c.id === student.course_id);
-        const session = sessions.find(s => s.id === student.academic_session_id);
-
-        return {
-          id: student.id,
-          name: `${student.first_name} ${student.last_name}`,
-          course: course?.name || 'Unknown Course',
-          phoneNumber: student.phone_number || '',
-          email: student.email || '',
-          university: university?.name || 'Unknown University',
-          status: student.status,
-          fatherName: student.father_name,
-          motherName: student.mother_name,
-          dateOfBirth: student.date_of_birth,
-          academicSession: session?.session_name || 'Unknown Session',
-          university_id: student.university_id,
-          course_id: student.course_id,
-          academic_session_id: student.academic_session_id,
-        };
-      });
-
-      setStudents(displayStudents);
-      toast({
-        title: "Success",
-        description: `Loaded ${displayStudents.length} students from database.`,
-      });
+      setStudents(studentsData);
+      setUniversities(universitiesData);
+      setCourses(coursesData);
+      setAcademicSessions(sessionsData);
     } catch (error) {
-      console.error('Error loading students:', error);
+      console.error('Error loading data:', error);
       toast({
         title: "Error",
-        description: "Failed to load students from database.",
+        description: "Failed to load students data.",
         variant: "destructive",
       });
     } finally {
@@ -95,78 +54,21 @@ const DirectStudents = () => {
     }
   };
 
-  const filteredData = students.filter(
-    (student) =>
-      student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.course.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.university.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.phoneNumber.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const handleViewStudent = (student: DirectStudentDisplay) => {
-    setCurrentStudent(student);
-    setIsViewModalOpen(true);
-  };
-
-  const handleEditStudent = (student: DirectStudentDisplay) => {
-    setCurrentStudent(student);
-    setIsEditModalOpen(true);
-  };
-
-  const handleDeleteStudent = async (student: DirectStudentDisplay) => {
-    if (window.confirm(`Are you sure you want to delete ${student.name}?`)) {
-      try {
-        await studentsAPI.delete(student.id);
-        toast({
-          title: "Student Deleted",
-          description: `${student.name} has been deleted successfully.`,
-        });
-        await loadStudents();
-      } catch (error) {
-        console.error('Error deleting student:', error);
-        toast({
-          title: "Error",
-          description: "Failed to delete student.",
-          variant: "destructive",
-        });
-      }
-    }
-  };
-
-  const handleAddStudent = () => {
-    setIsAddModalOpen(true);
-  };
-
-  const handleSaveStudent = async (formData: SupabaseDirectStudentFormData) => {
-    setIsSubmitting(true);
-    
+  const handleAddStudent = async (studentData: SupabaseDirectStudentFormData) => {
     try {
-      if (formData.id) {
-        // Update existing student
-        await studentsAPI.update(formData.id, formData);
-        toast({
-          title: "Student Updated",
-          description: `${formData.first_name} ${formData.last_name} has been updated successfully.`,
-        });
-      } else {
-        // Add new student
-        const { id, ...studentData } = formData;
-        await studentsAPI.create(studentData);
-        toast({
-          title: "Student Added",
-          description: `${formData.first_name} ${formData.last_name} has been added successfully.`,
-        });
-      }
-
-      await loadStudents();
-      setIsAddModalOpen(false);
+      setIsSubmitting(true);
+      const newStudent = await studentsAPI.create(studentData);
+      setStudents(prev => [newStudent, ...prev]);
+      toast({
+        title: "Student Added",
+        description: `${newStudent.first_name} ${newStudent.last_name} has been added successfully with admission number ${newStudent.admission_number}.`,
+      });
       setIsEditModalOpen(false);
     } catch (error) {
-      console.error('Error saving student:', error);
+      console.error('Error adding student:', error);
       toast({
         title: "Error",
-        description: "Failed to save student. Please try again.",
+        description: "Failed to add student.",
         variant: "destructive",
       });
     } finally {
@@ -174,56 +76,145 @@ const DirectStudents = () => {
     }
   };
 
-  const handleImport = () => {
-    toast({
-      title: "Feature Coming Soon",
-      description: "Import functionality will be available shortly.",
-    });
+  const handleEditStudent = async (studentData: SupabaseDirectStudentFormData) => {
+    if (!selectedStudent) return;
+    
+    try {
+      setIsSubmitting(true);
+      const updatedStudent = await studentsAPI.update(selectedStudent.id, studentData);
+      setStudents(prev => prev.map(student => 
+        student.id === selectedStudent.id ? updatedStudent : student
+      ));
+      toast({
+        title: "Student Updated",
+        description: `${updatedStudent.first_name} ${updatedStudent.last_name} has been updated successfully.`,
+      });
+      setIsEditModalOpen(false);
+      setSelectedStudent(null);
+    } catch (error) {
+      console.error('Error updating student:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update student.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleExport = () => {
-    toast({
-      title: "Feature Coming Soon",
-      description: "Export functionality will be available shortly.",
-    });
+  const handleDeleteStudent = async (id: number) => {
+    try {
+      await studentsAPI.delete(id);
+      setStudents(prev => prev.filter(student => student.id !== id));
+      toast({
+        title: "Student Deleted",
+        description: "Student has been deleted successfully.",
+      });
+    } catch (error) {
+      console.error('Error deleting student:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete student.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const columns = [
-    { header: "Student Name", accessorKey: "name" },
-    { header: "Course", accessorKey: "course" },
-    { header: "Phone Number", accessorKey: "phoneNumber" },
-    { header: "Email", accessorKey: "email" },
-    { header: "University", accessorKey: "university" },
+  const handleViewDetails = (student: Student) => {
+    setSelectedStudent(student);
+    setIsDetailModalOpen(true);
+  };
+
+  const handleEditClick = (student: Student) => {
+    setSelectedStudent(student);
+    setIsEditModalOpen(true);
+  };
+
+  const getUniversityName = (id: number) => {
+    return universities.find(u => u.id === id)?.name || 'Unknown';
+  };
+
+  const getCourseName = (id: number) => {
+    return courses.find(c => c.id === id)?.name || 'Unknown';
+  };
+
+  const getSessionName = (id: number) => {
+    return academicSessions.find(s => s.id === id)?.session_name || 'Unknown';
+  };
+
+  const getStatusBadge = (status: string) => {
+    const statusConfig = {
+      active: { variant: "default" as const, color: "text-green-600" },
+      inactive: { variant: "secondary" as const, color: "text-gray-600" },
+      completed: { variant: "outline" as const, color: "text-blue-600" }
+    };
+    
+    const config = statusConfig[status as keyof typeof statusConfig];
+    return (
+      <Badge variant={config.variant} className={config.color}>
+        {status.charAt(0).toUpperCase() + status.slice(1)}
+      </Badge>
+    );
+  };
+
+  const columns: Column<Student>[] = [
+    { 
+      header: "Admission No.", 
+      accessorKey: "admission_number",
+      cell: (student: Student) => (
+        <span className="font-mono text-sm">{student.admission_number || 'N/A'}</span>
+      )
+    },
+    { 
+      header: "Name", 
+      accessorKey: "first_name",
+      cell: (student: Student) => `${student.first_name} ${student.last_name}`
+    },
+    { 
+      header: "Father's Name", 
+      accessorKey: "father_name" 
+    },
+    { 
+      header: "University", 
+      accessorKey: "university_id",
+      cell: (student: Student) => getUniversityName(student.university_id)
+    },
+    { 
+      header: "Course", 
+      accessorKey: "course_id",
+      cell: (student: Student) => getCourseName(student.course_id)
+    },
     {
       header: "Status",
       accessorKey: "status",
-      cell: (row: any) => (
-        <span
-          className={`rounded-full px-2 py-1 text-xs font-medium ${
-            row.status === "active"
-              ? "bg-blue-100 text-blue-800"
-              : row.status === "completed"
-              ? "bg-green-100 text-green-800"
-              : "bg-gray-100 text-gray-800"
-          }`}
-        >
-          {row.status.charAt(0).toUpperCase() + row.status.slice(1)}
-        </span>
-      ),
+      cell: (student: Student) => getStatusBadge(student.status)
     },
     {
       header: "Actions",
       accessorKey: "actions",
-      cell: (row: DirectStudentDisplay) => (
-        <div className="flex space-x-1">
-          <Button variant="outline" size="sm" onClick={() => handleViewStudent(row)}>
+      cell: (student: Student) => (
+        <div className="flex space-x-2">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => handleViewDetails(student)}
+          >
             <Eye className="h-4 w-4" />
           </Button>
-          <Button variant="outline" size="sm" onClick={() => handleEditStudent(row)}>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => handleEditClick(student)}
+          >
             <Edit className="h-4 w-4" />
           </Button>
-          <Button variant="outline" size="sm" onClick={() => handleDeleteStudent(row)}>
-            <Trash2 className="h-4 w-4" />
+          <Button
+            size="sm"
+            variant="destructive"
+            onClick={() => handleDeleteStudent(student.id)}
+          >
+            <Trash className="h-4 w-4" />
           </Button>
         </div>
       ),
@@ -235,11 +226,9 @@ const DirectStudents = () => {
       <MainLayout>
         <PageHeader
           title="Direct Students"
-          description="Loading students from Supabase..."
+          description="Manage students admitted directly to universities"
         />
-        <div className="flex justify-center items-center h-64">
-          <div className="text-lg">Loading students from database...</div>
-        </div>
+        <div>Loading...</div>
       </MainLayout>
     );
   }
@@ -248,131 +237,120 @@ const DirectStudents = () => {
     <MainLayout>
       <PageHeader
         title="Direct Students"
-        description={`Manage all direct student records (${students.length} students)`}
-        actions={
-          <>
-            <Button variant="outline" size="sm" onClick={handleImport}>
-              <Upload className="mr-2 h-4 w-4" />
-              Import
-            </Button>
-            <Button variant="outline" size="sm" onClick={handleExport}>
-              <Download className="mr-2 h-4 w-4" />
-              Export
-            </Button>
-            <Button variant="default" size="sm" onClick={handleAddStudent}>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Student
-            </Button>
-          </>
-        }
+        description="Manage students admitted directly to universities"
       />
-
-      <div className="mb-6">
-        <Input
-          placeholder="Search by name, course, university, email or phone..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="max-w-sm"
-        />
-      </div>
-
-      <div className="rounded-lg border bg-card shadow-sm">
-        <DataTable columns={columns} data={filteredData} />
-      </div>
       
-      {/* Add Student Modal */}
-      <EditModal
-        title="Add New Student"
-        isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
-        onSave={() => {}}
+      <Card>
+        <CardHeader>
+          <div className="flex justify-between items-center">
+            <div>
+              <CardTitle>Student List</CardTitle>
+              <CardDescription>
+                All students admitted directly to universities
+              </CardDescription>
+            </div>
+            <Button onClick={() => {
+              setSelectedStudent(null);
+              setIsEditModalOpen(true);
+            }}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add New Student
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <DataTable columns={columns} data={students} />
+        </CardContent>
+      </Card>
+
+      <DetailViewModal
+        title={`Student Details - ${selectedStudent?.first_name || ""} ${selectedStudent?.last_name || ""}`}
+        isOpen={isDetailModalOpen}
+        onClose={() => setIsDetailModalOpen(false)}
       >
-        <SupabaseDirectStudentForm 
-          onSubmit={handleSaveStudent}
+        {selectedStudent && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-sm text-muted-foreground">Admission Number</p>
+                <p className="font-medium font-mono">{selectedStudent.admission_number || 'N/A'}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Status</p>
+                {getStatusBadge(selectedStudent.status)}
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">First Name</p>
+                <p className="font-medium">{selectedStudent.first_name}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Last Name</p>
+                <p className="font-medium">{selectedStudent.last_name}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Father's Name</p>
+                <p className="font-medium">{selectedStudent.father_name}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Mother's Name</p>
+                <p className="font-medium">{selectedStudent.mother_name}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Date of Birth</p>
+                <p className="font-medium">{selectedStudent.date_of_birth}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Phone Number</p>
+                <p className="font-medium">{selectedStudent.phone_number || 'N/A'}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Email</p>
+                <p className="font-medium">{selectedStudent.email || 'N/A'}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">University</p>
+                <p className="font-medium">{getUniversityName(selectedStudent.university_id)}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Course</p>
+                <p className="font-medium">{getCourseName(selectedStudent.course_id)}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Academic Session</p>
+                <p className="font-medium">{getSessionName(selectedStudent.academic_session_id)}</p>
+              </div>
+            </div>
+          </div>
+        )}
+      </DetailViewModal>
+
+      <EditModal
+        title={selectedStudent ? "Edit Student" : "Add New Student"}
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setSelectedStudent(null);
+        }}
+      >
+        <SupabaseDirectStudentForm
+          initialData={selectedStudent ? {
+            id: selectedStudent.id,
+            first_name: selectedStudent.first_name,
+            last_name: selectedStudent.last_name,
+            father_name: selectedStudent.father_name,
+            mother_name: selectedStudent.mother_name,
+            date_of_birth: selectedStudent.date_of_birth,
+            phone_number: selectedStudent.phone_number || "",
+            email: selectedStudent.email || "",
+            university_id: selectedStudent.university_id,
+            course_id: selectedStudent.course_id,
+            academic_session_id: selectedStudent.academic_session_id,
+            status: selectedStudent.status,
+          } : undefined}
+          onSubmit={selectedStudent ? handleEditStudent : handleAddStudent}
           isSubmitting={isSubmitting}
         />
       </EditModal>
-      
-      {/* View Student Modal */}
-      {currentStudent && (
-        <DetailViewModal
-          title={`Student: ${currentStudent.name}`}
-          isOpen={isViewModalOpen}
-          onClose={() => setIsViewModalOpen(false)}
-        >
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div>
-              <h3 className="font-semibold">Student Name</h3>
-              <p>{currentStudent.name}</p>
-            </div>
-            <div>
-              <h3 className="font-semibold">Course</h3>
-              <p>{currentStudent.course}</p>
-            </div>
-            <div>
-              <h3 className="font-semibold">University</h3>
-              <p>{currentStudent.university}</p>
-            </div>
-            <div>
-              <h3 className="font-semibold">Phone Number</h3>
-              <p>{currentStudent.phoneNumber || "Not provided"}</p>
-            </div>
-            <div>
-              <h3 className="font-semibold">Email</h3>
-              <p>{currentStudent.email || "Not provided"}</p>
-            </div>
-            <div>
-              <h3 className="font-semibold">Father's Name</h3>
-              <p>{currentStudent.fatherName}</p>
-            </div>
-            <div>
-              <h3 className="font-semibold">Mother's Name</h3>
-              <p>{currentStudent.motherName}</p>
-            </div>
-            <div>
-              <h3 className="font-semibold">Date of Birth</h3>
-              <p>{currentStudent.dateOfBirth}</p>
-            </div>
-            <div>
-              <h3 className="font-semibold">Academic Session</h3>
-              <p>{currentStudent.academicSession}</p>
-            </div>
-            <div>
-              <h3 className="font-semibold">Status</h3>
-              <p className="capitalize">{currentStudent.status}</p>
-            </div>
-          </div>
-        </DetailViewModal>
-      )}
-      
-      {/* Edit Student Modal */}
-      {currentStudent && (
-        <EditModal
-          title={`Edit Student: ${currentStudent.name}`}
-          isOpen={isEditModalOpen}
-          onClose={() => setIsEditModalOpen(false)}
-          onSave={() => {}}
-        >
-          <SupabaseDirectStudentForm 
-            initialData={{
-              id: currentStudent.id,
-              first_name: currentStudent.name.split(' ')[0],
-              last_name: currentStudent.name.split(' ').slice(1).join(' '),
-              father_name: currentStudent.fatherName,
-              mother_name: currentStudent.motherName,
-              date_of_birth: currentStudent.dateOfBirth,
-              phone_number: currentStudent.phoneNumber,
-              email: currentStudent.email,
-              university_id: currentStudent.university_id,
-              course_id: currentStudent.course_id,
-              academic_session_id: currentStudent.academic_session_id,
-              status: currentStudent.status as "active" | "inactive" | "completed",
-            }}
-            onSubmit={handleSaveStudent}
-            isSubmitting={isSubmitting}
-          />
-        </EditModal>
-      )}
     </MainLayout>
   );
 };

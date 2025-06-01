@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import PageHeader from "@/components/shared/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -10,54 +10,79 @@ import { Textarea } from "@/components/ui/textarea";
 import DataTable, { Column } from "@/components/ui/DataTable";
 import { toast } from "@/hooks/use-toast";
 import { Plus, Edit, Trash } from "lucide-react";
-
-interface FeeType {
-  id: string;
-  name: string;
-  description: string;
-  createdAt: string;
-}
+import { feeTypesAPI, FeeType } from "@/lib/supabase-database";
 
 const FeesType = () => {
-  const [feesTypes, setFeesTypes] = useState<FeeType[]>([
-    { id: "1", name: "Tuition Fee", description: "Annual tuition fee for the course", createdAt: "2025-01-01" },
-    { id: "2", name: "Hostel Fee", description: "Accommodation charges for hostel", createdAt: "2025-01-02" },
-    { id: "3", name: "Transport Fee", description: "Bus transportation fee", createdAt: "2025-01-03" },
-    { id: "4", name: "Lab Fee", description: "Laboratory usage fee", createdAt: "2025-01-04" },
-  ]);
-
+  const [feeTypes, setFeeTypes] = useState<FeeType[]>([]);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
+    amount: "",
   });
-
-  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadFeeTypes();
+  }, []);
+
+  const loadFeeTypes = async () => {
+    try {
+      setLoading(true);
+      const data = await feeTypesAPI.getAll();
+      setFeeTypes(data);
+    } catch (error) {
+      console.error('Error loading fee types:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load fee types.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
-    if (!formData.name.trim()) {
+    if (!formData.name.trim() || !formData.amount.trim()) {
       toast({
         title: "Error",
-        description: "Fee type name is required.",
+        description: "Fee type name and amount are required.",
         variant: "destructive",
       });
       setIsSubmitting(false);
       return;
     }
 
-    setTimeout(() => {
+    const amount = parseFloat(formData.amount);
+    if (isNaN(amount) || amount <= 0) {
+      toast({
+        title: "Error",
+        description: "Please enter a valid amount.",
+        variant: "destructive",
+      });
+      setIsSubmitting(false);
+      return;
+    }
+
+    try {
       if (editingId) {
-        setFeesTypes(prev => prev.map(fee => 
-          fee.id === editingId 
-            ? { ...fee, name: formData.name, description: formData.description }
-            : fee
+        const updatedFeeType = await feeTypesAPI.update(editingId, {
+          name: formData.name,
+          description: formData.description,
+          amount: amount,
+          is_active: true,
+        });
+        setFeeTypes(prev => prev.map(fee => 
+          fee.id === editingId ? updatedFeeType : fee
         ));
         toast({
           title: "Fee Type Updated",
@@ -65,44 +90,72 @@ const FeesType = () => {
         });
         setEditingId(null);
       } else {
-        const newFeeType: FeeType = {
-          id: Date.now().toString(),
+        const newFeeType = await feeTypesAPI.create({
           name: formData.name,
           description: formData.description,
-          createdAt: new Date().toISOString().split('T')[0],
-        };
-        setFeesTypes(prev => [...prev, newFeeType]);
+          amount: amount,
+          is_active: true,
+        });
+        setFeeTypes(prev => [...prev, newFeeType]);
         toast({
           title: "Fee Type Added",
           description: `${formData.name} has been added successfully.`,
         });
       }
 
-      setFormData({ name: "", description: "" });
+      setFormData({ name: "", description: "", amount: "" });
+    } catch (error) {
+      console.error('Error saving fee type:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save fee type.",
+        variant: "destructive",
+      });
+    } finally {
       setIsSubmitting(false);
-    }, 500);
+    }
   };
 
   const handleEdit = (feeType: FeeType) => {
     setFormData({
       name: feeType.name,
-      description: feeType.description,
+      description: feeType.description || "",
+      amount: feeType.amount.toString(),
     });
     setEditingId(feeType.id);
   };
 
-  const handleDelete = (id: string) => {
-    setFeesTypes(prev => prev.filter(fee => fee.id !== id));
-    toast({
-      title: "Fee Type Deleted",
-      description: "Fee type has been deleted successfully.",
-    });
+  const handleDelete = async (id: number) => {
+    try {
+      await feeTypesAPI.delete(id);
+      setFeeTypes(prev => prev.filter(fee => fee.id !== id));
+      toast({
+        title: "Fee Type Deleted",
+        description: "Fee type has been deleted successfully.",
+      });
+    } catch (error) {
+      console.error('Error deleting fee type:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete fee type.",
+        variant: "destructive",
+      });
+    }
   };
 
   const columns: Column<FeeType>[] = [
     { header: "Name", accessorKey: "name" },
     { header: "Description", accessorKey: "description" },
-    { header: "Created Date", accessorKey: "createdAt" },
+    { 
+      header: "Amount", 
+      accessorKey: "amount",
+      cell: (feeType: FeeType) => `₹${feeType.amount.toLocaleString()}`
+    },
+    { 
+      header: "Created Date", 
+      accessorKey: "created_at",
+      cell: (feeType: FeeType) => new Date(feeType.created_at).toLocaleDateString()
+    },
     {
       header: "Actions",
       accessorKey: "actions",
@@ -126,6 +179,18 @@ const FeesType = () => {
       ),
     },
   ];
+
+  if (loading) {
+    return (
+      <MainLayout>
+        <PageHeader
+          title="Fees Type Management"
+          description="Manage different types of fees"
+        />
+        <div>Loading...</div>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>
@@ -155,6 +220,19 @@ const FeesType = () => {
               </div>
 
               <div className="space-y-2">
+                <Label htmlFor="amount">Amount *</Label>
+                <Input
+                  id="amount"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={formData.amount}
+                  onChange={(e) => handleInputChange("amount", e.target.value)}
+                  placeholder="Enter amount"
+                />
+              </div>
+
+              <div className="space-y-2">
                 <Label htmlFor="description">Description</Label>
                 <Textarea
                   id="description"
@@ -176,7 +254,7 @@ const FeesType = () => {
                     variant="outline"
                     onClick={() => {
                       setEditingId(null);
-                      setFormData({ name: "", description: "" });
+                      setFormData({ name: "", description: "", amount: "" });
                     }}
                   >
                     Cancel
@@ -193,7 +271,7 @@ const FeesType = () => {
             <CardDescription>List of all fee types in the system</CardDescription>
           </CardHeader>
           <CardContent>
-            <DataTable columns={columns} data={feesTypes} />
+            <DataTable columns={columns} data={feeTypes} />
           </CardContent>
         </Card>
       </div>
