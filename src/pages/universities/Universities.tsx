@@ -323,7 +323,6 @@ const Universities = () => {
         title="Add New University"
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
-        onSave={() => {}} // Form has its own submit handler
       >
         <UniversityForm 
           onSubmit={handleSaveUniversity}
@@ -337,7 +336,6 @@ const Universities = () => {
           title={`Edit University: ${currentUniversity.name}`}
           isOpen={isEditModalOpen}
           onClose={() => setIsEditModalOpen(false)}
-          onSave={() => {}} // Form has its own submit handler
         >
           <UniversityForm 
             initialData={{

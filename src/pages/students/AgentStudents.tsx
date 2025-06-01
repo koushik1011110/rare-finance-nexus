@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import PageHeader from "@/components/shared/PageHeader";
@@ -266,7 +265,6 @@ const AgentStudents = () => {
         title="Add New Agent Student"
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
-        onSave={() => {}} // Form has its own submit handler
       >
         <AgentStudentForm 
           onSubmit={handleSaveStudent}
@@ -336,7 +334,6 @@ const AgentStudents = () => {
           title={`Edit Student: ${currentStudent.studentName}`}
           isOpen={isEditModalOpen}
           onClose={() => setIsEditModalOpen(false)}
-          onSave={() => {}} // Form has its own submit handler
         >
           <AgentStudentForm 
             initialData={{
