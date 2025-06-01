@@ -255,7 +255,10 @@ export const feeCollectionsAPI = {
       throw error;
     }
     
-    return data || [];
+    return (data || []).map(collection => ({
+      ...collection,
+      payment_method: collection.payment_method as 'cash' | 'card' | 'bank_transfer' | 'cheque'
+    }));
   },
 
   getByStudent: async (studentId: number): Promise<FeeCollection[]> => {
@@ -270,7 +273,10 @@ export const feeCollectionsAPI = {
       throw error;
     }
     
-    return data || [];
+    return (data || []).map(collection => ({
+      ...collection,
+      payment_method: collection.payment_method as 'cash' | 'card' | 'bank_transfer' | 'cheque'
+    }));
   },
 
   create: async (feeCollectionData: Omit<FeeCollection, 'id' | 'created_at' | 'updated_at' | 'receipt_number'>): Promise<FeeCollection> => {
@@ -285,7 +291,10 @@ export const feeCollectionsAPI = {
       throw error;
     }
     
-    return data;
+    return {
+      ...data,
+      payment_method: data.payment_method as 'cash' | 'card' | 'bank_transfer' | 'cheque'
+    };
   },
 
   update: async (id: number, feeCollectionData: Partial<Omit<FeeCollection, 'id' | 'created_at' | 'updated_at' | 'receipt_number'>>): Promise<FeeCollection> => {
@@ -301,7 +310,10 @@ export const feeCollectionsAPI = {
       throw error;
     }
     
-    return data;
+    return {
+      ...data,
+      payment_method: data.payment_method as 'cash' | 'card' | 'bank_transfer' | 'cheque'
+    };
   },
 
   delete: async (id: number): Promise<void> => {
