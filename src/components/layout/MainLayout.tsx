@@ -1,6 +1,4 @@
-
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { 
   BarChart3, Users, GraduationCap, Building2, Home, ClipboardList, 
@@ -80,9 +78,19 @@ interface MainLayoutProps {
 }
 
 export default function MainLayout({ children }: MainLayoutProps) {
-  const [sidebarOpen, setSidebarOpen] = useState(false); // Set default to false (collapsed)
+  // Initialize sidebar state from localStorage, default to true (expanded)
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    const saved = localStorage.getItem('sidebarOpen');
+    return saved !== null ? JSON.parse(saved) : true;
+  });
+  
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const location = useLocation();
+  
+  // Save sidebar state to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('sidebarOpen', JSON.stringify(sidebarOpen));
+  }, [sidebarOpen]);
   
   const toggleExpand = (title: string) => {
     setExpandedItems(prev => 

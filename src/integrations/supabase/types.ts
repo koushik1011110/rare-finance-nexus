@@ -9,7 +9,142 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      academic_sessions: {
+        Row: {
+          created_at: string | null
+          end_date: string | null
+          id: number
+          is_active: boolean | null
+          session_name: string
+          start_date: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          end_date?: string | null
+          id?: number
+          is_active?: boolean | null
+          session_name: string
+          start_date?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          end_date?: string | null
+          id?: number
+          is_active?: boolean | null
+          session_name?: string
+          start_date?: string | null
+        }
+        Relationships: []
+      }
+      courses: {
+        Row: {
+          created_at: string | null
+          id: number
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          name?: string
+        }
+        Relationships: []
+      }
+      students: {
+        Row: {
+          academic_session_id: number | null
+          course_id: number | null
+          created_at: string | null
+          date_of_birth: string
+          email: string | null
+          father_name: string
+          first_name: string
+          id: number
+          last_name: string
+          mother_name: string
+          phone_number: string | null
+          status: string | null
+          university_id: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          academic_session_id?: number | null
+          course_id?: number | null
+          created_at?: string | null
+          date_of_birth: string
+          email?: string | null
+          father_name: string
+          first_name: string
+          id?: number
+          last_name: string
+          mother_name: string
+          phone_number?: string | null
+          status?: string | null
+          university_id?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          academic_session_id?: number | null
+          course_id?: number | null
+          created_at?: string | null
+          date_of_birth?: string
+          email?: string | null
+          father_name?: string
+          first_name?: string
+          id?: number
+          last_name?: string
+          mother_name?: string
+          phone_number?: string | null
+          status?: string | null
+          university_id?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "students_academic_session_id_fkey"
+            columns: ["academic_session_id"]
+            isOneToOne: false
+            referencedRelation: "academic_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "students_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "students_university_id_fkey"
+            columns: ["university_id"]
+            isOneToOne: false
+            referencedRelation: "universities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      universities: {
+        Row: {
+          created_at: string | null
+          id: number
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          name?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

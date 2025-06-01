@@ -4,16 +4,16 @@ import MainLayout from "@/components/layout/MainLayout";
 import PageHeader from "@/components/shared/PageHeader";
 import DataTable from "@/components/ui/DataTable";
 import { Button } from "@/components/ui/button";
-import { Plus, Download, Upload, Eye, Edit } from "lucide-react";
+import { Plus, Download, Upload, Eye, Edit, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
 import DetailViewModal from "@/components/shared/DetailViewModal";
 import EditModal from "@/components/shared/EditModal";
-import DirectStudentForm, { DirectStudentFormData } from "@/components/forms/DirectStudentForm";
-import { studentAPI, universityAPI, courseAPI, academicSessionAPI, Student } from "@/lib/database";
+import SupabaseDirectStudentForm, { SupabaseDirectStudentFormData } from "@/components/forms/SupabaseDirectStudentForm";
+import { studentsAPI, universitiesAPI, coursesAPI, academicSessionsAPI, Student } from "@/lib/supabase-database";
 
 interface DirectStudentDisplay {
-  id: string;
+  id: number;
   name: string;
   course: string;
   phoneNumber: string;
@@ -24,6 +24,9 @@ interface DirectStudentDisplay {
   motherName: string;
   dateOfBirth: string;
   academicSession: string;
+  university_id: number;
+  course_id: number;
+  academic_session_id: number;
 }
 
 const DirectStudents = () => {
@@ -45,20 +48,20 @@ const DirectStudents = () => {
   const loadStudents = async () => {
     try {
       setLoading(true);
-      console.log('Loading students from database...');
-      const studentsData = await studentAPI.getAll();
-      const universities = await universityAPI.getAll();
-      const courses = await courseAPI.getAll();
-      const sessions = await academicSessionAPI.getAll();
+      const [studentsData, universities, courses, sessions] = await Promise.all([
+        studentsAPI.getAll(),
+        universitiesAPI.getAll(),
+        coursesAPI.getAll(),
+        academicSessionsAPI.getAll(),
+      ]);
 
-      // Transform data for display
       const displayStudents: DirectStudentDisplay[] = studentsData.map((student: Student) => {
         const university = universities.find(u => u.id === student.university_id);
         const course = courses.find(c => c.id === student.course_id);
         const session = sessions.find(s => s.id === student.academic_session_id);
 
         return {
-          id: student.id.toString(),
+          id: student.id,
           name: `${student.first_name} ${student.last_name}`,
           course: course?.name || 'Unknown Course',
           phoneNumber: student.phone_number || '',
@@ -69,48 +72,24 @@ const DirectStudents = () => {
           motherName: student.mother_name,
           dateOfBirth: student.date_of_birth,
           academicSession: session?.session_name || 'Unknown Session',
+          university_id: student.university_id,
+          course_id: student.course_id,
+          academic_session_id: student.academic_session_id,
         };
       });
 
       setStudents(displayStudents);
-      console.log('Students loaded successfully:', displayStudents.length);
+      toast({
+        title: "Success",
+        description: `Loaded ${displayStudents.length} students from database.`,
+      });
     } catch (error) {
       console.error('Error loading students:', error);
       toast({
         title: "Error",
-        description: "Failed to load students. Using fallback data.",
+        description: "Failed to load students from database.",
         variant: "destructive",
       });
-      
-      // Fallback data for development
-      setStudents([
-        {
-          id: "1",
-          name: "John Smith",
-          course: "MBBS",
-          phoneNumber: "+1234567890",
-          email: "john.smith@email.com",
-          university: "Tashkent State Medical University",
-          status: "active",
-          fatherName: "Robert Smith",
-          motherName: "Mary Smith",
-          dateOfBirth: "2000-01-15",
-          academicSession: "2025-26",
-        },
-        {
-          id: "2",
-          name: "Emma Johnson",
-          course: "BDS",
-          phoneNumber: "+1234567891",
-          email: "emma.johnson@email.com",
-          university: "Samarkand State Medical University",
-          status: "active",
-          fatherName: "David Johnson",
-          motherName: "Sarah Johnson",
-          dateOfBirth: "1999-08-22",
-          academicSession: "2025-26",
-        },
-      ]);
     } finally {
       setLoading(false);
     }
@@ -135,51 +114,52 @@ const DirectStudents = () => {
     setIsEditModalOpen(true);
   };
 
+  const handleDeleteStudent = async (student: DirectStudentDisplay) => {
+    if (window.confirm(`Are you sure you want to delete ${student.name}?`)) {
+      try {
+        await studentsAPI.delete(student.id);
+        toast({
+          title: "Student Deleted",
+          description: `${student.name} has been deleted successfully.`,
+        });
+        await loadStudents();
+      } catch (error) {
+        console.error('Error deleting student:', error);
+        toast({
+          title: "Error",
+          description: "Failed to delete student.",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
   const handleAddStudent = () => {
     setIsAddModalOpen(true);
   };
 
-  const handleSaveStudent = async (formData: DirectStudentFormData) => {
+  const handleSaveStudent = async (formData: SupabaseDirectStudentFormData) => {
     setIsSubmitting(true);
     
     try {
-      console.log('Saving student:', formData);
-      
-      const studentData = {
-        first_name: formData.firstName,
-        last_name: formData.lastName,
-        father_name: formData.fatherName,
-        mother_name: formData.motherName,
-        date_of_birth: formData.dateOfBirth,
-        phone_number: formData.phoneNumber,
-        email: formData.email,
-        university_id: parseInt(formData.universityId),
-        course_id: parseInt(formData.courseId),
-        academic_session_id: parseInt(formData.academicSessionId),
-        status: formData.status,
-      };
-
       if (formData.id) {
         // Update existing student
-        await studentAPI.update(parseInt(formData.id), studentData);
-        
+        await studentsAPI.update(formData.id, formData);
         toast({
           title: "Student Updated",
-          description: `${formData.firstName} ${formData.lastName} has been updated successfully.`,
+          description: `${formData.first_name} ${formData.last_name} has been updated successfully.`,
         });
       } else {
         // Add new student
-        await studentAPI.create(studentData);
-        
+        const { id, ...studentData } = formData;
+        await studentsAPI.create(studentData);
         toast({
           title: "Student Added",
-          description: `${formData.firstName} ${formData.lastName} has been added successfully.`,
+          description: `${formData.first_name} ${formData.last_name} has been added successfully.`,
         });
       }
 
-      // Reload students list
       await loadStudents();
-      
       setIsAddModalOpen(false);
       setIsEditModalOpen(false);
     } catch (error) {
@@ -235,14 +215,15 @@ const DirectStudents = () => {
       header: "Actions",
       accessorKey: "actions",
       cell: (row: DirectStudentDisplay) => (
-        <div className="flex space-x-2">
+        <div className="flex space-x-1">
           <Button variant="outline" size="sm" onClick={() => handleViewStudent(row)}>
-            <Eye className="mr-2 h-4 w-4" />
-            View
+            <Eye className="h-4 w-4" />
           </Button>
           <Button variant="outline" size="sm" onClick={() => handleEditStudent(row)}>
-            <Edit className="mr-2 h-4 w-4" />
-            Edit
+            <Edit className="h-4 w-4" />
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => handleDeleteStudent(row)}>
+            <Trash2 className="h-4 w-4" />
           </Button>
         </div>
       ),
@@ -254,7 +235,7 @@ const DirectStudents = () => {
       <MainLayout>
         <PageHeader
           title="Direct Students"
-          description="Loading students..."
+          description="Loading students from Supabase..."
         />
         <div className="flex justify-center items-center h-64">
           <div className="text-lg">Loading students from database...</div>
@@ -267,7 +248,7 @@ const DirectStudents = () => {
     <MainLayout>
       <PageHeader
         title="Direct Students"
-        description="Manage all direct student records"
+        description={`Manage all direct student records (${students.length} students)`}
         actions={
           <>
             <Button variant="outline" size="sm" onClick={handleImport}>
@@ -304,9 +285,9 @@ const DirectStudents = () => {
         title="Add New Student"
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
-        onSave={() => {}} // Form has its own submit handler
+        onSave={() => {}}
       >
-        <DirectStudentForm 
+        <SupabaseDirectStudentForm 
           onSubmit={handleSaveStudent}
           isSubmitting={isSubmitting}
         />
@@ -370,21 +351,21 @@ const DirectStudents = () => {
           title={`Edit Student: ${currentStudent.name}`}
           isOpen={isEditModalOpen}
           onClose={() => setIsEditModalOpen(false)}
-          onSave={() => {}} // Form has its own submit handler
+          onSave={() => {}}
         >
-          <DirectStudentForm 
+          <SupabaseDirectStudentForm 
             initialData={{
               id: currentStudent.id,
-              firstName: currentStudent.name.split(' ')[0],
-              lastName: currentStudent.name.split(' ').slice(1).join(' '),
-              fatherName: currentStudent.fatherName,
-              motherName: currentStudent.motherName,
-              dateOfBirth: currentStudent.dateOfBirth,
-              phoneNumber: currentStudent.phoneNumber,
+              first_name: currentStudent.name.split(' ')[0],
+              last_name: currentStudent.name.split(' ').slice(1).join(' '),
+              father_name: currentStudent.fatherName,
+              mother_name: currentStudent.motherName,
+              date_of_birth: currentStudent.dateOfBirth,
+              phone_number: currentStudent.phoneNumber,
               email: currentStudent.email,
-              universityId: "1", // This should be mapped from the database
-              courseId: "1", // This should be mapped from the database
-              academicSessionId: "1", // This should be mapped from the database
+              university_id: currentStudent.university_id,
+              course_id: currentStudent.course_id,
+              academic_session_id: currentStudent.academic_session_id,
               status: currentStudent.status as "active" | "inactive" | "completed",
             }}
             onSubmit={handleSaveStudent}
