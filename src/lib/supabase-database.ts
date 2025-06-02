@@ -677,36 +677,57 @@ export const studentFeePaymentsAPI = {
   getStudentsWithFeeStructures: async (): Promise<any[]> => {
     console.log('Fetching students with fee structures...');
     
-    const { data, error } = await supabase
+    // First get all active students
+    const { data: students, error: studentsError } = await supabase
       .from('students')
       .select(`
         *,
         universities(name),
         courses(name),
-        academic_sessions(session_name),
-        student_fee_payments(
+        academic_sessions(session_name)
+      `)
+      .eq('status', 'active')
+      .order('created_at', { ascending: false });
+    
+    if (studentsError) {
+      console.error('Error fetching students:', studentsError);
+      throw studentsError;
+    }
+
+    console.log('Fetched students:', students);
+
+    // Then get fee payments for each student with related data
+    const studentsWithPayments = [];
+    
+    for (const student of students || []) {
+      const { data: payments, error: paymentsError } = await supabase
+        .from('student_fee_payments')
+        .select(`
           *,
           fee_structure_components(
             *,
             fee_types(name),
             fee_structures(name)
           )
-        )
-      `)
-      .eq('status', 'active')
-      .order('created_at', { ascending: false });
-    
-    if (error) {
-      console.error('Error fetching students with fee structures:', error);
-      throw error;
+        `)
+        .eq('student_id', student.id);
+
+      if (paymentsError) {
+        console.error('Error fetching payments for student:', student.id, paymentsError);
+        continue;
+      }
+
+      // Only include students who have fee payments
+      if (payments && payments.length > 0) {
+        studentsWithPayments.push({
+          ...student,
+          student_fee_payments: payments.map(payment => ({
+            ...payment,
+            payment_status: payment.payment_status as 'pending' | 'partial' | 'paid'
+          }))
+        });
+      }
     }
-    
-    console.log('Raw data from Supabase:', data);
-    
-    // Filter students who have fee payments
-    const studentsWithPayments = (data || []).filter(student => 
-      student.student_fee_payments && student.student_fee_payments.length > 0
-    );
     
     console.log('Students with fee payments:', studentsWithPayments);
     
