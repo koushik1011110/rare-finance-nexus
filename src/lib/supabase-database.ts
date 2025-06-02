@@ -444,6 +444,8 @@ export const feeStructuresAPI = {
   },
 
   assignToStudents: async (structureId: number): Promise<number> => {
+    console.log('Assigning fee structure:', structureId);
+    
     // Get the fee structure details first
     const { data: feeStructure, error: structureError } = await supabase
       .from('fee_structures')
@@ -456,6 +458,8 @@ export const feeStructuresAPI = {
       throw structureError;
     }
 
+    console.log('Fee structure details:', feeStructure);
+
     // Get active academic session
     const { data: activeSession, error: sessionError } = await supabase
       .from('academic_sessions')
@@ -467,6 +471,8 @@ export const feeStructuresAPI = {
       console.error('Error fetching active session:', sessionError);
       throw sessionError;
     }
+
+    console.log('Active session:', activeSession);
 
     // Get students that match the criteria
     const { data: students, error: studentsError } = await supabase
@@ -481,6 +487,8 @@ export const feeStructuresAPI = {
       console.error('Error fetching students:', studentsError);
       throw studentsError;
     }
+
+    console.log('Matching students:', students);
 
     let assignedCount = 0;
 
@@ -512,6 +520,8 @@ export const feeStructuresAPI = {
             .select('*')
             .eq('fee_structure_id', structureId);
 
+          console.log('Fee structure components:', components);
+
           // Create payment records for each component
           for (const component of components || []) {
             let dueDate = new Date();
@@ -527,7 +537,7 @@ export const feeStructuresAPI = {
                 break;
             }
 
-            await supabase
+            const { error: paymentError } = await supabase
               .from('student_fee_payments')
               .insert({
                 student_id: student.id,
@@ -536,11 +546,16 @@ export const feeStructuresAPI = {
                 due_date: dueDate.toISOString().split('T')[0],
                 payment_status: 'pending'
               });
+
+            if (paymentError) {
+              console.error('Error creating payment record:', paymentError);
+            }
           }
         }
       }
     }
 
+    console.log('Assigned count:', assignedCount);
     return assignedCount;
   },
 };
@@ -660,6 +675,8 @@ export const studentFeePaymentsAPI = {
   },
 
   getStudentsWithFeeStructures: async (): Promise<any[]> => {
+    console.log('Fetching students with fee structures...');
+    
     const { data, error } = await supabase
       .from('students')
       .select(`
@@ -684,6 +701,15 @@ export const studentFeePaymentsAPI = {
       throw error;
     }
     
-    return data || [];
+    console.log('Raw data from Supabase:', data);
+    
+    // Filter students who have fee payments
+    const studentsWithPayments = (data || []).filter(student => 
+      student.student_fee_payments && student.student_fee_payments.length > 0
+    );
+    
+    console.log('Students with fee payments:', studentsWithPayments);
+    
+    return studentsWithPayments;
   },
 };

@@ -8,11 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import DataTable, { Column } from "@/components/ui/DataTable";
 import DetailViewModal from "@/components/shared/DetailViewModal";
 import { toast } from "@/hooks/use-toast";
-import { CreditCard, Phone, DollarSign } from "lucide-react";
+import { CreditCard, Phone, DollarSign, RefreshCw } from "lucide-react";
 import {
   studentFeePaymentsAPI,
   type StudentFeePayment
@@ -45,10 +44,13 @@ const CollectFees = () => {
   const [searchTerm, setSearchTerm] = useState("");
 
   // Fetch students with fee structures
-  const { data: studentsWithFees = [], refetch, isLoading } = useQuery({
+  const { data: studentsWithFees = [], refetch, isLoading, error } = useQuery({
     queryKey: ['studentsWithFees'],
     queryFn: studentFeePaymentsAPI.getStudentsWithFeeStructures,
   });
+
+  console.log('Students with fees data:', studentsWithFees);
+  console.log('Query error:', error);
 
   // Filter students based on search term
   const filteredStudents = useMemo(() => {
@@ -292,10 +294,22 @@ const CollectFees = () => {
       
       <Card>
         <CardHeader>
-          <CardTitle>Students Fee Collection</CardTitle>
-          <CardDescription>
-            View all students with their assigned fee structures and collect payments
-          </CardDescription>
+          <div className="flex justify-between items-center">
+            <div>
+              <CardTitle>Students Fee Collection</CardTitle>
+              <CardDescription>
+                View all students with their assigned fee structures and collect payments
+              </CardDescription>
+            </div>
+            <Button 
+              variant="outline" 
+              onClick={() => refetch()}
+              disabled={isLoading}
+            >
+              <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <StudentSearch 
@@ -303,23 +317,35 @@ const CollectFees = () => {
             onSearchChange={setSearchTerm}
           />
           
+          {error && (
+            <div className="text-center py-8">
+              <p className="text-red-600">Error loading students: {error.message}</p>
+              <Button onClick={() => refetch()} className="mt-2">
+                Try Again
+              </Button>
+            </div>
+          )}
+          
           {isLoading ? (
             <div className="text-center py-8">
               <p className="text-muted-foreground">Loading students...</p>
             </div>
-          ) : (
+          ) : !error && (
             <DataTable columns={studentColumns} data={filteredStudents} />
           )}
           
-          {!isLoading && filteredStudents.length === 0 && studentsWithFees.length > 0 && (
+          {!isLoading && !error && filteredStudents.length === 0 && studentsWithFees.length > 0 && (
             <div className="text-center py-8">
               <p className="text-muted-foreground">No students found matching your search.</p>
             </div>
           )}
           
-          {!isLoading && studentsWithFees.length === 0 && (
+          {!isLoading && !error && studentsWithFees.length === 0 && (
             <div className="text-center py-8">
               <p className="text-muted-foreground">No students with assigned fee structures found.</p>
+              <p className="text-sm text-muted-foreground mt-2">
+                Make sure you have created fee structures and assigned them to students.
+              </p>
             </div>
           )}
         </CardContent>
