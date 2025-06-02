@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 export interface Student {
@@ -58,6 +57,46 @@ export interface FeeCollection {
   payment_method: 'cash' | 'card' | 'bank_transfer' | 'cheque';
   receipt_number: string;
   notes?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface FeeStructure {
+  id: number;
+  university_id: number;
+  course_id: number;
+  name: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface FeeStructureComponent {
+  id: number;
+  fee_structure_id: number;
+  fee_type_id: number;
+  amount: number;
+  frequency: 'one-time' | 'yearly' | 'semester-wise';
+  created_at: string;
+  updated_at: string;
+}
+
+export interface StudentFeeAssignment {
+  id: number;
+  student_id: number;
+  fee_structure_id: number;
+  assigned_at: string;
+}
+
+export interface StudentFeePayment {
+  id: number;
+  student_id: number;
+  fee_structure_component_id: number;
+  amount_due: number;
+  amount_paid: number;
+  payment_status: 'pending' | 'partial' | 'paid';
+  due_date?: string;
+  last_payment_date?: string;
   created_at: string;
   updated_at: string;
 }
@@ -326,5 +365,220 @@ export const feeCollectionsAPI = {
       console.error('Error deleting fee collection:', error);
       throw error;
     }
+  },
+};
+
+// Fee Structures API
+export const feeStructuresAPI = {
+  getAll: async (): Promise<FeeStructure[]> => {
+    const { data, error } = await supabase
+      .from('fee_structures')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      console.error('Error fetching fee structures:', error);
+      throw error;
+    }
+    
+    return data || [];
+  },
+
+  getByUniversityAndCourse: async (universityId: number, courseId: number): Promise<FeeStructure[]> => {
+    const { data, error } = await supabase
+      .from('fee_structures')
+      .select('*')
+      .eq('university_id', universityId)
+      .eq('course_id', courseId)
+      .eq('is_active', true);
+    
+    if (error) {
+      console.error('Error fetching fee structures:', error);
+      throw error;
+    }
+    
+    return data || [];
+  },
+
+  create: async (feeStructureData: Omit<FeeStructure, 'id' | 'created_at' | 'updated_at'>): Promise<FeeStructure> => {
+    const { data, error } = await supabase
+      .from('fee_structures')
+      .insert([feeStructureData])
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Error creating fee structure:', error);
+      throw error;
+    }
+    
+    return data;
+  },
+
+  update: async (id: number, feeStructureData: Partial<Omit<FeeStructure, 'id' | 'created_at' | 'updated_at'>>): Promise<FeeStructure> => {
+    const { data, error } = await supabase
+      .from('fee_structures')
+      .update({ ...feeStructureData, updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Error updating fee structure:', error);
+      throw error;
+    }
+    
+    return data;
+  },
+
+  delete: async (id: number): Promise<void> => {
+    const { error } = await supabase
+      .from('fee_structures')
+      .delete()
+      .eq('id', id);
+    
+    if (error) {
+      console.error('Error deleting fee structure:', error);
+      throw error;
+    }
+  },
+
+  assignToStudents: async (structureId: number): Promise<number> => {
+    const { data, error } = await supabase.rpc('assign_fee_structure_to_students', {
+      structure_id: structureId
+    });
+    
+    if (error) {
+      console.error('Error assigning fee structure to students:', error);
+      throw error;
+    }
+    
+    return data || 0;
+  },
+};
+
+// Fee Structure Components API
+export const feeStructureComponentsAPI = {
+  getByStructure: async (feeStructureId: number): Promise<FeeStructureComponent[]> => {
+    const { data, error } = await supabase
+      .from('fee_structure_components')
+      .select('*')
+      .eq('fee_structure_id', feeStructureId)
+      .order('created_at');
+    
+    if (error) {
+      console.error('Error fetching fee structure components:', error);
+      throw error;
+    }
+    
+    return data || [];
+  },
+
+  create: async (componentData: Omit<FeeStructureComponent, 'id' | 'created_at' | 'updated_at'>): Promise<FeeStructureComponent> => {
+    const { data, error } = await supabase
+      .from('fee_structure_components')
+      .insert([componentData])
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Error creating fee structure component:', error);
+      throw error;
+    }
+    
+    return data;
+  },
+
+  update: async (id: number, componentData: Partial<Omit<FeeStructureComponent, 'id' | 'created_at' | 'updated_at'>>): Promise<FeeStructureComponent> => {
+    const { data, error } = await supabase
+      .from('fee_structure_components')
+      .update({ ...componentData, updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Error updating fee structure component:', error);
+      throw error;
+    }
+    
+    return data;
+  },
+
+  delete: async (id: number): Promise<void> => {
+    const { error } = await supabase
+      .from('fee_structure_components')
+      .delete()
+      .eq('id', id);
+    
+    if (error) {
+      console.error('Error deleting fee structure component:', error);
+      throw error;
+    }
+  },
+};
+
+// Student Fee Payments API
+export const studentFeePaymentsAPI = {
+  getByStudent: async (studentId: number): Promise<StudentFeePayment[]> => {
+    const { data, error } = await supabase
+      .from('student_fee_payments')
+      .select('*')
+      .eq('student_id', studentId)
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      console.error('Error fetching student fee payments:', error);
+      throw error;
+    }
+    
+    return data || [];
+  },
+
+  updatePayment: async (id: number, amountPaid: number, paymentStatus: 'pending' | 'partial' | 'paid'): Promise<StudentFeePayment> => {
+    const { data, error } = await supabase
+      .from('student_fee_payments')
+      .update({
+        amount_paid: amountPaid,
+        payment_status: paymentStatus,
+        last_payment_date: paymentStatus !== 'pending' ? new Date().toISOString().split('T')[0] : null,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Error updating student fee payment:', error);
+      throw error;
+    }
+    
+    return data;
+  },
+
+  getStudentsWithFeeStructures: async (): Promise<any[]> => {
+    const { data, error } = await supabase
+      .from('students')
+      .select(`
+        *,
+        universities(name),
+        courses(name),
+        student_fee_payments(
+          *,
+          fee_structure_components(
+            *,
+            fee_types(name),
+            fee_structures(name)
+          )
+        )
+      `)
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      console.error('Error fetching students with fee structures:', error);
+      throw error;
+    }
+    
+    return data || [];
   },
 };

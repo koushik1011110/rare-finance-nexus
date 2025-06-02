@@ -1,5 +1,5 @@
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import MainLayout from "@/components/layout/MainLayout";
 import PageHeader from "@/components/shared/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -7,332 +7,218 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
 import DataTable, { Column } from "@/components/ui/DataTable";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Edit, Trash, Search, Users } from "lucide-react";
+import { Plus, Edit, Trash, Save, X } from "lucide-react";
+import {
+  universitiesAPI,
+  coursesAPI,
+  feeTypesAPI,
+  feeStructuresAPI,
+  feeStructureComponentsAPI,
+  type University,
+  type Course,
+  type FeeType,
+  type FeeStructure,
+  type FeeStructureComponent
+} from "@/lib/supabase-database";
 
-interface FeeMaster {
-  id: string;
-  feeType: string;
-  amount: number;
-  assignedStudents: string[];
-  createdAt: string;
-}
-
-interface Student {
-  id: string;
-  name: string;
-  phone: string;
-  course: string;
-  batch: string;
-  assignedFees: { feeType: string; amount: number }[];
+interface FeeComponent {
+  feeTypeId: number;
+  amount: string;
+  frequency: 'one-time' | 'yearly' | 'semester-wise';
 }
 
 const FeesMaster = () => {
-  const [feesMaster, setFeesMaster] = useState<FeeMaster[]>([
-    { id: "1", feeType: "Tuition Fee", amount: 15000, assignedStudents: ["1", "2"], createdAt: "2025-01-01" },
-    { id: "2", feeType: "Hostel Fee", amount: 8000, assignedStudents: ["1"], createdAt: "2025-01-02" },
-    { id: "3", feeType: "Transport Fee", amount: 2000, assignedStudents: ["2", "3"], createdAt: "2025-01-03" },
-  ]);
+  const queryClient = useQueryClient();
+  const [selectedUniversity, setSelectedUniversity] = useState<string>("");
+  const [selectedCourse, setSelectedCourse] = useState<string>("");
+  const [structureName, setStructureName] = useState("");
+  const [feeComponents, setFeeComponents] = useState<FeeComponent[]>([]);
+  const [editingStructure, setEditingStructure] = useState<FeeStructure | null>(null);
+  const [editingComponents, setEditingComponents] = useState<FeeStructureComponent[]>([]);
 
-  const [students, setStudents] = useState<Student[]>([
-    { 
-      id: "1", 
-      name: "John Doe", 
-      phone: "+1234567890", 
-      course: "MBBS", 
-      batch: "2024",
-      assignedFees: [
-        { feeType: "Tuition Fee", amount: 15000 },
-        { feeType: "Hostel Fee", amount: 8000 }
-      ]
-    },
-    { 
-      id: "2", 
-      name: "Jane Smith", 
-      phone: "+1234567891", 
-      course: "MBBS", 
-      batch: "2024",
-      assignedFees: [
-        { feeType: "Tuition Fee", amount: 15000 },
-        { feeType: "Transport Fee", amount: 2000 }
-      ]
-    },
-    { 
-      id: "3", 
-      name: "Bob Wilson", 
-      phone: "+1234567892", 
-      course: "BDS", 
-      batch: "2023",
-      assignedFees: [
-        { feeType: "Transport Fee", amount: 2000 }
-      ]
-    },
-    { 
-      id: "4", 
-      name: "Alice Johnson", 
-      phone: "+1234567893", 
-      course: "MBBS", 
-      batch: "2023",
-      assignedFees: []
-    },
-    { 
-      id: "5", 
-      name: "Mike Brown", 
-      phone: "+1234567894", 
-      course: "BDS", 
-      batch: "2024",
-      assignedFees: []
-    },
-  ]);
-
-  const [formData, setFormData] = useState({
-    feeType: "",
-    amount: "",
+  // Fetch data
+  const { data: universities = [] } = useQuery({
+    queryKey: ['universities'],
+    queryFn: universitiesAPI.getAll,
   });
 
-  const [searchFilters, setSearchFilters] = useState({
-    course: "all",
-    batch: "all",
-    name: "",
+  const { data: courses = [] } = useQuery({
+    queryKey: ['courses'],
+    queryFn: coursesAPI.getAll,
   });
 
-  const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
-  const [filteredStudents, setFilteredStudents] = useState<Student[]>([]);
-  const [showStudentTable, setShowStudentTable] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { data: feeTypes = [] } = useQuery({
+    queryKey: ['feeTypes'],
+    queryFn: feeTypesAPI.getAll,
+  });
 
-  const feeTypes = [
-    "Tuition Fee",
-    "Hostel Fee", 
-    "Transport Fee",
-    "Lab Fee",
-  ];
+  const { data: feeStructures = [], refetch: refetchStructures } = useQuery({
+    queryKey: ['feeStructures'],
+    queryFn: feeStructuresAPI.getAll,
+  });
 
-  const courses = ["MBBS", "BDS", "BAMS", "BHMS"];
-  const batches = ["2021", "2022", "2023", "2024", "2025"];
-
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
-
-  const handleSearchFilterChange = (field: string, value: string) => {
-    setSearchFilters(prev => ({ ...prev, [field]: value }));
-  };
-
-  const handleSearchStudents = () => {
-    if (!formData.feeType || !formData.amount) {
-      toast({
-        title: "Error",
-        description: "Please select fee type and enter amount first.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const filtered = students.filter(student => {
-      const matchesCourse = searchFilters.course === "all" || student.course === searchFilters.course;
-      const matchesBatch = searchFilters.batch === "all" || student.batch === searchFilters.batch;
-      const matchesName = !searchFilters.name || student.name.toLowerCase().includes(searchFilters.name.toLowerCase());
+  // Mutations
+  const createStructureMutation = useMutation({
+    mutationFn: async (structureData: Omit<FeeStructure, 'id' | 'created_at' | 'updated_at'>) => {
+      const structure = await feeStructuresAPI.create(structureData);
       
-      return matchesCourse && matchesBatch && matchesName;
-    });
-
-    setFilteredStudents(filtered);
-    setShowStudentTable(true);
-    setSelectedStudents([]);
-  };
-
-  const handleSelectAll = (checked: boolean) => {
-    if (checked) {
-      setSelectedStudents(filteredStudents.map(student => student.id));
-    } else {
-      setSelectedStudents([]);
-    }
-  };
-
-  const handleStudentSelect = (studentId: string, checked: boolean) => {
-    if (checked) {
-      setSelectedStudents(prev => [...prev, studentId]);
-    } else {
-      setSelectedStudents(prev => prev.filter(id => id !== studentId));
-    }
-  };
-
-  const handleAssignFees = () => {
-    if (selectedStudents.length === 0) {
+      // Create components
+      for (const component of feeComponents) {
+        await feeStructureComponentsAPI.create({
+          fee_structure_id: structure.id,
+          fee_type_id: component.feeTypeId,
+          amount: parseFloat(component.amount),
+          frequency: component.frequency,
+        });
+      }
+      
+      // Assign to students
+      const assignedCount = await feeStructuresAPI.assignToStudents(structure.id);
+      
+      return { structure, assignedCount };
+    },
+    onSuccess: ({ assignedCount }) => {
+      toast({
+        title: "Fee Structure Created",
+        description: `Fee structure created and assigned to ${assignedCount} students.`,
+      });
+      resetForm();
+      refetchStructures();
+    },
+    onError: (error) => {
       toast({
         title: "Error",
-        description: "Please select at least one student.",
+        description: "Failed to create fee structure.",
         variant: "destructive",
       });
-      return;
-    }
+      console.error('Create structure error:', error);
+    },
+  });
 
-    // Update students with assigned fees
-    setStudents(prev => prev.map(student => {
-      if (selectedStudents.includes(student.id)) {
-        const existingFeeIndex = student.assignedFees.findIndex(fee => fee.feeType === formData.feeType);
-        const updatedFees = [...student.assignedFees];
-        
-        if (existingFeeIndex >= 0) {
-          updatedFees[existingFeeIndex] = { feeType: formData.feeType, amount: parseFloat(formData.amount) };
-        } else {
-          updatedFees.push({ feeType: formData.feeType, amount: parseFloat(formData.amount) });
-        }
-        
-        return { ...student, assignedFees: updatedFees };
-      }
-      return student;
-    }));
+  const updateComponentMutation = useMutation({
+    mutationFn: ({ id, amount }: { id: number; amount: number }) =>
+      feeStructureComponentsAPI.update(id, { amount }),
+    onSuccess: () => {
+      toast({
+        title: "Component Updated",
+        description: "Fee component amount updated successfully.",
+      });
+      refetchStructures();
+    },
+  });
 
-    // Update or create fee master record
-    const existingFeeIndex = feesMaster.findIndex(fee => fee.feeType === formData.feeType);
-    if (existingFeeIndex >= 0) {
-      setFeesMaster(prev => prev.map(fee => 
-        fee.feeType === formData.feeType 
-          ? { 
-              ...fee, 
-              amount: parseFloat(formData.amount),
-              assignedStudents: [...new Set([...fee.assignedStudents, ...selectedStudents])]
-            }
-          : fee
-      ));
-    } else {
-      const newFeeMaster: FeeMaster = {
-        id: Date.now().toString(),
-        feeType: formData.feeType,
-        amount: parseFloat(formData.amount),
-        assignedStudents: selectedStudents,
-        createdAt: new Date().toISOString().split('T')[0],
-      };
-      setFeesMaster(prev => [...prev, newFeeMaster]);
-    }
+  const deleteStructureMutation = useMutation({
+    mutationFn: feeStructuresAPI.delete,
+    onSuccess: () => {
+      toast({
+        title: "Fee Structure Deleted",
+        description: "Fee structure deleted successfully.",
+      });
+      refetchStructures();
+    },
+  });
 
-    toast({
-      title: "Fees Assigned Successfully",
-      description: `${formData.feeType} (₹${formData.amount}) has been assigned to ${selectedStudents.length} students.`,
-    });
+  const addFeeComponent = () => {
+    setFeeComponents([...feeComponents, { feeTypeId: 0, amount: "", frequency: "one-time" }]);
+  };
 
-    // Reset form and hide table
-    setFormData({ feeType: "", amount: "" });
-    setSearchFilters({ course: "all", batch: "all", name: "" });
-    setSelectedStudents([]);
-    setShowStudentTable(false);
-    setFilteredStudents([]);
+  const updateFeeComponent = (index: number, field: keyof FeeComponent, value: string | number) => {
+    const updated = [...feeComponents];
+    updated[index] = { ...updated[index], [field]: value };
+    setFeeComponents(updated);
+  };
+
+  const removeFeeComponent = (index: number) => {
+    setFeeComponents(feeComponents.filter((_, i) => i !== index));
+  };
+
+  const resetForm = () => {
+    setSelectedUniversity("");
+    setSelectedCourse("");
+    setStructureName("");
+    setFeeComponents([]);
+    setEditingStructure(null);
+    setEditingComponents([]);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
-
-    if (!formData.feeType || !formData.amount) {
+    
+    if (!selectedUniversity || !selectedCourse || !structureName || feeComponents.length === 0) {
       toast({
         title: "Error",
-        description: "Fee type and amount are required.",
+        description: "Please fill all required fields and add at least one fee component.",
         variant: "destructive",
       });
-      setIsSubmitting(false);
       return;
     }
 
-    setTimeout(() => {
-      if (editingId) {
-        setFeesMaster(prev => prev.map(fee => 
-          fee.id === editingId 
-            ? { 
-                ...fee, 
-                feeType: formData.feeType, 
-                amount: parseFloat(formData.amount)
-              }
-            : fee
-        ));
-        toast({
-          title: "Fee Master Updated",
-          description: `${formData.feeType} has been updated successfully.`,
-        });
-        setEditingId(null);
+    if (feeComponents.some(comp => !comp.feeTypeId || !comp.amount)) {
+      toast({
+        title: "Error",
+        description: "Please complete all fee component details.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    createStructureMutation.mutate({
+      university_id: parseInt(selectedUniversity),
+      course_id: parseInt(selectedCourse),
+      name: structureName,
+      is_active: true,
+    });
+  };
+
+  const handleEditComponent = async (componentId: number, newAmount: number) => {
+    updateComponentMutation.mutate({ id: componentId, amount: newAmount });
+  };
+
+  const feeStructureColumns: Column<FeeStructure>[] = [
+    { header: "Structure Name", accessorKey: "name" },
+    {
+      header: "University",
+      accessorKey: "university_id",
+      cell: (structure: FeeStructure) => {
+        const university = universities.find(u => u.id === structure.university_id);
+        return university?.name || "Unknown";
       }
-
-      setFormData({ feeType: "", amount: "" });
-      setIsSubmitting(false);
-    }, 500);
-  };
-
-  const handleEdit = (feeMaster: FeeMaster) => {
-    setFormData({
-      feeType: feeMaster.feeType,
-      amount: feeMaster.amount.toString(),
-    });
-    setEditingId(feeMaster.id);
-    setShowStudentTable(false);
-  };
-
-  const handleDelete = (id: string) => {
-    setFeesMaster(prev => prev.filter(fee => fee.id !== id));
-    toast({
-      title: "Fee Master Deleted",
-      description: "Fee master has been deleted successfully.",
-    });
-  };
-
-  const studentColumns: Column<Student>[] = [
-    {
-      header: "Select",
-      accessorKey: "actions",
-      cell: (student: Student) => (
-        <Checkbox
-          checked={selectedStudents.includes(student.id)}
-          onCheckedChange={(checked) => handleStudentSelect(student.id, checked as boolean)}
-        />
-      ),
     },
-    { header: "Student Name", accessorKey: "name" },
-    { header: "Phone Number", accessorKey: "phone" },
-    { header: "Course", accessorKey: "course" },
-    { header: "Batch", accessorKey: "batch" },
     {
-      header: "Assigned Fees",
-      accessorKey: "assignedFees",
-      cell: (student: Student) => (
-        <span className="text-sm text-muted-foreground">
-          {student.assignedFees.length} fees assigned
+      header: "Course",
+      accessorKey: "course_id",
+      cell: (structure: FeeStructure) => {
+        const course = courses.find(c => c.id === structure.course_id);
+        return course?.name || "Unknown";
+      }
+    },
+    {
+      header: "Status",
+      accessorKey: "is_active",
+      cell: (structure: FeeStructure) => (
+        <span className={`px-2 py-1 rounded text-xs ${structure.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+          {structure.is_active ? 'Active' : 'Inactive'}
         </span>
-      ),
+      )
     },
-  ];
-
-  const columns: Column<FeeMaster>[] = [
-    { header: "Fee Type", accessorKey: "feeType" },
-    { 
-      header: "Amount", 
-      accessorKey: "amount",
-      cell: (feeMaster: FeeMaster) => `₹${feeMaster.amount.toLocaleString()}`
-    },
-    { 
-      header: "Assigned Students", 
-      accessorKey: "assignedStudents",
-      cell: (feeMaster: FeeMaster) => `${feeMaster.assignedStudents.length} students`
-    },
-    { header: "Created Date", accessorKey: "createdAt" },
     {
       header: "Actions",
       accessorKey: "actions",
-      cell: (feeMaster: FeeMaster) => (
+      cell: (structure: FeeStructure) => (
         <div className="flex space-x-2">
           <Button
             size="sm"
             variant="outline"
-            onClick={() => handleEdit(feeMaster)}
+            onClick={() => setEditingStructure(structure)}
           >
             <Edit className="h-4 w-4" />
           </Button>
           <Button
             size="sm"
             variant="destructive"
-            onClick={() => handleDelete(feeMaster.id)}
+            onClick={() => deleteStructureMutation.mutate(structure.id)}
           >
             <Trash className="h-4 w-4" />
           </Button>
@@ -345,31 +231,31 @@ const FeesMaster = () => {
     <MainLayout>
       <PageHeader
         title="Fees Master"
-        description="Manage fee amounts and assign them to students"
+        description="Create and manage fee structures for universities and courses"
       />
       
       <div className="space-y-6">
-        {/* Fee Setup Form */}
+        {/* Fee Structure Creation Form */}
         <Card>
           <CardHeader>
-            <CardTitle>{editingId ? "Edit Fee Master" : "Create New Fee Assignment"}</CardTitle>
+            <CardTitle>Create Fee Structure</CardTitle>
             <CardDescription>
-              {editingId ? "Update fee details" : "Set fee amount and search for students to assign"}
+              Set up fee components for a specific university and course combination
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="feeType">Fee Type *</Label>
-                  <Select value={formData.feeType} onValueChange={(value) => handleInputChange("feeType", value)}>
+                  <Label htmlFor="university">University *</Label>
+                  <Select value={selectedUniversity} onValueChange={setSelectedUniversity}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select fee type" />
+                      <SelectValue placeholder="Select university" />
                     </SelectTrigger>
                     <SelectContent>
-                      {feeTypes.map((type) => (
-                        <SelectItem key={type} value={type}>
-                          {type}
+                      {universities.map((university) => (
+                        <SelectItem key={university.id} value={university.id.toString()}>
+                          {university.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -377,141 +263,122 @@ const FeesMaster = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="amount">Amount (₹) *</Label>
+                  <Label htmlFor="course">Course *</Label>
+                  <Select value={selectedCourse} onValueChange={setSelectedCourse}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select course" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {courses.map((course) => (
+                        <SelectItem key={course.id} value={course.id.toString()}>
+                          {course.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="structureName">Structure Name *</Label>
                   <Input
-                    id="amount"
-                    type="number"
-                    value={formData.amount}
-                    onChange={(e) => handleInputChange("amount", e.target.value)}
-                    placeholder="Enter amount"
+                    id="structureName"
+                    value={structureName}
+                    onChange={(e) => setStructureName(e.target.value)}
+                    placeholder="Enter structure name"
                   />
                 </div>
               </div>
 
-              {editingId && (
-                <div className="flex space-x-2">
-                  <Button type="submit" disabled={isSubmitting} className="flex-1">
-                    <Plus className="mr-2 h-4 w-4" />
-                    {isSubmitting ? "Updating..." : "Update Fee Master"}
-                  </Button>
-                  <Button 
-                    type="button" 
-                    variant="outline"
-                    onClick={() => {
-                      setEditingId(null);
-                      setFormData({ feeType: "", amount: "" });
-                    }}
-                  >
-                    Cancel
+              {/* Fee Components */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label className="text-base font-medium">Fee Components</Label>
+                  <Button type="button" onClick={addFeeComponent} size="sm">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Component
                   </Button>
                 </div>
-              )}
+
+                {feeComponents.map((component, index) => (
+                  <div key={index} className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 border rounded-lg">
+                    <div className="space-y-2">
+                      <Label>Fee Type *</Label>
+                      <Select
+                        value={component.feeTypeId.toString()}
+                        onValueChange={(value) => updateFeeComponent(index, "feeTypeId", parseInt(value))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select fee type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {feeTypes.map((feeType) => (
+                            <SelectItem key={feeType.id} value={feeType.id.toString()}>
+                              {feeType.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Amount (₹) *</Label>
+                      <Input
+                        type="number"
+                        value={component.amount}
+                        onChange={(e) => updateFeeComponent(index, "amount", e.target.value)}
+                        placeholder="Enter amount"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Frequency *</Label>
+                      <Select
+                        value={component.frequency}
+                        onValueChange={(value) => updateFeeComponent(index, "frequency", value as 'one-time' | 'yearly' | 'semester-wise')}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="one-time">One-time</SelectItem>
+                          <SelectItem value="yearly">Yearly</SelectItem>
+                          <SelectItem value="semester-wise">Semester-wise</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="flex items-end">
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => removeFeeComponent(index)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <Button type="submit" disabled={createStructureMutation.isPending} className="w-full">
+                <Save className="h-4 w-4 mr-2" />
+                {createStructureMutation.isPending ? "Creating..." : "Create Fee Structure"}
+              </Button>
             </form>
           </CardContent>
         </Card>
 
-        {/* Student Search Section */}
-        {!editingId && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Search Students</CardTitle>
-              <CardDescription>Find students to assign the fee based on course, batch, or name</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="course">Course</Label>
-                    <Select value={searchFilters.course} onValueChange={(value) => handleSearchFilterChange("course", value)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="All courses" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All courses</SelectItem>
-                        {courses.map((course) => (
-                          <SelectItem key={course} value={course}>
-                            {course}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="batch">Batch</Label>
-                    <Select value={searchFilters.batch} onValueChange={(value) => handleSearchFilterChange("batch", value)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="All batches" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All batches</SelectItem>
-                        {batches.map((batch) => (
-                          <SelectItem key={batch} value={batch}>
-                            {batch}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Student Name</Label>
-                    <Input
-                      id="name"
-                      value={searchFilters.name}
-                      onChange={(e) => handleSearchFilterChange("name", e.target.value)}
-                      placeholder="Search by name"
-                    />
-                  </div>
-                </div>
-
-                <Button onClick={handleSearchStudents} className="w-full md:w-auto">
-                  <Search className="mr-2 h-4 w-4" />
-                  Search Students
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Student Selection Table */}
-        {showStudentTable && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span>Select Students ({filteredStudents.length} found)</span>
-                <div className="flex items-center space-x-4">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      checked={selectedStudents.length === filteredStudents.length && filteredStudents.length > 0}
-                      onCheckedChange={handleSelectAll}
-                    />
-                    <Label className="text-sm">Select All</Label>
-                  </div>
-                  <Button onClick={handleAssignFees} disabled={selectedStudents.length === 0}>
-                    <Users className="mr-2 h-4 w-4" />
-                    Assign to {selectedStudents.length} Students
-                  </Button>
-                </div>
-              </CardTitle>
-              <CardDescription>
-                Assigning {formData.feeType} (₹{formData.amount}) to selected students
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <DataTable columns={studentColumns} data={filteredStudents} />
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Existing Fee Masters */}
+        {/* Existing Fee Structures */}
         <Card>
           <CardHeader>
-            <CardTitle>Existing Fee Masters</CardTitle>
-            <CardDescription>List of all fee assignments</CardDescription>
+            <CardTitle>Existing Fee Structures</CardTitle>
+            <CardDescription>
+              Manage existing fee structures and their components
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <DataTable columns={columns} data={feesMaster} />
+            <DataTable columns={feeStructureColumns} data={feeStructures} />
           </CardContent>
         </Card>
       </div>
