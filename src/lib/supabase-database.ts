@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 export interface Student {
@@ -471,7 +472,10 @@ export const feeStructureComponentsAPI = {
       throw error;
     }
     
-    return data || [];
+    return (data || []).map(component => ({
+      ...component,
+      frequency: component.frequency as 'one-time' | 'yearly' | 'semester-wise'
+    }));
   },
 
   create: async (componentData: Omit<FeeStructureComponent, 'id' | 'created_at' | 'updated_at'>): Promise<FeeStructureComponent> => {
@@ -486,7 +490,10 @@ export const feeStructureComponentsAPI = {
       throw error;
     }
     
-    return data;
+    return {
+      ...data,
+      frequency: data.frequency as 'one-time' | 'yearly' | 'semester-wise'
+    };
   },
 
   update: async (id: number, componentData: Partial<Omit<FeeStructureComponent, 'id' | 'created_at' | 'updated_at'>>): Promise<FeeStructureComponent> => {
@@ -502,7 +509,10 @@ export const feeStructureComponentsAPI = {
       throw error;
     }
     
-    return data;
+    return {
+      ...data,
+      frequency: data.frequency as 'one-time' | 'yearly' | 'semester-wise'
+    };
   },
 
   delete: async (id: number): Promise<void> => {
@@ -532,7 +542,10 @@ export const studentFeePaymentsAPI = {
       throw error;
     }
     
-    return data || [];
+    return (data || []).map(payment => ({
+      ...payment,
+      payment_status: payment.payment_status as 'pending' | 'partial' | 'paid'
+    }));
   },
 
   updatePayment: async (id: number, amountPaid: number, paymentStatus: 'pending' | 'partial' | 'paid'): Promise<StudentFeePayment> => {
@@ -553,7 +566,10 @@ export const studentFeePaymentsAPI = {
       throw error;
     }
     
-    return data;
+    return {
+      ...data,
+      payment_status: data.payment_status as 'pending' | 'partial' | 'paid'
+    };
   },
 
   getStudentsWithFeeStructures: async (): Promise<any[]> => {
