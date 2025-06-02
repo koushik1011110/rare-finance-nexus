@@ -1,8 +1,9 @@
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import MainLayout from "@/components/layout/MainLayout";
 import PageHeader from "@/components/shared/PageHeader";
+import StudentSearch from "@/components/fees/StudentSearch";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -25,6 +26,7 @@ interface StudentWithFees {
   email?: string;
   universities?: { name: string };
   courses?: { name: string };
+  academic_sessions?: { session_name: string };
   student_fee_payments: (StudentFeePayment & {
     fee_structure_components: {
       fee_types: { name: string };
@@ -40,12 +42,33 @@ const CollectFees = () => {
   const [selectedStudent, setSelectedStudent] = useState<StudentWithFees | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [paymentAmounts, setPaymentAmounts] = useState<{ [key: number]: string }>({});
+  const [searchTerm, setSearchTerm] = useState("");
 
   // Fetch students with fee structures
-  const { data: studentsWithFees = [], refetch } = useQuery({
+  const { data: studentsWithFees = [], refetch, isLoading } = useQuery({
     queryKey: ['studentsWithFees'],
     queryFn: studentFeePaymentsAPI.getStudentsWithFeeStructures,
   });
+
+  // Filter students based on search term
+  const filteredStudents = useMemo(() => {
+    if (!searchTerm) return studentsWithFees;
+    
+    const searchLower = searchTerm.toLowerCase();
+    return studentsWithFees.filter((student: StudentWithFees) => {
+      const fullName = `${student.first_name} ${student.last_name}`.toLowerCase();
+      const phone = student.phone_number?.toLowerCase() || '';
+      const university = student.universities?.name?.toLowerCase() || '';
+      const course = student.courses?.name?.toLowerCase() || '';
+      const email = student.email?.toLowerCase() || '';
+      
+      return fullName.includes(searchLower) ||
+             phone.includes(searchLower) ||
+             university.includes(searchLower) ||
+             course.includes(searchLower) ||
+             email.includes(searchLower);
+    });
+  }, [studentsWithFees, searchTerm]);
 
   // Update payment mutation
   const updatePaymentMutation = useMutation({
@@ -146,6 +169,11 @@ const CollectFees = () => {
       header: "Course",
       accessorKey: "courses", 
       cell: (student: StudentWithFees) => student.courses?.name || "N/A"
+    },
+    {
+      header: "Academic Session",
+      accessorKey: "academic_sessions",
+      cell: (student: StudentWithFees) => student.academic_sessions?.session_name || "N/A"
     },
     {
       header: "Total Due",
@@ -270,7 +298,30 @@ const CollectFees = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <DataTable columns={studentColumns} data={studentsWithFees} />
+          <StudentSearch 
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+          />
+          
+          {isLoading ? (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">Loading students...</p>
+            </div>
+          ) : (
+            <DataTable columns={studentColumns} data={filteredStudents} />
+          )}
+          
+          {!isLoading && filteredStudents.length === 0 && studentsWithFees.length > 0 && (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">No students found matching your search.</p>
+            </div>
+          )}
+          
+          {!isLoading && studentsWithFees.length === 0 && (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">No students with assigned fee structures found.</p>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -297,6 +348,10 @@ const CollectFees = () => {
               <div>
                 <p className="text-sm text-muted-foreground">Course</p>
                 <p className="font-medium">{selectedStudent.courses?.name || "N/A"}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Academic Session</p>
+                <p className="font-medium">{selectedStudent.academic_sessions?.session_name || "N/A"}</p>
               </div>
             </div>
             

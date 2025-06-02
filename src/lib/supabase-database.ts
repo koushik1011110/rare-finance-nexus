@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 export interface Student {
@@ -445,16 +444,104 @@ export const feeStructuresAPI = {
   },
 
   assignToStudents: async (structureId: number): Promise<number> => {
-    const { data, error } = await supabase.rpc('assign_fee_structure_to_students', {
-      structure_id: structureId
-    });
-    
-    if (error) {
-      console.error('Error assigning fee structure to students:', error);
-      throw error;
+    // Get the fee structure details first
+    const { data: feeStructure, error: structureError } = await supabase
+      .from('fee_structures')
+      .select('university_id, course_id')
+      .eq('id', structureId)
+      .single();
+
+    if (structureError) {
+      console.error('Error fetching fee structure:', structureError);
+      throw structureError;
     }
-    
-    return data || 0;
+
+    // Get active academic session
+    const { data: activeSession, error: sessionError } = await supabase
+      .from('academic_sessions')
+      .select('id')
+      .eq('is_active', true)
+      .single();
+
+    if (sessionError) {
+      console.error('Error fetching active session:', sessionError);
+      throw sessionError;
+    }
+
+    // Get students that match the criteria
+    const { data: students, error: studentsError } = await supabase
+      .from('students')
+      .select('id')
+      .eq('university_id', feeStructure.university_id)
+      .eq('course_id', feeStructure.course_id)
+      .eq('academic_session_id', activeSession.id)
+      .eq('status', 'active');
+
+    if (studentsError) {
+      console.error('Error fetching students:', studentsError);
+      throw studentsError;
+    }
+
+    let assignedCount = 0;
+
+    // Assign fee structure to each student
+    for (const student of students || []) {
+      // Check if assignment already exists
+      const { data: existingAssignment } = await supabase
+        .from('student_fee_assignments')
+        .select('id')
+        .eq('student_id', student.id)
+        .eq('fee_structure_id', structureId)
+        .single();
+
+      if (!existingAssignment) {
+        // Create assignment
+        const { error: assignmentError } = await supabase
+          .from('student_fee_assignments')
+          .insert({
+            student_id: student.id,
+            fee_structure_id: structureId
+          });
+
+        if (!assignmentError) {
+          assignedCount++;
+
+          // Get fee structure components
+          const { data: components } = await supabase
+            .from('fee_structure_components')
+            .select('*')
+            .eq('fee_structure_id', structureId);
+
+          // Create payment records for each component
+          for (const component of components || []) {
+            let dueDate = new Date();
+            switch (component.frequency) {
+              case 'one-time':
+                dueDate.setDate(dueDate.getDate() + 30);
+                break;
+              case 'yearly':
+                dueDate.setFullYear(dueDate.getFullYear() + 1);
+                break;
+              case 'semester-wise':
+                dueDate.setMonth(dueDate.getMonth() + 6);
+                break;
+            }
+
+            await supabase
+              .from('student_fee_payments')
+              .insert({
+                student_id: student.id,
+                fee_structure_component_id: component.id,
+                amount_due: component.amount,
+                due_date: dueDate.toISOString().split('T')[0],
+                payment_status: 'pending'
+              });
+          }
+        }
+      }
+    }
+
+    return assignedCount;
   },
 };
 
@@ -579,6 +666,7 @@ export const studentFeePaymentsAPI = {
         *,
         universities(name),
         courses(name),
+        academic_sessions(session_name),
         student_fee_payments(
           *,
           fee_structure_components(
@@ -588,6 +676,7 @@ export const studentFeePaymentsAPI = {
           )
         )
       `)
+      .eq('status', 'active')
       .order('created_at', { ascending: false });
     
     if (error) {
