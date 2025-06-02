@@ -268,7 +268,6 @@ const AgentManagement = () => {
         title="Add New Agent"
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
-        onSave={() => {}} // Form has its own submit handler
       >
         <AgentForm 
           onSubmit={handleSaveAgent}
@@ -334,7 +333,6 @@ const AgentManagement = () => {
           title={`Edit Agent: ${currentAgent.name}`}
           isOpen={isEditModalOpen}
           onClose={() => setIsEditModalOpen(false)}
-          onSave={() => {}} // Form has its own submit handler
         >
           <AgentForm 
             initialData={{

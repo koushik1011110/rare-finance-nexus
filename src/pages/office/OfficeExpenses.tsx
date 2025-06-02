@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import PageHeader from "@/components/shared/PageHeader";
@@ -269,7 +268,6 @@ const OfficeExpenses = () => {
           title={`Edit Office Expense - ${editedExpense.location}`}
           isOpen={editModalOpen}
           onClose={() => setEditModalOpen(false)}
-          onSave={handleSaveEdit}
         >
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -344,6 +342,14 @@ const OfficeExpenses = () => {
                 onChange={(e) => setEditedExpense({...editedExpense, monthlyTotal: e.target.value})}
               />
             </div>
+          </div>
+          <div className="flex justify-end space-x-2 pt-4">
+            <Button variant="outline" onClick={() => setEditModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveEdit}>
+              Save Changes
+            </Button>
           </div>
         </EditModal>
       )}
