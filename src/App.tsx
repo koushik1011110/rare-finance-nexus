@@ -36,6 +36,8 @@ import PersonalExpenses from "./pages/personal/PersonalExpenses";
 import FeesType from "./pages/fees/FeesType";
 import FeesMaster from "./pages/fees/FeesMaster";
 import CollectFees from "./pages/fees/CollectFees";
+import FeeReports from "./pages/fees/FeeReports";
+import PaymentHistory from "./pages/fees/PaymentHistory";
 
 // Reports Section
 import Reports from "./pages/reports/Reports";
@@ -83,6 +85,8 @@ const App = () => (
           <Route path="/fees/types" element={<FeesType />} />
           <Route path="/fees/master" element={<FeesMaster />} />
           <Route path="/fees/collect" element={<CollectFees />} />
+          <Route path="/fees/reports" element={<FeeReports />} />
+          <Route path="/fees/payment-history" element={<PaymentHistory />} />
           
           {/* Reports Section */}
           <Route path="/reports" element={<Reports />} />

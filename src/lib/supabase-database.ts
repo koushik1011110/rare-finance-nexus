@@ -637,6 +637,81 @@ export const feePaymentsAPI = {
     
     return studentsWithPayments;
   },
+
+  async getFeeReports(dateRange?: { from: string; to: string }, statusFilter?: string) {
+    let query = supabase
+      .from('fee_payments')
+      .select(`
+        *,
+        students (
+          first_name,
+          last_name,
+          admission_number,
+          phone_number
+        ),
+        fee_structure_components (
+          fee_types (name),
+          fee_structures (name),
+          amount,
+          frequency
+        )
+      `)
+      .order('created_at', { ascending: false });
+
+    if (dateRange?.from && dateRange?.to) {
+      query = query
+        .gte('created_at', dateRange.from)
+        .lte('created_at', dateRange.to);
+    }
+
+    if (statusFilter && statusFilter !== 'all') {
+      query = query.eq('payment_status', statusFilter);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error('Error fetching fee reports:', error);
+      throw error;
+    }
+
+    return data || [];
+  },
+
+  async getPaymentHistory(dateRange?: { from: string; to: string }, paymentMethodFilter?: string) {
+    let query = supabase
+      .from('fee_payments')
+      .select(`
+        *,
+        students (
+          first_name,
+          last_name,
+          admission_number,
+          phone_number
+        ),
+        fee_structure_components (
+          fee_types (name),
+          fee_structures (name)
+        )
+      `)
+      .gt('amount_paid', 0)
+      .order('last_payment_date', { ascending: false });
+
+    if (dateRange?.from && dateRange?.to) {
+      query = query
+        .gte('last_payment_date', dateRange.from)
+        .lte('last_payment_date', dateRange.to);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error('Error fetching payment history:', error);
+      throw error;
+    }
+
+    return data || [];
+  }
 };
 
 // For backward compatibility, keep the old API name

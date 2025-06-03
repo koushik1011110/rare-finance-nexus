@@ -9,10 +9,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import DataTable, { Column } from "@/components/ui/DataTable";
-import DetailViewModal from "@/components/shared/DetailViewModal";
 import { toast } from "@/hooks/use-toast";
-import { CreditCard, Phone, DollarSign, RefreshCw, User, Mail, GraduationCap, Calendar } from "lucide-react";
+import { CreditCard, Phone, DollarSign, RefreshCw, User, Mail, GraduationCap, Calendar, X } from "lucide-react";
 import {
   feePaymentsAPI,
   type FeePayment
@@ -372,110 +372,119 @@ const CollectFees = () => {
         </CardContent>
       </Card>
 
-      <DetailViewModal
-        title={`Fee Collection - ${selectedStudent?.first_name || ""} ${selectedStudent?.last_name || ""}`}
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-      >
-        {selectedStudent && (
-          <div className="space-y-4 max-h-[80vh] overflow-y-auto">
-            {/* Student Information Section */}
-            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border p-4">
-              <h3 className="text-lg font-semibold mb-3 text-gray-900 flex items-center">
-                <User className="h-5 w-5 mr-2" />
-                Student Information
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <div className="flex items-center space-x-2">
-                    <User className="h-4 w-4 text-gray-500" />
-                    <div>
-                      <p className="text-xs font-medium text-gray-600">Student Name</p>
-                      <p className="text-sm font-semibold text-gray-900">{selectedStudent.first_name} {selectedStudent.last_name}</p>
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogContent className="max-w-6xl max-h-[90vh] w-[95vw] p-0 overflow-hidden">
+          <DialogHeader className="px-6 py-4 border-b bg-gray-50">
+            <DialogTitle className="text-xl font-semibold flex items-center">
+              <CreditCard className="h-5 w-5 mr-2" />
+              Fee Collection - {selectedStudent?.first_name || ""} {selectedStudent?.last_name || ""}
+            </DialogTitle>
+          </DialogHeader>
+          
+          {selectedStudent && (
+            <div className="flex flex-col h-full overflow-hidden">
+              <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
+                {/* Student Information Section */}
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border p-4">
+                  <h3 className="text-lg font-semibold mb-3 text-gray-900 flex items-center">
+                    <User className="h-5 w-5 mr-2" />
+                    Student Information
+                  </h3>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <div className="space-y-3">
+                      <div className="flex items-center space-x-3">
+                        <User className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                        <div className="min-w-0">
+                          <p className="text-xs font-medium text-gray-600">Student Name</p>
+                          <p className="text-sm font-semibold text-gray-900 truncate">
+                            {selectedStudent.first_name} {selectedStudent.last_name}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <Phone className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                        <div className="min-w-0">
+                          <p className="text-xs font-medium text-gray-600">Phone Number</p>
+                          <p className="text-sm text-gray-900 truncate">{selectedStudent.phone_number || "N/A"}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <Mail className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                        <div className="min-w-0">
+                          <p className="text-xs font-medium text-gray-600">Email</p>
+                          <p className="text-sm text-gray-900 truncate">{selectedStudent.email || "N/A"}</p>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Phone className="h-4 w-4 text-gray-500" />
-                    <div>
-                      <p className="text-xs font-medium text-gray-600">Phone Number</p>
-                      <p className="text-sm text-gray-900">{selectedStudent.phone_number || "N/A"}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Mail className="h-4 w-4 text-gray-500" />
-                    <div>
-                      <p className="text-xs font-medium text-gray-600">Email</p>
-                      <p className="text-sm text-gray-900">{selectedStudent.email || "N/A"}</p>
+                    <div className="space-y-3">
+                      <div className="flex items-center space-x-3">
+                        <GraduationCap className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                        <div className="min-w-0">
+                          <p className="text-xs font-medium text-gray-600">University</p>
+                          <p className="text-sm text-gray-900 truncate">{selectedStudent.universities?.name || "N/A"}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <GraduationCap className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                        <div className="min-w-0">
+                          <p className="text-xs font-medium text-gray-600">Course</p>
+                          <p className="text-sm text-gray-900 truncate">{selectedStudent.courses?.name || "N/A"}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <Calendar className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                        <div className="min-w-0">
+                          <p className="text-xs font-medium text-gray-600">Academic Session</p>
+                          <p className="text-sm text-gray-900 truncate">{selectedStudent.academic_sessions?.session_name || "N/A"}</p>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <div className="flex items-center space-x-2">
-                    <GraduationCap className="h-4 w-4 text-gray-500" />
-                    <div>
-                      <p className="text-xs font-medium text-gray-600">University</p>
-                      <p className="text-sm text-gray-900">{selectedStudent.universities?.name || "N/A"}</p>
+                
+                {/* Fee Payment Details Section */}
+                <div>
+                  <h3 className="text-lg font-semibold mb-3 text-gray-900 flex items-center">
+                    <CreditCard className="h-5 w-5 mr-2" />
+                    Fee Payment Details
+                  </h3>
+                  <div className="bg-white rounded-lg border shadow-sm">
+                    <div className="overflow-x-auto">
+                      <DataTable columns={paymentColumns} data={selectedStudent.fee_payments} />
                     </div>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <GraduationCap className="h-4 w-4 text-gray-500" />
-                    <div>
-                      <p className="text-xs font-medium text-gray-600">Course</p>
-                      <p className="text-sm text-gray-900">{selectedStudent.courses?.name || "N/A"}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Calendar className="h-4 w-4 text-gray-500" />
-                    <div>
-                      <p className="text-xs font-medium text-gray-600">Academic Session</p>
-                      <p className="text-sm text-gray-900">{selectedStudent.academic_sessions?.session_name || "N/A"}</p>
-                    </div>
+                </div>
+                
+                {/* Payment Summary Section */}
+                <div className="bg-gray-50 rounded-lg border p-4">
+                  <h3 className="text-lg font-semibold mb-3 text-gray-900">Payment Summary</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {(() => {
+                      const { totalDue, totalPaid, totalPending } = calculateStudentTotals(selectedStudent);
+                      return (
+                        <>
+                          <div className="text-center p-3 bg-white rounded-lg border">
+                            <p className="text-xs font-medium text-gray-600 mb-1">Total Due</p>
+                            <p className="text-lg font-bold text-gray-900">₹{totalDue.toLocaleString()}</p>
+                          </div>
+                          <div className="text-center p-3 bg-white rounded-lg border">
+                            <p className="text-xs font-medium text-gray-600 mb-1">Total Paid</p>
+                            <p className="text-lg font-bold text-green-600">₹{totalPaid.toLocaleString()}</p>
+                          </div>
+                          <div className="text-center p-3 bg-white rounded-lg border">
+                            <p className="text-xs font-medium text-gray-600 mb-1">Pending</p>
+                            <p className="text-lg font-bold text-red-600">₹{totalPending.toLocaleString()}</p>
+                          </div>
+                        </>
+                      );
+                    })()}
                   </div>
                 </div>
               </div>
             </div>
-            
-            {/* Fee Payment Details Section */}
-            <div>
-              <h3 className="text-lg font-semibold mb-3 text-gray-900 flex items-center">
-                <CreditCard className="h-5 w-5 mr-2" />
-                Fee Payment Details
-              </h3>
-              <div className="bg-white rounded-lg border shadow-sm overflow-hidden">
-                <div className="overflow-x-auto">
-                  <DataTable columns={paymentColumns} data={selectedStudent.fee_payments} />
-                </div>
-              </div>
-            </div>
-            
-            {/* Summary Section */}
-            <div className="bg-gray-50 rounded-lg border p-4">
-              <h3 className="text-lg font-semibold mb-3 text-gray-900">Payment Summary</h3>
-              <div className="grid grid-cols-3 gap-4">
-                {(() => {
-                  const { totalDue, totalPaid, totalPending } = calculateStudentTotals(selectedStudent);
-                  return (
-                    <>
-                      <div className="text-center p-3 bg-white rounded-lg border">
-                        <p className="text-xs font-medium text-gray-600 mb-1">Total Due</p>
-                        <p className="text-lg font-bold text-gray-900">₹{totalDue.toLocaleString()}</p>
-                      </div>
-                      <div className="text-center p-3 bg-white rounded-lg border">
-                        <p className="text-xs font-medium text-gray-600 mb-1">Total Paid</p>
-                        <p className="text-lg font-bold text-green-600">₹{totalPaid.toLocaleString()}</p>
-                      </div>
-                      <div className="text-center p-3 bg-white rounded-lg border">
-                        <p className="text-xs font-medium text-gray-600 mb-1">Pending</p>
-                        <p className="text-lg font-bold text-red-600">₹{totalPending.toLocaleString()}</p>
-                      </div>
-                    </>
-                  );
-                })()}
-              </div>
-            </div>
-          </div>
-        )}
-      </DetailViewModal>
+          )}
+        </DialogContent>
+      </Dialog>
     </MainLayout>
   );
 };
