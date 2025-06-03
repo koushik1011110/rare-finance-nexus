@@ -18,7 +18,6 @@ const FeesType = () => {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
-    amount: "",
     category: "Academic",
     frequency: "One Time",
     status: "Active",
@@ -56,21 +55,10 @@ const FeesType = () => {
     e.preventDefault();
     setIsSubmitting(true);
 
-    if (!formData.name.trim() || !formData.amount.trim()) {
+    if (!formData.name.trim()) {
       toast({
         title: "Error",
-        description: "Fee type name and amount are required.",
-        variant: "destructive",
-      });
-      setIsSubmitting(false);
-      return;
-    }
-
-    const amount = parseFloat(formData.amount);
-    if (isNaN(amount) || amount <= 0) {
-      toast({
-        title: "Error",
-        description: "Please enter a valid amount.",
+        description: "Fee type name is required.",
         variant: "destructive",
       });
       setIsSubmitting(false);
@@ -82,7 +70,6 @@ const FeesType = () => {
         const updatedFeeType = await feeTypesAPI.update(editingId, {
           name: formData.name,
           description: formData.description,
-          amount: amount,
           category: formData.category,
           frequency: formData.frequency,
           status: formData.status,
@@ -100,10 +87,10 @@ const FeesType = () => {
         const newFeeType = await feeTypesAPI.create({
           name: formData.name,
           description: formData.description,
-          amount: amount,
           category: formData.category,
           frequency: formData.frequency,
           status: formData.status,
+          amount: 0, // Default amount since it's set at structure level
           is_active: true,
         });
         setFeeTypes(prev => [...prev, newFeeType]);
@@ -116,7 +103,6 @@ const FeesType = () => {
       setFormData({ 
         name: "", 
         description: "", 
-        amount: "",
         category: "Academic",
         frequency: "One Time",
         status: "Active"
@@ -137,7 +123,6 @@ const FeesType = () => {
     setFormData({
       name: feeType.name,
       description: feeType.description || "",
-      amount: feeType.amount.toString(),
       category: feeType.category,
       frequency: feeType.frequency,
       status: feeType.status,
@@ -168,11 +153,6 @@ const FeesType = () => {
     { header: "Category", accessorKey: "category" },
     { header: "Frequency", accessorKey: "frequency" },
     { header: "Description", accessorKey: "description" },
-    { 
-      header: "Amount", 
-      accessorKey: "amount",
-      cell: (feeType: FeeType) => `₹${feeType.amount.toLocaleString()}`
-    },
     {
       header: "Status",
       accessorKey: "status",
@@ -283,19 +263,6 @@ const FeesType = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="amount">Amount *</Label>
-                <Input
-                  id="amount"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={formData.amount}
-                  onChange={(e) => handleInputChange("amount", e.target.value)}
-                  placeholder="Enter amount"
-                />
-              </div>
-
-              <div className="space-y-2">
                 <Label htmlFor="status">Status *</Label>
                 <Select value={formData.status} onValueChange={(value) => handleInputChange("status", value)}>
                   <SelectTrigger>
@@ -333,7 +300,6 @@ const FeesType = () => {
                       setFormData({ 
                         name: "", 
                         description: "", 
-                        amount: "",
                         category: "Academic",
                         frequency: "One Time",
                         status: "Active"

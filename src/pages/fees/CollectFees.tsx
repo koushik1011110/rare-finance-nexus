@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import MainLayout from "@/components/layout/MainLayout";
 import PageHeader from "@/components/shared/PageHeader";
 import StudentSearch from "@/components/fees/StudentSearch";
+import InvoiceGenerator from "@/components/fees/InvoiceGenerator";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -146,6 +147,10 @@ const CollectFees = () => {
     return { totalDue, totalPaid, totalPending };
   };
 
+  const generateReceiptNumber = () => {
+    return `REC-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+  };
+
   const studentColumns: Column<StudentWithFees>[] = [
     { 
       header: "Student Name", 
@@ -280,6 +285,21 @@ const CollectFees = () => {
           >
             <DollarSign className="h-4 w-4" />
           </Button>
+          {payment.amount_paid && payment.amount_paid > 0 && selectedStudent && (
+            <InvoiceGenerator
+              invoiceData={{
+                student: selectedStudent,
+                payment: payment,
+                receiptNumber: generateReceiptNumber()
+              }}
+              onGenerateInvoice={() => {
+                toast({
+                  title: "Invoice Generated",
+                  description: "Invoice has been generated successfully.",
+                });
+              }}
+            />
+          )}
         </div>
       ),
     },
@@ -357,51 +377,61 @@ const CollectFees = () => {
         onClose={() => setIsModalOpen(false)}
       >
         {selectedStudent && (
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
-              <div>
-                <p className="text-sm text-muted-foreground">Student Name</p>
-                <p className="font-medium">{selectedStudent.first_name} {selectedStudent.last_name}</p>
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border">
+              <div className="space-y-3">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Student Name</p>
+                  <p className="text-lg font-semibold text-gray-900">{selectedStudent.first_name} {selectedStudent.last_name}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Phone Number</p>
+                  <p className="text-base text-gray-900">{selectedStudent.phone_number || "N/A"}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Email</p>
+                  <p className="text-base text-gray-900">{selectedStudent.email || "N/A"}</p>
+                </div>
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Phone Number</p>
-                <p className="font-medium">{selectedStudent.phone_number || "N/A"}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">University</p>
-                <p className="font-medium">{selectedStudent.universities?.name || "N/A"}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Course</p>
-                <p className="font-medium">{selectedStudent.courses?.name || "N/A"}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Academic Session</p>
-                <p className="font-medium">{selectedStudent.academic_sessions?.session_name || "N/A"}</p>
+              <div className="space-y-3">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">University</p>
+                  <p className="text-base text-gray-900">{selectedStudent.universities?.name || "N/A"}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Course</p>
+                  <p className="text-base text-gray-900">{selectedStudent.courses?.name || "N/A"}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Academic Session</p>
+                  <p className="text-base text-gray-900">{selectedStudent.academic_sessions?.session_name || "N/A"}</p>
+                </div>
               </div>
             </div>
             
             <div>
-              <h3 className="text-lg font-semibold mb-3">Fee Payment Details</h3>
-              <DataTable columns={paymentColumns} data={selectedStudent.fee_payments} />
+              <h3 className="text-xl font-semibold mb-4 text-gray-900">Fee Payment Details</h3>
+              <div className="bg-white rounded-lg border shadow-sm">
+                <DataTable columns={paymentColumns} data={selectedStudent.fee_payments} />
+              </div>
             </div>
             
-            <div className="grid grid-cols-3 gap-4 mt-4 p-4 bg-gray-50 rounded-lg">
+            <div className="grid grid-cols-3 gap-4 p-6 bg-gray-50 rounded-lg border">
               {(() => {
                 const { totalDue, totalPaid, totalPending } = calculateStudentTotals(selectedStudent);
                 return (
                   <>
                     <div className="text-center">
-                      <p className="text-sm text-muted-foreground">Total Due</p>
-                      <p className="text-lg font-bold">₹{totalDue.toLocaleString()}</p>
+                      <p className="text-sm font-medium text-gray-600">Total Due</p>
+                      <p className="text-2xl font-bold text-gray-900">₹{totalDue.toLocaleString()}</p>
                     </div>
                     <div className="text-center">
-                      <p className="text-sm text-muted-foreground">Total Paid</p>
-                      <p className="text-lg font-bold text-green-600">₹{totalPaid.toLocaleString()}</p>
+                      <p className="text-sm font-medium text-gray-600">Total Paid</p>
+                      <p className="text-2xl font-bold text-green-600">₹{totalPaid.toLocaleString()}</p>
                     </div>
                     <div className="text-center">
-                      <p className="text-sm text-muted-foreground">Pending</p>
-                      <p className="text-lg font-bold text-red-600">₹{totalPending.toLocaleString()}</p>
+                      <p className="text-sm font-medium text-gray-600">Pending</p>
+                      <p className="text-2xl font-bold text-red-600">₹{totalPending.toLocaleString()}</p>
                     </div>
                   </>
                 );
