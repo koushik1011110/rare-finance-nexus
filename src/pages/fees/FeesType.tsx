@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import DataTable, { Column } from "@/components/ui/DataTable";
 import { toast } from "@/hooks/use-toast";
 import { Plus, Edit, Trash } from "lucide-react";
@@ -18,6 +19,9 @@ const FeesType = () => {
     name: "",
     description: "",
     amount: "",
+    category: "Academic",
+    frequency: "One Time",
+    status: "Active",
   });
   const [editingId, setEditingId] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -79,6 +83,9 @@ const FeesType = () => {
           name: formData.name,
           description: formData.description,
           amount: amount,
+          category: formData.category,
+          frequency: formData.frequency,
+          status: formData.status,
           is_active: true,
         });
         setFeeTypes(prev => prev.map(fee => 
@@ -94,6 +101,9 @@ const FeesType = () => {
           name: formData.name,
           description: formData.description,
           amount: amount,
+          category: formData.category,
+          frequency: formData.frequency,
+          status: formData.status,
           is_active: true,
         });
         setFeeTypes(prev => [...prev, newFeeType]);
@@ -103,7 +113,14 @@ const FeesType = () => {
         });
       }
 
-      setFormData({ name: "", description: "", amount: "" });
+      setFormData({ 
+        name: "", 
+        description: "", 
+        amount: "",
+        category: "Academic",
+        frequency: "One Time",
+        status: "Active"
+      });
     } catch (error) {
       console.error('Error saving fee type:', error);
       toast({
@@ -121,6 +138,9 @@ const FeesType = () => {
       name: feeType.name,
       description: feeType.description || "",
       amount: feeType.amount.toString(),
+      category: feeType.category,
+      frequency: feeType.frequency,
+      status: feeType.status,
     });
     setEditingId(feeType.id);
   };
@@ -145,11 +165,24 @@ const FeesType = () => {
 
   const columns: Column<FeeType>[] = [
     { header: "Name", accessorKey: "name" },
+    { header: "Category", accessorKey: "category" },
+    { header: "Frequency", accessorKey: "frequency" },
     { header: "Description", accessorKey: "description" },
     { 
       header: "Amount", 
       accessorKey: "amount",
       cell: (feeType: FeeType) => `₹${feeType.amount.toLocaleString()}`
+    },
+    {
+      header: "Status",
+      accessorKey: "status",
+      cell: (feeType: FeeType) => (
+        <span className={`px-2 py-1 rounded-full text-xs ${
+          feeType.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+        }`}>
+          {feeType.status}
+        </span>
+      )
     },
     { 
       header: "Created Date", 
@@ -220,6 +253,36 @@ const FeesType = () => {
               </div>
 
               <div className="space-y-2">
+                <Label htmlFor="category">Category *</Label>
+                <Select value={formData.category} onValueChange={(value) => handleInputChange("category", value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Academic">Academic</SelectItem>
+                    <SelectItem value="Administrative">Administrative</SelectItem>
+                    <SelectItem value="Accommodation">Accommodation</SelectItem>
+                    <SelectItem value="Other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="frequency">Frequency *</Label>
+                <Select value={formData.frequency} onValueChange={(value) => handleInputChange("frequency", value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select frequency" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="One Time">One Time</SelectItem>
+                    <SelectItem value="Monthly">Monthly</SelectItem>
+                    <SelectItem value="Per Semester">Per Semester</SelectItem>
+                    <SelectItem value="Yearly">Yearly</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
                 <Label htmlFor="amount">Amount *</Label>
                 <Input
                   id="amount"
@@ -230,6 +293,19 @@ const FeesType = () => {
                   onChange={(e) => handleInputChange("amount", e.target.value)}
                   placeholder="Enter amount"
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="status">Status *</Label>
+                <Select value={formData.status} onValueChange={(value) => handleInputChange("status", value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Active">Active</SelectItem>
+                    <SelectItem value="Inactive">Inactive</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-2">
@@ -254,7 +330,14 @@ const FeesType = () => {
                     variant="outline"
                     onClick={() => {
                       setEditingId(null);
-                      setFormData({ name: "", description: "", amount: "" });
+                      setFormData({ 
+                        name: "", 
+                        description: "", 
+                        amount: "",
+                        category: "Academic",
+                        frequency: "One Time",
+                        status: "Active"
+                      });
                     }}
                   >
                     Cancel
