@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import DataTable, { Column } from "@/components/ui/DataTable";
 import DetailViewModal from "@/components/shared/DetailViewModal";
 import { toast } from "@/hooks/use-toast";
-import { CreditCard, Phone, DollarSign, RefreshCw } from "lucide-react";
+import { CreditCard, Phone, DollarSign, RefreshCw, User, Mail, GraduationCap, Calendar } from "lucide-react";
 import {
   feePaymentsAPI,
   type FeePayment
@@ -267,14 +267,14 @@ const CollectFees = () => {
       cell: (payment: StudentWithFees['fee_payments'][0]) => getStatusBadge(payment.payment_status)
     },
     {
-      header: "Collect Payment",
+      header: "Payment Actions",
       accessorKey: "actions",
       cell: (payment: StudentWithFees['fee_payments'][0]) => (
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-2 min-w-fit">
           <Input
             type="number"
             placeholder="Amount"
-            className="w-24"
+            className="w-20 text-sm"
             value={paymentAmounts[payment.id] || ""}
             onChange={(e) => setPaymentAmounts(prev => ({ ...prev, [payment.id]: e.target.value }))}
           />
@@ -282,8 +282,9 @@ const CollectFees = () => {
             size="sm"
             onClick={() => handlePaymentUpdate(payment.id, payment.amount_due)}
             disabled={updatePaymentMutation.isPending}
+            className="px-2"
           >
-            <DollarSign className="h-4 w-4" />
+            <DollarSign className="h-3 w-3" />
           </Button>
           {payment.amount_paid && payment.amount_paid > 0 && selectedStudent && (
             <InvoiceGenerator
@@ -377,65 +378,100 @@ const CollectFees = () => {
         onClose={() => setIsModalOpen(false)}
       >
         {selectedStudent && (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border">
-              <div className="space-y-3">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Student Name</p>
-                  <p className="text-lg font-semibold text-gray-900">{selectedStudent.first_name} {selectedStudent.last_name}</p>
+          <div className="space-y-4 max-h-[80vh] overflow-y-auto">
+            {/* Student Information Section */}
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border p-4">
+              <h3 className="text-lg font-semibold mb-3 text-gray-900 flex items-center">
+                <User className="h-5 w-5 mr-2" />
+                Student Information
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <User className="h-4 w-4 text-gray-500" />
+                    <div>
+                      <p className="text-xs font-medium text-gray-600">Student Name</p>
+                      <p className="text-sm font-semibold text-gray-900">{selectedStudent.first_name} {selectedStudent.last_name}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Phone className="h-4 w-4 text-gray-500" />
+                    <div>
+                      <p className="text-xs font-medium text-gray-600">Phone Number</p>
+                      <p className="text-sm text-gray-900">{selectedStudent.phone_number || "N/A"}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Mail className="h-4 w-4 text-gray-500" />
+                    <div>
+                      <p className="text-xs font-medium text-gray-600">Email</p>
+                      <p className="text-sm text-gray-900">{selectedStudent.email || "N/A"}</p>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Phone Number</p>
-                  <p className="text-base text-gray-900">{selectedStudent.phone_number || "N/A"}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Email</p>
-                  <p className="text-base text-gray-900">{selectedStudent.email || "N/A"}</p>
-                </div>
-              </div>
-              <div className="space-y-3">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">University</p>
-                  <p className="text-base text-gray-900">{selectedStudent.universities?.name || "N/A"}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Course</p>
-                  <p className="text-base text-gray-900">{selectedStudent.courses?.name || "N/A"}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Academic Session</p>
-                  <p className="text-base text-gray-900">{selectedStudent.academic_sessions?.session_name || "N/A"}</p>
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <GraduationCap className="h-4 w-4 text-gray-500" />
+                    <div>
+                      <p className="text-xs font-medium text-gray-600">University</p>
+                      <p className="text-sm text-gray-900">{selectedStudent.universities?.name || "N/A"}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <GraduationCap className="h-4 w-4 text-gray-500" />
+                    <div>
+                      <p className="text-xs font-medium text-gray-600">Course</p>
+                      <p className="text-sm text-gray-900">{selectedStudent.courses?.name || "N/A"}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Calendar className="h-4 w-4 text-gray-500" />
+                    <div>
+                      <p className="text-xs font-medium text-gray-600">Academic Session</p>
+                      <p className="text-sm text-gray-900">{selectedStudent.academic_sessions?.session_name || "N/A"}</p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
             
+            {/* Fee Payment Details Section */}
             <div>
-              <h3 className="text-xl font-semibold mb-4 text-gray-900">Fee Payment Details</h3>
-              <div className="bg-white rounded-lg border shadow-sm">
-                <DataTable columns={paymentColumns} data={selectedStudent.fee_payments} />
+              <h3 className="text-lg font-semibold mb-3 text-gray-900 flex items-center">
+                <CreditCard className="h-5 w-5 mr-2" />
+                Fee Payment Details
+              </h3>
+              <div className="bg-white rounded-lg border shadow-sm overflow-hidden">
+                <div className="overflow-x-auto">
+                  <DataTable columns={paymentColumns} data={selectedStudent.fee_payments} />
+                </div>
               </div>
             </div>
             
-            <div className="grid grid-cols-3 gap-4 p-6 bg-gray-50 rounded-lg border">
-              {(() => {
-                const { totalDue, totalPaid, totalPending } = calculateStudentTotals(selectedStudent);
-                return (
-                  <>
-                    <div className="text-center">
-                      <p className="text-sm font-medium text-gray-600">Total Due</p>
-                      <p className="text-2xl font-bold text-gray-900">₹{totalDue.toLocaleString()}</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-sm font-medium text-gray-600">Total Paid</p>
-                      <p className="text-2xl font-bold text-green-600">₹{totalPaid.toLocaleString()}</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-sm font-medium text-gray-600">Pending</p>
-                      <p className="text-2xl font-bold text-red-600">₹{totalPending.toLocaleString()}</p>
-                    </div>
-                  </>
-                );
-              })()}
+            {/* Summary Section */}
+            <div className="bg-gray-50 rounded-lg border p-4">
+              <h3 className="text-lg font-semibold mb-3 text-gray-900">Payment Summary</h3>
+              <div className="grid grid-cols-3 gap-4">
+                {(() => {
+                  const { totalDue, totalPaid, totalPending } = calculateStudentTotals(selectedStudent);
+                  return (
+                    <>
+                      <div className="text-center p-3 bg-white rounded-lg border">
+                        <p className="text-xs font-medium text-gray-600 mb-1">Total Due</p>
+                        <p className="text-lg font-bold text-gray-900">₹{totalDue.toLocaleString()}</p>
+                      </div>
+                      <div className="text-center p-3 bg-white rounded-lg border">
+                        <p className="text-xs font-medium text-gray-600 mb-1">Total Paid</p>
+                        <p className="text-lg font-bold text-green-600">₹{totalPaid.toLocaleString()}</p>
+                      </div>
+                      <div className="text-center p-3 bg-white rounded-lg border">
+                        <p className="text-xs font-medium text-gray-600 mb-1">Pending</p>
+                        <p className="text-lg font-bold text-red-600">₹{totalPending.toLocaleString()}</p>
+                      </div>
+                    </>
+                  );
+                })()}
+              </div>
             </div>
           </div>
         )}
