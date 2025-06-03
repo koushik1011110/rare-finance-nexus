@@ -13,8 +13,8 @@ import DetailViewModal from "@/components/shared/DetailViewModal";
 import { toast } from "@/hooks/use-toast";
 import { CreditCard, Phone, DollarSign, RefreshCw } from "lucide-react";
 import {
-  studentFeePaymentsAPI,
-  type StudentFeePayment
+  feePaymentsAPI,
+  type FeePayment
 } from "@/lib/supabase-database";
 
 interface StudentWithFees {
@@ -26,7 +26,7 @@ interface StudentWithFees {
   universities?: { name: string };
   courses?: { name: string };
   academic_sessions?: { session_name: string };
-  student_fee_payments: (StudentFeePayment & {
+  fee_payments: (FeePayment & {
     fee_structure_components: {
       fee_types: { name: string };
       fee_structures: { name: string };
@@ -46,7 +46,7 @@ const CollectFees = () => {
   // Fetch students with fee structures
   const { data: studentsWithFees = [], refetch, isLoading, error } = useQuery({
     queryKey: ['studentsWithFees'],
-    queryFn: studentFeePaymentsAPI.getStudentsWithFeeStructures,
+    queryFn: feePaymentsAPI.getStudentsWithFeeStructures,
   });
 
   console.log('Students with fees data:', studentsWithFees);
@@ -83,7 +83,7 @@ const CollectFees = () => {
         status = 'partial';
       }
       
-      return studentFeePaymentsAPI.updatePayment(paymentId, amountPaid, status);
+      return feePaymentsAPI.updatePayment(paymentId, amountPaid, status);
     },
     onSuccess: () => {
       toast({
@@ -139,8 +139,8 @@ const CollectFees = () => {
   };
 
   const calculateStudentTotals = (student: StudentWithFees) => {
-    const totalDue = student.student_fee_payments.reduce((sum, payment) => sum + payment.amount_due, 0);
-    const totalPaid = student.student_fee_payments.reduce((sum, payment) => sum + (payment.amount_paid || 0), 0);
+    const totalDue = student.fee_payments.reduce((sum, payment) => sum + payment.amount_due, 0);
+    const totalPaid = student.fee_payments.reduce((sum, payment) => sum + (payment.amount_paid || 0), 0);
     const totalPending = totalDue - totalPaid;
     
     return { totalDue, totalPaid, totalPending };
@@ -179,7 +179,7 @@ const CollectFees = () => {
     },
     {
       header: "Total Due",
-      accessorKey: "student_fee_payments",
+      accessorKey: "fee_payments",
       cell: (student: StudentWithFees) => {
         const { totalDue } = calculateStudentTotals(student);
         return `₹${totalDue.toLocaleString()}`;
@@ -187,7 +187,7 @@ const CollectFees = () => {
     },
     {
       header: "Total Paid",
-      accessorKey: "student_fee_payments",
+      accessorKey: "fee_payments",
       cell: (student: StudentWithFees) => {
         const { totalPaid } = calculateStudentTotals(student);
         return `₹${totalPaid.toLocaleString()}`;
@@ -195,7 +195,7 @@ const CollectFees = () => {
     },
     {
       header: "Pending",
-      accessorKey: "student_fee_payments",
+      accessorKey: "fee_payments",
       cell: (student: StudentWithFees) => {
         const { totalPending } = calculateStudentTotals(student);
         return (
@@ -212,7 +212,7 @@ const CollectFees = () => {
         <Button
           size="sm"
           onClick={() => handleCollectFees(student)}
-          disabled={student.student_fee_payments.length === 0}
+          disabled={student.fee_payments.length === 0}
         >
           <CreditCard className="mr-2 h-4 w-4" />
           Collect Fees
@@ -221,50 +221,50 @@ const CollectFees = () => {
     },
   ];
 
-  const paymentColumns: Column<StudentWithFees['student_fee_payments'][0]>[] = [
+  const paymentColumns: Column<StudentWithFees['fee_payments'][0]>[] = [
     {
       header: "Fee Type",
       accessorKey: "fee_structure_components",
-      cell: (payment: StudentWithFees['student_fee_payments'][0]) => 
+      cell: (payment: StudentWithFees['fee_payments'][0]) => 
         payment.fee_structure_components?.fee_types?.name || "N/A"
     },
     {
       header: "Structure",
       accessorKey: "fee_structure_components",
-      cell: (payment: StudentWithFees['student_fee_payments'][0]) => 
+      cell: (payment: StudentWithFees['fee_payments'][0]) => 
         payment.fee_structure_components?.fee_structures?.name || "N/A"
     },
     {
       header: "Frequency",
       accessorKey: "fee_structure_components",
-      cell: (payment: StudentWithFees['student_fee_payments'][0]) => 
+      cell: (payment: StudentWithFees['fee_payments'][0]) => 
         payment.fee_structure_components?.frequency || "N/A"
     },
     { 
       header: "Amount Due", 
       accessorKey: "amount_due",
-      cell: (payment: StudentWithFees['student_fee_payments'][0]) => `₹${payment.amount_due.toLocaleString()}`
+      cell: (payment: StudentWithFees['fee_payments'][0]) => `₹${payment.amount_due.toLocaleString()}`
     },
     { 
       header: "Amount Paid", 
       accessorKey: "amount_paid",
-      cell: (payment: StudentWithFees['student_fee_payments'][0]) => `₹${(payment.amount_paid || 0).toLocaleString()}`
+      cell: (payment: StudentWithFees['fee_payments'][0]) => `₹${(payment.amount_paid || 0).toLocaleString()}`
     },
     { 
       header: "Due Date", 
       accessorKey: "due_date",
-      cell: (payment: StudentWithFees['student_fee_payments'][0]) => 
+      cell: (payment: StudentWithFees['fee_payments'][0]) => 
         payment.due_date ? new Date(payment.due_date).toLocaleDateString() : "N/A"
     },
     {
       header: "Status",
       accessorKey: "payment_status", 
-      cell: (payment: StudentWithFees['student_fee_payments'][0]) => getStatusBadge(payment.payment_status)
+      cell: (payment: StudentWithFees['fee_payments'][0]) => getStatusBadge(payment.payment_status)
     },
     {
       header: "Collect Payment",
       accessorKey: "actions",
-      cell: (payment: StudentWithFees['student_fee_payments'][0]) => (
+      cell: (payment: StudentWithFees['fee_payments'][0]) => (
         <div className="flex items-center space-x-2">
           <Input
             type="number"
@@ -383,7 +383,7 @@ const CollectFees = () => {
             
             <div>
               <h3 className="text-lg font-semibold mb-3">Fee Payment Details</h3>
-              <DataTable columns={paymentColumns} data={selectedStudent.student_fee_payments} />
+              <DataTable columns={paymentColumns} data={selectedStudent.fee_payments} />
             </div>
             
             <div className="grid grid-cols-3 gap-4 mt-4 p-4 bg-gray-50 rounded-lg">

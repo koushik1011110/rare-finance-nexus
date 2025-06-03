@@ -43,9 +43,13 @@ export interface FeeType {
   id: number;
   name: string;
   description?: string;
+  category: string;
+  frequency: string;
+  status: string;
   amount: number;
   is_active: boolean;
   created_at: string;
+  updated_at: string;
 }
 
 export interface FeeCollection {
@@ -88,7 +92,7 @@ export interface StudentFeeAssignment {
   assigned_at: string;
 }
 
-export interface StudentFeePayment {
+export interface FeePayment {
   id: number;
   student_id: number;
   fee_structure_component_id: number;
@@ -237,7 +241,7 @@ export const feeTypesAPI = {
     return data || [];
   },
 
-  create: async (feeTypeData: Omit<FeeType, 'id' | 'created_at'>): Promise<FeeType> => {
+  create: async (feeTypeData: Omit<FeeType, 'id' | 'created_at' | 'updated_at'>): Promise<FeeType> => {
     const { data, error } = await supabase
       .from('fee_types')
       .insert([feeTypeData])
@@ -252,10 +256,10 @@ export const feeTypesAPI = {
     return data;
   },
 
-  update: async (id: number, feeTypeData: Partial<Omit<FeeType, 'id' | 'created_at'>>): Promise<FeeType> => {
+  update: async (id: number, feeTypeData: Partial<Omit<FeeType, 'id' | 'created_at' | 'updated_at'>>): Promise<FeeType> => {
     const { data, error } = await supabase
       .from('fee_types')
-      .update(feeTypeData)
+      .update({ ...feeTypeData, updated_at: new Date().toISOString() })
       .eq('id', id)
       .select()
       .single();
@@ -446,117 +450,17 @@ export const feeStructuresAPI = {
   assignToStudents: async (structureId: number): Promise<number> => {
     console.log('Assigning fee structure:', structureId);
     
-    // Get the fee structure details first
-    const { data: feeStructure, error: structureError } = await supabase
-      .from('fee_structures')
-      .select('university_id, course_id')
-      .eq('id', structureId)
-      .single();
+    const { data, error } = await supabase.rpc('assign_fee_structure_to_students', {
+      structure_id: structureId
+    });
 
-    if (structureError) {
-      console.error('Error fetching fee structure:', structureError);
-      throw structureError;
+    if (error) {
+      console.error('Error assigning fee structure:', error);
+      throw error;
     }
 
-    console.log('Fee structure details:', feeStructure);
-
-    // Get active academic session
-    const { data: activeSession, error: sessionError } = await supabase
-      .from('academic_sessions')
-      .select('id')
-      .eq('is_active', true)
-      .single();
-
-    if (sessionError) {
-      console.error('Error fetching active session:', sessionError);
-      throw sessionError;
-    }
-
-    console.log('Active session:', activeSession);
-
-    // Get students that match the criteria
-    const { data: students, error: studentsError } = await supabase
-      .from('students')
-      .select('id')
-      .eq('university_id', feeStructure.university_id)
-      .eq('course_id', feeStructure.course_id)
-      .eq('academic_session_id', activeSession.id)
-      .eq('status', 'active');
-
-    if (studentsError) {
-      console.error('Error fetching students:', studentsError);
-      throw studentsError;
-    }
-
-    console.log('Matching students:', students);
-
-    let assignedCount = 0;
-
-    // Assign fee structure to each student
-    for (const student of students || []) {
-      // Check if assignment already exists
-      const { data: existingAssignment } = await supabase
-        .from('student_fee_assignments')
-        .select('id')
-        .eq('student_id', student.id)
-        .eq('fee_structure_id', structureId)
-        .single();
-
-      if (!existingAssignment) {
-        // Create assignment
-        const { error: assignmentError } = await supabase
-          .from('student_fee_assignments')
-          .insert({
-            student_id: student.id,
-            fee_structure_id: structureId
-          });
-
-        if (!assignmentError) {
-          assignedCount++;
-
-          // Get fee structure components
-          const { data: components } = await supabase
-            .from('fee_structure_components')
-            .select('*')
-            .eq('fee_structure_id', structureId);
-
-          console.log('Fee structure components:', components);
-
-          // Create payment records for each component
-          for (const component of components || []) {
-            let dueDate = new Date();
-            switch (component.frequency) {
-              case 'one-time':
-                dueDate.setDate(dueDate.getDate() + 30);
-                break;
-              case 'yearly':
-                dueDate.setFullYear(dueDate.getFullYear() + 1);
-                break;
-              case 'semester-wise':
-                dueDate.setMonth(dueDate.getMonth() + 6);
-                break;
-            }
-
-            const { error: paymentError } = await supabase
-              .from('student_fee_payments')
-              .insert({
-                student_id: student.id,
-                fee_structure_component_id: component.id,
-                amount_due: component.amount,
-                due_date: dueDate.toISOString().split('T')[0],
-                payment_status: 'pending'
-              });
-
-            if (paymentError) {
-              console.error('Error creating payment record:', paymentError);
-            }
-          }
-        }
-      }
-    }
-
-    console.log('Assigned count:', assignedCount);
-    return assignedCount;
+    console.log('Assigned count:', data);
+    return data || 0;
   },
 };
 
@@ -630,11 +534,11 @@ export const feeStructureComponentsAPI = {
   },
 };
 
-// Student Fee Payments API
-export const studentFeePaymentsAPI = {
-  getByStudent: async (studentId: number): Promise<StudentFeePayment[]> => {
+// Fee Payments API (updated to use new table name)
+export const feePaymentsAPI = {
+  getByStudent: async (studentId: number): Promise<FeePayment[]> => {
     const { data, error } = await supabase
-      .from('student_fee_payments')
+      .from('fee_payments')
       .select('*')
       .eq('student_id', studentId)
       .order('created_at', { ascending: false });
@@ -650,9 +554,9 @@ export const studentFeePaymentsAPI = {
     }));
   },
 
-  updatePayment: async (id: number, amountPaid: number, paymentStatus: 'pending' | 'partial' | 'paid'): Promise<StudentFeePayment> => {
+  updatePayment: async (id: number, amountPaid: number, paymentStatus: 'pending' | 'partial' | 'paid'): Promise<FeePayment> => {
     const { data, error } = await supabase
-      .from('student_fee_payments')
+      .from('fee_payments')
       .update({
         amount_paid: amountPaid,
         payment_status: paymentStatus,
@@ -664,7 +568,7 @@ export const studentFeePaymentsAPI = {
       .single();
     
     if (error) {
-      console.error('Error updating student fee payment:', error);
+      console.error('Error updating fee payment:', error);
       throw error;
     }
     
@@ -701,7 +605,7 @@ export const studentFeePaymentsAPI = {
     
     for (const student of students || []) {
       const { data: payments, error: paymentsError } = await supabase
-        .from('student_fee_payments')
+        .from('fee_payments')
         .select(`
           *,
           fee_structure_components(
@@ -721,7 +625,7 @@ export const studentFeePaymentsAPI = {
       if (payments && payments.length > 0) {
         studentsWithPayments.push({
           ...student,
-          student_fee_payments: payments.map(payment => ({
+          fee_payments: payments.map(payment => ({
             ...payment,
             payment_status: payment.payment_status as 'pending' | 'partial' | 'paid'
           }))
@@ -734,3 +638,6 @@ export const studentFeePaymentsAPI = {
     return studentsWithPayments;
   },
 };
+
+// For backward compatibility, keep the old API name
+export const studentFeePaymentsAPI = feePaymentsAPI;
