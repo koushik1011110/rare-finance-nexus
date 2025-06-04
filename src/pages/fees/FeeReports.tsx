@@ -15,7 +15,17 @@ import {
   type FeePayment
 } from "@/lib/supabase-database";
 
-interface FeeReportData extends FeePayment {
+interface FeeReportData {
+  id: number;
+  amount_due: number;
+  amount_paid: number | null;
+  created_at: string | null;
+  due_date: string | null;
+  fee_structure_component_id: number;
+  last_payment_date: string | null;
+  payment_status: string | null;
+  student_id: number;
+  updated_at: string | null;
   students: {
     first_name: string;
     last_name: string;
@@ -40,14 +50,18 @@ const FeeReports = () => {
     queryFn: () => feePaymentsAPI.getFeeReports(dateRange, statusFilter),
   });
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status: string | null) => {
+    if (!status) return <Badge variant="secondary">Unknown</Badge>;
+    
     const statusConfig = {
       "pending": { variant: "destructive" as const, color: "text-red-600" },
       "partial": { variant: "secondary" as const, color: "text-yellow-600" },
       "paid": { variant: "default" as const, color: "text-green-600" }
     };
     
-    const config = statusConfig[status as keyof typeof statusConfig];
+    const config = statusConfig[status as keyof typeof statusConfig] || 
+                   { variant: "secondary" as const, color: "text-gray-600" };
+    
     return (
       <Badge variant={config.variant} className={config.color}>
         {status.charAt(0).toUpperCase() + status.slice(1)}
@@ -101,7 +115,7 @@ const FeeReports = () => {
     },
     {
       header: "Balance",
-      accessorKey: "balance",
+      accessorKey: "actions",
       cell: (report: FeeReportData) => {
         const balance = report.amount_due - (report.amount_paid || 0);
         return (
@@ -139,7 +153,7 @@ const FeeReports = () => {
       'Amount Paid': report.amount_paid || 0,
       'Balance': report.amount_due - (report.amount_paid || 0),
       'Due Date': report.due_date || '',
-      'Status': report.payment_status,
+      'Status': report.payment_status || '',
       'Last Payment Date': report.last_payment_date || ''
     }));
 
