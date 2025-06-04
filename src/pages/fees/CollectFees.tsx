@@ -13,6 +13,7 @@ import DataTable, { Column } from "@/components/ui/DataTable";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
 import { CreditCard, DollarSign, Search, Users } from "lucide-react";
+import InvoiceGenerator from "@/components/fees/InvoiceGenerator";
 import {
   feePaymentsAPI,
   universitiesAPI,
@@ -107,12 +108,12 @@ const CollectFees = () => {
   const handleCollectFees = (student: StudentWithFees) => {
     setSelectedStudent(student);
     
-    // Initialize payment data for pending/partial payments
+    // Initialize payment data with empty amounts (no auto-fill)
     const initialPaymentData = student.fee_payments
       .filter(payment => payment.payment_status !== 'paid')
       .map(payment => ({
         feePaymentId: payment.id,
-        amount: payment.amount_due - payment.amount_paid
+        amount: 0 // Changed: Don't auto-fill with balance
       }));
     
     setPaymentData(initialPaymentData);
@@ -332,15 +333,15 @@ const CollectFees = () => {
 
       {/* Payment Collection Modal */}
       <Dialog open={isPaymentModalOpen} onOpenChange={setIsPaymentModalOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
-          <DialogHeader>
+        <DialogContent className="max-w-5xl max-h-[95vh] flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle>
               Collect Fees - {selectedStudent?.first_name} {selectedStudent?.last_name}
             </DialogTitle>
           </DialogHeader>
           
-          <ScrollArea className="flex-1 pr-4">
-            <div className="space-y-6 pb-4">
+          <ScrollArea className="flex-1 overflow-auto">
+            <div className="space-y-6 p-1">
               {/* Student Information */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
                 <div>
@@ -372,7 +373,7 @@ const CollectFees = () => {
                     
                     return (
                       <Card key={feePayment.id} className="p-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-center">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-center">
                           <div>
                             <p className="text-sm text-muted-foreground">Fee Type</p>
                             <p className="font-medium">{feePayment.fee_structure_components?.fee_types?.name}</p>
@@ -391,11 +392,40 @@ const CollectFees = () => {
                               type="number"
                               min="0"
                               max={balance}
-                              value={paymentItem?.amount || 0}
+                              value={paymentItem?.amount || ''}
                               onChange={(e) => updatePaymentAmount(feePayment.id, parseFloat(e.target.value) || 0)}
                               className="w-full"
-                              placeholder="Enter amount"
+                              placeholder="0"
                             />
+                          </div>
+                          <div>
+                            {paymentItem && paymentItem.amount > 0 && (
+                              <InvoiceGenerator
+                                invoiceData={{
+                                  student: {
+                                    id: selectedStudent!.id,
+                                    first_name: selectedStudent!.first_name,
+                                    last_name: selectedStudent!.last_name,
+                                    phone_number: selectedStudent!.phone_number,
+                                    universities: selectedStudent!.universities,
+                                    courses: selectedStudent!.courses,
+                                    academic_sessions: selectedStudent!.academic_sessions
+                                  },
+                                  payment: {
+                                    id: feePayment.id,
+                                    amount_paid: paymentItem.amount,
+                                    fee_structure_components: feePayment.fee_structure_components
+                                  },
+                                  receiptNumber: `REC-${Date.now()}-${feePayment.id}`
+                                }}
+                                onGenerateInvoice={() => {
+                                  toast({
+                                    title: "Invoice Generated",
+                                    description: "Invoice has been generated successfully.",
+                                  });
+                                }}
+                              />
+                            )}
                           </div>
                         </div>
                       </Card>
@@ -441,7 +471,7 @@ const CollectFees = () => {
           </ScrollArea>
 
           {/* Action Buttons */}
-          <div className="flex justify-end space-x-2 pt-4 border-t">
+          <div className="flex justify-end space-x-2 pt-4 border-t flex-shrink-0">
             <Button variant="outline" onClick={() => setIsPaymentModalOpen(false)}>
               Cancel
             </Button>
