@@ -109,7 +109,7 @@ const CollectFees = () => {
     setSelectedStudent(student);
     
     // Initialize payment data with empty amounts (no auto-fill)
-    const initialPaymentData = (student.fee_payments || [])
+    const initialPaymentData = student.fee_payments
       .filter(payment => payment.payment_status !== 'paid')
       .map(payment => ({
         feePaymentId: payment.id,
@@ -139,7 +139,7 @@ const CollectFees = () => {
       // Process each payment
       for (const payment of paymentData) {
         if (payment.amount > 0) {
-          const feePayment = (selectedStudent.fee_payments || []).find(fp => fp.id === payment.feePaymentId);
+          const feePayment = selectedStudent.fee_payments.find(fp => fp.id === payment.feePaymentId);
           if (feePayment) {
             const newAmountPaid = feePayment.amount_paid + payment.amount;
             const newStatus = newAmountPaid >= feePayment.amount_due ? 'paid' : 
@@ -200,7 +200,7 @@ const CollectFees = () => {
       header: "Total Due",
       accessorKey: "fee_payments",
       cell: (student: StudentWithFees) => {
-        const totalDue = (student.fee_payments || []).reduce((sum, payment) => sum + payment.amount_due, 0);
+        const totalDue = student.fee_payments.reduce((sum, payment) => sum + payment.amount_due, 0);
         return `₹${totalDue.toLocaleString()}`;
       }
     },
@@ -208,7 +208,7 @@ const CollectFees = () => {
       header: "Total Paid",
       accessorKey: "fee_payments",
       cell: (student: StudentWithFees) => {
-        const totalPaid = (student.fee_payments || []).reduce((sum, payment) => sum + payment.amount_paid, 0);
+        const totalPaid = student.fee_payments.reduce((sum, payment) => sum + payment.amount_paid, 0);
         return `₹${totalPaid.toLocaleString()}`;
       }
     },
@@ -216,8 +216,8 @@ const CollectFees = () => {
       header: "Balance",
       accessorKey: "fee_payments",
       cell: (student: StudentWithFees) => {
-        const totalDue = (student.fee_payments || []).reduce((sum, payment) => sum + payment.amount_due, 0);
-        const totalPaid = (student.fee_payments || []).reduce((sum, payment) => sum + payment.amount_paid, 0);
+        const totalDue = student.fee_payments.reduce((sum, payment) => sum + payment.amount_due, 0);
+        const totalPaid = student.fee_payments.reduce((sum, payment) => sum + payment.amount_paid, 0);
         const balance = totalDue - totalPaid;
         return (
           <span className={balance > 0 ? "text-red-600 font-medium" : "text-green-600 font-medium"}>
@@ -230,7 +230,7 @@ const CollectFees = () => {
       header: "Actions",
       accessorKey: "actions",
       cell: (student: StudentWithFees) => {
-        const hasOutstanding = (student.fee_payments || []).some(payment => 
+        const hasOutstanding = student.fee_payments.some(payment => 
           payment.payment_status === 'pending' || payment.payment_status === 'partial'
         );
         
@@ -275,7 +275,7 @@ const CollectFees = () => {
           <CardContent>
             <div className="text-2xl font-bold">
               {filteredStudents.filter(student => 
-                (student.fee_payments || []).some(payment => 
+                student.fee_payments.some(payment => 
                   payment.payment_status === 'pending' || payment.payment_status === 'partial'
                 )
               ).length}
@@ -290,7 +290,7 @@ const CollectFees = () => {
           <CardContent>
             <div className="text-2xl font-bold text-red-600">
               ₹{filteredStudents.reduce((total, student) => {
-                const studentBalance = (student.fee_payments || []).reduce((sum, payment) => 
+                const studentBalance = student.fee_payments.reduce((sum, payment) => 
                   sum + (payment.amount_due - payment.amount_paid), 0
                 );
                 return total + studentBalance;
@@ -365,7 +365,7 @@ const CollectFees = () => {
               {/* Fee Payment Details */}
               <div className="space-y-4">
                 <h3 className="text-lg font-medium">Fee Payment Details</h3>
-                {(selectedStudent?.fee_payments || [])
+                {selectedStudent?.fee_payments
                   .filter(payment => payment.payment_status !== 'paid')
                   .map((feePayment) => {
                     const paymentItem = paymentData.find(p => p.feePaymentId === feePayment.id);

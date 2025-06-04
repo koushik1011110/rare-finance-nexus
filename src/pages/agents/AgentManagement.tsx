@@ -118,20 +118,20 @@ const AgentManagement = () => {
     
     // Simulating API call
     setTimeout(() => {
-      if (currentAgent && isEditModalOpen) {
+      if (formData.id) {
         // Update existing agent
         setAgents(
           agents.map((agent) =>
-            agent.id === currentAgent.id
+            agent.id === formData.id
               ? {
                   ...agent,
                   name: formData.name,
-                  contactPerson: formData.contact_person,
+                  contactPerson: formData.contactPerson,
                   email: formData.email,
-                  phone: formData.phone || "",
-                  location: formData.location || "",
-                  commission: `${formData.commission_rate}%`,
-                  status: formData.status === 'active' ? 'Active' : 'Inactive',
+                  phone: formData.phone,
+                  location: formData.location,
+                  commission: formData.commission,
+                  status: formData.status,
                 }
               : agent
           )
@@ -146,15 +146,15 @@ const AgentManagement = () => {
         const newAgent: Agent = {
           id: Date.now().toString(),
           name: formData.name,
-          contactPerson: formData.contact_person,
+          contactPerson: formData.contactPerson,
           email: formData.email,
-          phone: formData.phone || "",
-          location: formData.location || "",
+          phone: formData.phone,
+          location: formData.location,
           studentsCount: 0,
-          commission: `${formData.commission_rate}%`,
+          commission: formData.commission,
           totalReceived: "$0",
           commissionDue: "$0",
-          status: formData.status === 'active' ? 'Active' : 'Inactive',
+          status: formData.status,
         };
         
         setAgents([newAgent, ...agents]);
@@ -335,14 +335,15 @@ const AgentManagement = () => {
           onClose={() => setIsEditModalOpen(false)}
         >
           <AgentForm 
-            defaultValues={{
+            initialData={{
+              id: currentAgent.id,
               name: currentAgent.name,
-              contact_person: currentAgent.contactPerson,
+              contactPerson: currentAgent.contactPerson,
               email: currentAgent.email,
               phone: currentAgent.phone,
               location: currentAgent.location,
-              commission_rate: parseFloat(currentAgent.commission.replace('%', '')),
-              status: currentAgent.status.toLowerCase() as 'active' | 'inactive',
+              commission: currentAgent.commission,
+              status: currentAgent.status as "Active" | "Inactive",
             }}
             onSubmit={handleSaveAgent}
             isSubmitting={isSubmitting}
