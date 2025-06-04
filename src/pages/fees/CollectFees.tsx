@@ -1,128 +1,93 @@
 
-import React, { useState, useMemo } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import React, { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import MainLayout from "@/components/layout/MainLayout";
 import PageHeader from "@/components/shared/PageHeader";
-import StudentSearch from "@/components/fees/StudentSearch";
-import InvoiceGenerator from "@/components/fees/InvoiceGenerator";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import DataTable, { Column } from "@/components/ui/DataTable";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
-import { CreditCard, Phone, DollarSign, RefreshCw, User, Mail, GraduationCap, Calendar, X } from "lucide-react";
+import { CreditCard, DollarSign, Search, Users } from "lucide-react";
 import {
   feePaymentsAPI,
-  type FeePayment
+  universitiesAPI,
+  coursesAPI,
+  academicSessionsAPI,
+  type University,
+  type Course,
+  type AcademicSession
 } from "@/lib/supabase-database";
 
 interface StudentWithFees {
   id: number;
   first_name: string;
   last_name: string;
+  admission_number: string;
   phone_number?: string;
-  email?: string;
-  universities?: { name: string };
-  courses?: { name: string };
-  academic_sessions?: { session_name: string };
-  fee_payments: (FeePayment & {
+  universities: { name: string };
+  courses: { name: string };
+  academic_sessions: { session_name: string };
+  fee_payments: Array<{
+    id: number;
+    amount_due: number;
+    amount_paid: number;
+    payment_status: 'pending' | 'partial' | 'paid';
+    due_date: string;
     fee_structure_components: {
       fee_types: { name: string };
       fee_structures: { name: string };
       amount: number;
       frequency: string;
     };
-  })[];
+  }>;
+}
+
+interface PaymentData {
+  feePaymentId: number;
+  amount: number;
 }
 
 const CollectFees = () => {
-  const queryClient = useQueryClient();
-  const [selectedStudent, setSelectedStudent] = useState<StudentWithFees | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [paymentAmounts, setPaymentAmounts] = useState<{ [key: number]: string }>({});
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedStudent, setSelectedStudent] = useState<StudentWithFees | null>(null);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [paymentData, setPaymentData] = useState<PaymentData[]>([]);
+  const [paymentMethod, setPaymentMethod] = useState<string>("cash");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Fetch students with fee structures
-  const { data: studentsWithFees = [], refetch, isLoading, error } = useQuery({
-    queryKey: ['studentsWithFees'],
-    queryFn: feePaymentsAPI.getStudentsWithFeeStructures,
+  const { data: studentsWithFees = [], refetch, isLoading } = useQuery({
+    queryKey: ['studentsWithFeeStructures'],
+    queryFn: () => feePaymentsAPI.getStudentsWithFeeStructures(),
   });
 
-  console.log('Students with fees data:', studentsWithFees);
-  console.log('Query error:', error);
+  const { data: universities = [] } = useQuery({
+    queryKey: ['universities'],
+    queryFn: () => universitiesAPI.getAll(),
+  });
 
-  // Filter students based on search term
-  const filteredStudents = useMemo(() => {
-    if (!searchTerm) return studentsWithFees;
-    
+  const { data: courses = [] } = useQuery({
+    queryKey: ['courses'],
+    queryFn: () => coursesAPI.getAll(),
+  });
+
+  const { data: academicSessions = [] } = useQuery({
+    queryKey: ['academicSessions'],
+    queryFn: () => academicSessionsAPI.getAll(),
+  });
+
+  const filteredStudents = studentsWithFees.filter((student: StudentWithFees) => {
+    if (!searchTerm) return true;
     const searchLower = searchTerm.toLowerCase();
-    return studentsWithFees.filter((student: StudentWithFees) => {
-      const fullName = `${student.first_name} ${student.last_name}`.toLowerCase();
-      const phone = student.phone_number?.toLowerCase() || '';
-      const university = student.universities?.name?.toLowerCase() || '';
-      const course = student.courses?.name?.toLowerCase() || '';
-      const email = student.email?.toLowerCase() || '';
-      
-      return fullName.includes(searchLower) ||
-             phone.includes(searchLower) ||
-             university.includes(searchLower) ||
-             course.includes(searchLower) ||
-             email.includes(searchLower);
-    });
-  }, [studentsWithFees, searchTerm]);
-
-  // Update payment mutation
-  const updatePaymentMutation = useMutation({
-    mutationFn: async ({ paymentId, amountPaid, totalDue }: { paymentId: number; amountPaid: number; totalDue: number }) => {
-      let status: 'pending' | 'partial' | 'paid' = 'pending';
-      
-      if (amountPaid >= totalDue) {
-        status = 'paid';
-      } else if (amountPaid > 0) {
-        status = 'partial';
-      }
-      
-      return feePaymentsAPI.updatePayment(paymentId, amountPaid, status);
-    },
-    onSuccess: () => {
-      toast({
-        title: "Payment Updated",
-        description: "Payment status updated successfully.",
-      });
-      refetch();
-      setPaymentAmounts({});
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: "Failed to update payment.",
-        variant: "destructive",
-      });
-      console.error('Payment update error:', error);
-    },
-  });
-
-  const handleCollectFees = (student: StudentWithFees) => {
-    setSelectedStudent(student);
-    setIsModalOpen(true);
-  };
-
-  const handlePaymentUpdate = (paymentId: number, totalDue: number) => {
-    const amountPaid = parseFloat(paymentAmounts[paymentId] || "0");
+    const studentName = `${student.first_name} ${student.last_name}`.toLowerCase();
+    const admissionNumber = student.admission_number?.toLowerCase() || '';
     
-    if (amountPaid < 0) {
-      toast({
-        title: "Error",
-        description: "Payment amount cannot be negative.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    updatePaymentMutation.mutate({ paymentId, amountPaid, totalDue });
-  };
+    return studentName.includes(searchLower) || admissionNumber.includes(searchLower);
+  });
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
@@ -139,31 +104,84 @@ const CollectFees = () => {
     );
   };
 
-  const calculateStudentTotals = (student: StudentWithFees) => {
-    const totalDue = student.fee_payments.reduce((sum, payment) => sum + payment.amount_due, 0);
-    const totalPaid = student.fee_payments.reduce((sum, payment) => sum + (payment.amount_paid || 0), 0);
-    const totalPending = totalDue - totalPaid;
+  const handleCollectFees = (student: StudentWithFees) => {
+    setSelectedStudent(student);
     
-    return { totalDue, totalPaid, totalPending };
+    // Initialize payment data for pending/partial payments
+    const initialPaymentData = student.fee_payments
+      .filter(payment => payment.payment_status !== 'paid')
+      .map(payment => ({
+        feePaymentId: payment.id,
+        amount: payment.amount_due - payment.amount_paid
+      }));
+    
+    setPaymentData(initialPaymentData);
+    setIsPaymentModalOpen(true);
   };
 
-  const generateReceiptNumber = () => {
-    return `REC-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+  const updatePaymentAmount = (feePaymentId: number, amount: number) => {
+    setPaymentData(prev => 
+      prev.map(payment => 
+        payment.feePaymentId === feePaymentId 
+          ? { ...payment, amount: Math.max(0, amount) }
+          : payment
+      )
+    );
   };
 
-  const studentColumns: Column<StudentWithFees>[] = [
-    { 
-      header: "Student Name", 
+  const handleSubmitPayments = async () => {
+    if (!selectedStudent) return;
+
+    try {
+      setIsSubmitting(true);
+
+      // Process each payment
+      for (const payment of paymentData) {
+        if (payment.amount > 0) {
+          const feePayment = selectedStudent.fee_payments.find(fp => fp.id === payment.feePaymentId);
+          if (feePayment) {
+            const newAmountPaid = feePayment.amount_paid + payment.amount;
+            const newStatus = newAmountPaid >= feePayment.amount_due ? 'paid' : 
+                            newAmountPaid > 0 ? 'partial' : 'pending';
+
+            await feePaymentsAPI.updatePayment(payment.feePaymentId, newAmountPaid, newStatus);
+          }
+        }
+      }
+
+      toast({
+        title: "Payments Collected",
+        description: `Fees have been collected successfully for ${selectedStudent.first_name} ${selectedStudent.last_name}.`,
+      });
+
+      setIsPaymentModalOpen(false);
+      setSelectedStudent(null);
+      setPaymentData([]);
+      refetch();
+    } catch (error) {
+      console.error('Error processing payments:', error);
+      toast({
+        title: "Error",
+        description: "Failed to process payments. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const getTotalAmount = () => {
+    return paymentData.reduce((sum, payment) => sum + payment.amount, 0);
+  };
+
+  const columns: Column<StudentWithFees>[] = [
+    {
+      header: "Student",
       accessorKey: "first_name",
-      cell: (student: StudentWithFees) => `${student.first_name} ${student.last_name}`
-    },
-    { 
-      header: "Phone Number", 
-      accessorKey: "phone_number",
       cell: (student: StudentWithFees) => (
-        <div className="flex items-center">
-          <Phone className="h-4 w-4 mr-2 text-muted-foreground" />
-          {student.phone_number || "N/A"}
+        <div>
+          <p className="font-medium">{student.first_name} {student.last_name}</p>
+          <p className="text-sm text-muted-foreground">{student.admission_number}</p>
         </div>
       )
     },
@@ -174,19 +192,14 @@ const CollectFees = () => {
     },
     {
       header: "Course",
-      accessorKey: "courses", 
+      accessorKey: "courses",
       cell: (student: StudentWithFees) => student.courses?.name || "N/A"
-    },
-    {
-      header: "Academic Session",
-      accessorKey: "academic_sessions",
-      cell: (student: StudentWithFees) => student.academic_sessions?.session_name || "N/A"
     },
     {
       header: "Total Due",
       accessorKey: "fee_payments",
       cell: (student: StudentWithFees) => {
-        const { totalDue } = calculateStudentTotals(student);
+        const totalDue = student.fee_payments.reduce((sum, payment) => sum + payment.amount_due, 0);
         return `₹${totalDue.toLocaleString()}`;
       }
     },
@@ -194,18 +207,20 @@ const CollectFees = () => {
       header: "Total Paid",
       accessorKey: "fee_payments",
       cell: (student: StudentWithFees) => {
-        const { totalPaid } = calculateStudentTotals(student);
+        const totalPaid = student.fee_payments.reduce((sum, payment) => sum + payment.amount_paid, 0);
         return `₹${totalPaid.toLocaleString()}`;
       }
     },
     {
-      header: "Pending",
+      header: "Balance",
       accessorKey: "fee_payments",
       cell: (student: StudentWithFees) => {
-        const { totalPending } = calculateStudentTotals(student);
+        const totalDue = student.fee_payments.reduce((sum, payment) => sum + payment.amount_due, 0);
+        const totalPaid = student.fee_payments.reduce((sum, payment) => sum + payment.amount_paid, 0);
+        const balance = totalDue - totalPaid;
         return (
-          <span className={totalPending > 0 ? "text-red-600 font-medium" : "text-green-600 font-medium"}>
-            ₹{totalPending.toLocaleString()}
+          <span className={balance > 0 ? "text-red-600 font-medium" : "text-green-600 font-medium"}>
+            ₹{balance.toLocaleString()}
           </span>
         );
       }
@@ -213,276 +228,231 @@ const CollectFees = () => {
     {
       header: "Actions",
       accessorKey: "actions",
-      cell: (student: StudentWithFees) => (
-        <Button
-          size="sm"
-          onClick={() => handleCollectFees(student)}
-          disabled={student.fee_payments.length === 0}
-        >
-          <CreditCard className="mr-2 h-4 w-4" />
-          Collect Fees
-        </Button>
-      ),
-    },
-  ];
-
-  const paymentColumns: Column<StudentWithFees['fee_payments'][0]>[] = [
-    {
-      header: "Fee Type",
-      accessorKey: "fee_structure_components",
-      cell: (payment: StudentWithFees['fee_payments'][0]) => 
-        payment.fee_structure_components?.fee_types?.name || "N/A"
-    },
-    {
-      header: "Structure",
-      accessorKey: "fee_structure_components",
-      cell: (payment: StudentWithFees['fee_payments'][0]) => 
-        payment.fee_structure_components?.fee_structures?.name || "N/A"
-    },
-    {
-      header: "Frequency",
-      accessorKey: "fee_structure_components",
-      cell: (payment: StudentWithFees['fee_payments'][0]) => 
-        payment.fee_structure_components?.frequency || "N/A"
-    },
-    { 
-      header: "Amount Due", 
-      accessorKey: "amount_due",
-      cell: (payment: StudentWithFees['fee_payments'][0]) => `₹${payment.amount_due.toLocaleString()}`
-    },
-    { 
-      header: "Amount Paid", 
-      accessorKey: "amount_paid",
-      cell: (payment: StudentWithFees['fee_payments'][0]) => `₹${(payment.amount_paid || 0).toLocaleString()}`
-    },
-    { 
-      header: "Due Date", 
-      accessorKey: "due_date",
-      cell: (payment: StudentWithFees['fee_payments'][0]) => 
-        payment.due_date ? new Date(payment.due_date).toLocaleDateString() : "N/A"
-    },
-    {
-      header: "Status",
-      accessorKey: "payment_status", 
-      cell: (payment: StudentWithFees['fee_payments'][0]) => getStatusBadge(payment.payment_status)
-    },
-    {
-      header: "Payment Actions",
-      accessorKey: "actions",
-      cell: (payment: StudentWithFees['fee_payments'][0]) => (
-        <div className="flex items-center space-x-2 min-w-fit">
-          <Input
-            type="number"
-            placeholder="Amount"
-            className="w-20 text-sm"
-            value={paymentAmounts[payment.id] || ""}
-            onChange={(e) => setPaymentAmounts(prev => ({ ...prev, [payment.id]: e.target.value }))}
-          />
+      cell: (student: StudentWithFees) => {
+        const hasOutstanding = student.fee_payments.some(payment => 
+          payment.payment_status === 'pending' || payment.payment_status === 'partial'
+        );
+        
+        return (
           <Button
             size="sm"
-            onClick={() => handlePaymentUpdate(payment.id, payment.amount_due)}
-            disabled={updatePaymentMutation.isPending}
-            className="px-2"
+            onClick={() => handleCollectFees(student)}
+            disabled={!hasOutstanding}
+            className="bg-green-600 hover:bg-green-700"
           >
-            <DollarSign className="h-3 w-3" />
+            <CreditCard className="mr-2 h-4 w-4" />
+            Collect Fees
           </Button>
-          {payment.amount_paid && payment.amount_paid > 0 && selectedStudent && (
-            <InvoiceGenerator
-              invoiceData={{
-                student: selectedStudent,
-                payment: payment,
-                receiptNumber: generateReceiptNumber()
-              }}
-              onGenerateInvoice={() => {
-                toast({
-                  title: "Invoice Generated",
-                  description: "Invoice has been generated successfully.",
-                });
-              }}
-            />
-          )}
-        </div>
-      ),
-    },
+        );
+      }
+    }
   ];
 
   return (
     <MainLayout>
       <PageHeader
         title="Collect Fees"
-        description="Manage fee collection from students with assigned fee structures"
+        description="Process fee payments from students"
       />
       
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Students</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{filteredStudents.length}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Students with Dues</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {filteredStudents.filter(student => 
+                student.fee_payments.some(payment => 
+                  payment.payment_status === 'pending' || payment.payment_status === 'partial'
+                )
+              ).length}
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Outstanding</CardTitle>
+            <CreditCard className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-600">
+              ₹{filteredStudents.reduce((total, student) => {
+                const studentBalance = student.fee_payments.reduce((sum, payment) => 
+                  sum + (payment.amount_due - payment.amount_paid), 0
+                );
+                return total + studentBalance;
+              }, 0).toLocaleString()}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
       <Card>
         <CardHeader>
-          <div className="flex justify-between items-center">
-            <div>
-              <CardTitle>Students Fee Collection</CardTitle>
-              <CardDescription>
-                View all students with their assigned fee structures and collect payments
-              </CardDescription>
-            </div>
-            <Button 
-              variant="outline" 
-              onClick={() => refetch()}
-              disabled={isLoading}
-            >
-              <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-              Refresh
-            </Button>
-          </div>
+          <CardTitle>Students with Fee Assignments</CardTitle>
+          <CardDescription>
+            Select students to collect fee payments
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <StudentSearch 
-            searchTerm={searchTerm}
-            onSearchChange={setSearchTerm}
-          />
-          
-          {error && (
-            <div className="text-center py-8">
-              <p className="text-red-600">Error loading students: {error.message}</p>
-              <Button onClick={() => refetch()} className="mt-2">
-                Try Again
-              </Button>
+          {/* Search */}
+          <div className="flex items-center space-x-2 mb-6">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by student name or admission number..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
             </div>
-          )}
-          
+          </div>
+
           {isLoading ? (
             <div className="text-center py-8">
               <p className="text-muted-foreground">Loading students...</p>
             </div>
-          ) : !error && (
-            <DataTable columns={studentColumns} data={filteredStudents} />
-          )}
-          
-          {!isLoading && !error && filteredStudents.length === 0 && studentsWithFees.length > 0 && (
-            <div className="text-center py-8">
-              <p className="text-muted-foreground">No students found matching your search.</p>
-            </div>
-          )}
-          
-          {!isLoading && !error && studentsWithFees.length === 0 && (
-            <div className="text-center py-8">
-              <p className="text-muted-foreground">No students with assigned fee structures found.</p>
-              <p className="text-sm text-muted-foreground mt-2">
-                Make sure you have created fee structures and assigned them to students.
-              </p>
-            </div>
+          ) : (
+            <DataTable columns={columns} data={filteredStudents} />
           )}
         </CardContent>
       </Card>
 
-      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="max-w-6xl max-h-[90vh] w-[95vw] p-0 overflow-hidden">
-          <DialogHeader className="px-6 py-4 border-b bg-gray-50">
-            <DialogTitle className="text-xl font-semibold flex items-center">
-              <CreditCard className="h-5 w-5 mr-2" />
-              Fee Collection - {selectedStudent?.first_name || ""} {selectedStudent?.last_name || ""}
+      {/* Payment Collection Modal */}
+      <Dialog open={isPaymentModalOpen} onOpenChange={setIsPaymentModalOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle>
+              Collect Fees - {selectedStudent?.first_name} {selectedStudent?.last_name}
             </DialogTitle>
           </DialogHeader>
           
-          {selectedStudent && (
-            <div className="flex flex-col h-full overflow-hidden">
-              <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
-                {/* Student Information Section */}
-                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border p-4">
-                  <h3 className="text-lg font-semibold mb-3 text-gray-900 flex items-center">
-                    <User className="h-5 w-5 mr-2" />
-                    Student Information
-                  </h3>
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                    <div className="space-y-3">
-                      <div className="flex items-center space-x-3">
-                        <User className="h-4 w-4 text-gray-500 flex-shrink-0" />
-                        <div className="min-w-0">
-                          <p className="text-xs font-medium text-gray-600">Student Name</p>
-                          <p className="text-sm font-semibold text-gray-900 truncate">
-                            {selectedStudent.first_name} {selectedStudent.last_name}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-3">
-                        <Phone className="h-4 w-4 text-gray-500 flex-shrink-0" />
-                        <div className="min-w-0">
-                          <p className="text-xs font-medium text-gray-600">Phone Number</p>
-                          <p className="text-sm text-gray-900 truncate">{selectedStudent.phone_number || "N/A"}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-3">
-                        <Mail className="h-4 w-4 text-gray-500 flex-shrink-0" />
-                        <div className="min-w-0">
-                          <p className="text-xs font-medium text-gray-600">Email</p>
-                          <p className="text-sm text-gray-900 truncate">{selectedStudent.email || "N/A"}</p>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="space-y-3">
-                      <div className="flex items-center space-x-3">
-                        <GraduationCap className="h-4 w-4 text-gray-500 flex-shrink-0" />
-                        <div className="min-w-0">
-                          <p className="text-xs font-medium text-gray-600">University</p>
-                          <p className="text-sm text-gray-900 truncate">{selectedStudent.universities?.name || "N/A"}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-3">
-                        <GraduationCap className="h-4 w-4 text-gray-500 flex-shrink-0" />
-                        <div className="min-w-0">
-                          <p className="text-xs font-medium text-gray-600">Course</p>
-                          <p className="text-sm text-gray-900 truncate">{selectedStudent.courses?.name || "N/A"}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-3">
-                        <Calendar className="h-4 w-4 text-gray-500 flex-shrink-0" />
-                        <div className="min-w-0">
-                          <p className="text-xs font-medium text-gray-600">Academic Session</p>
-                          <p className="text-sm text-gray-900 truncate">{selectedStudent.academic_sessions?.session_name || "N/A"}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Fee Payment Details Section */}
+          <ScrollArea className="flex-1 pr-4">
+            <div className="space-y-6 pb-4">
+              {/* Student Information */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
                 <div>
-                  <h3 className="text-lg font-semibold mb-3 text-gray-900 flex items-center">
-                    <CreditCard className="h-5 w-5 mr-2" />
-                    Fee Payment Details
-                  </h3>
-                  <div className="bg-white rounded-lg border shadow-sm">
-                    <div className="overflow-x-auto">
-                      <DataTable columns={paymentColumns} data={selectedStudent.fee_payments} />
-                    </div>
-                  </div>
+                  <p className="text-sm text-muted-foreground">Student Name</p>
+                  <p className="font-medium">{selectedStudent?.first_name} {selectedStudent?.last_name}</p>
                 </div>
-                
-                {/* Payment Summary Section */}
-                <div className="bg-gray-50 rounded-lg border p-4">
-                  <h3 className="text-lg font-semibold mb-3 text-gray-900">Payment Summary</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {(() => {
-                      const { totalDue, totalPaid, totalPending } = calculateStudentTotals(selectedStudent);
-                      return (
-                        <>
-                          <div className="text-center p-3 bg-white rounded-lg border">
-                            <p className="text-xs font-medium text-gray-600 mb-1">Total Due</p>
-                            <p className="text-lg font-bold text-gray-900">₹{totalDue.toLocaleString()}</p>
-                          </div>
-                          <div className="text-center p-3 bg-white rounded-lg border">
-                            <p className="text-xs font-medium text-gray-600 mb-1">Total Paid</p>
-                            <p className="text-lg font-bold text-green-600">₹{totalPaid.toLocaleString()}</p>
-                          </div>
-                          <div className="text-center p-3 bg-white rounded-lg border">
-                            <p className="text-xs font-medium text-gray-600 mb-1">Pending</p>
-                            <p className="text-lg font-bold text-red-600">₹{totalPending.toLocaleString()}</p>
-                          </div>
-                        </>
-                      );
-                    })()}
-                  </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Admission Number</p>
+                  <p className="font-medium">{selectedStudent?.admission_number}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">University</p>
+                  <p className="font-medium">{selectedStudent?.universities?.name}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Course</p>
+                  <p className="font-medium">{selectedStudent?.courses?.name}</p>
                 </div>
               </div>
+
+              {/* Fee Payment Details */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">Fee Payment Details</h3>
+                {selectedStudent?.fee_payments
+                  .filter(payment => payment.payment_status !== 'paid')
+                  .map((feePayment) => {
+                    const paymentItem = paymentData.find(p => p.feePaymentId === feePayment.id);
+                    const balance = feePayment.amount_due - feePayment.amount_paid;
+                    
+                    return (
+                      <Card key={feePayment.id} className="p-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-center">
+                          <div>
+                            <p className="text-sm text-muted-foreground">Fee Type</p>
+                            <p className="font-medium">{feePayment.fee_structure_components?.fee_types?.name}</p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-muted-foreground">Total Due</p>
+                            <p className="font-medium">₹{feePayment.amount_due.toLocaleString()}</p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-muted-foreground">Balance</p>
+                            <p className="font-medium text-red-600">₹{balance.toLocaleString()}</p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-muted-foreground">Collect Amount</p>
+                            <Input
+                              type="number"
+                              min="0"
+                              max={balance}
+                              value={paymentItem?.amount || 0}
+                              onChange={(e) => updatePaymentAmount(feePayment.id, parseFloat(e.target.value) || 0)}
+                              className="w-full"
+                              placeholder="Enter amount"
+                            />
+                          </div>
+                        </div>
+                      </Card>
+                    );
+                  })}
+              </div>
+
+              {/* Payment Method */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Payment Method</label>
+                <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select payment method" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="cash">Cash</SelectItem>
+                    <SelectItem value="card">Card</SelectItem>
+                    <SelectItem value="upi">UPI</SelectItem>
+                    <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Payment Summary */}
+              <Card className="p-4 bg-blue-50">
+                <h3 className="text-lg font-medium mb-4">Payment Summary</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Total Collecting</p>
+                    <p className="text-xl font-bold text-green-600">₹{getTotalAmount().toLocaleString()}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Payment Method</p>
+                    <p className="font-medium">{paymentMethod.toUpperCase()}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Student</p>
+                    <p className="font-medium">{selectedStudent?.first_name} {selectedStudent?.last_name}</p>
+                  </div>
+                </div>
+              </Card>
             </div>
-          )}
+          </ScrollArea>
+
+          {/* Action Buttons */}
+          <div className="flex justify-end space-x-2 pt-4 border-t">
+            <Button variant="outline" onClick={() => setIsPaymentModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleSubmitPayments} 
+              disabled={isSubmitting || getTotalAmount() === 0}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {isSubmitting ? "Processing..." : `Collect ₹${getTotalAmount().toLocaleString()}`}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </MainLayout>

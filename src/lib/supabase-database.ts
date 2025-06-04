@@ -136,10 +136,101 @@ export const studentsAPI = {
       throw error;
     }
     
-    return {
+    const newStudent = {
       ...data,
       status: data.status as 'active' | 'inactive' | 'completed'
     };
+
+    // Automatically assign matching fee structures
+    try {
+      await studentsAPI.autoAssignFeeStructures(newStudent);
+    } catch (assignError) {
+      console.error('Error auto-assigning fee structures:', assignError);
+      // Don't throw error here - student creation succeeded, fee assignment is secondary
+    }
+    
+    return newStudent;
+  },
+
+  autoAssignFeeStructures: async (student: Student): Promise<void> => {
+    console.log('Auto-assigning fee structures for student:', student.id);
+    
+    // Find matching fee structures for this student's university, course, and academic session
+    const { data: matchingStructures, error: structuresError } = await supabase
+      .from('fee_structures')
+      .select('id')
+      .eq('university_id', student.university_id)
+      .eq('course_id', student.course_id)
+      .eq('is_active', true);
+
+    if (structuresError) {
+      console.error('Error finding matching fee structures:', structuresError);
+      throw structuresError;
+    }
+
+    if (!matchingStructures || matchingStructures.length === 0) {
+      console.log('No matching fee structures found for student');
+      return;
+    }
+
+    // Assign each matching fee structure to the student
+    for (const structure of matchingStructures) {
+      try {
+        // Check if assignment already exists
+        const { data: existingAssignment } = await supabase
+          .from('student_fee_assignments')
+          .select('id')
+          .eq('student_id', student.id)
+          .eq('fee_structure_id', structure.id)
+          .single();
+
+        if (!existingAssignment) {
+          // Create assignment
+          await supabase
+            .from('student_fee_assignments')
+            .insert([{
+              student_id: student.id,
+              fee_structure_id: structure.id
+            }]);
+
+          // Create payment records for each component
+          const { data: components } = await supabase
+            .from('fee_structure_components')
+            .select('*')
+            .eq('fee_structure_id', structure.id);
+
+          if (components) {
+            const paymentRecords = components.map(component => ({
+              student_id: student.id,
+              fee_structure_component_id: component.id,
+              amount_due: component.amount,
+              due_date: (() => {
+                const now = new Date();
+                switch (component.frequency) {
+                  case 'one-time':
+                    return new Date(now.setMonth(now.getMonth() + 1)).toISOString().split('T')[0];
+                  case 'yearly':
+                    return new Date(now.setFullYear(now.getFullYear() + 1)).toISOString().split('T')[0];
+                  case 'semester-wise':
+                    return new Date(now.setMonth(now.getMonth() + 6)).toISOString().split('T')[0];
+                  default:
+                    return new Date(now.setMonth(now.getMonth() + 1)).toISOString().split('T')[0];
+                }
+              })()
+            }));
+
+            await supabase
+              .from('fee_payments')
+              .insert(paymentRecords);
+          }
+
+          console.log(`Assigned fee structure ${structure.id} to student ${student.id}`);
+        }
+      } catch (assignmentError) {
+        console.error(`Error assigning fee structure ${structure.id}:`, assignmentError);
+        // Continue with other structures even if one fails
+      }
+    }
   },
 
   update: async (id: number, studentData: Partial<Omit<Student, 'id' | 'created_at' | 'updated_at' | 'admission_number'>>): Promise<Student> => {
