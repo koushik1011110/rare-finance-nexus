@@ -1,307 +1,305 @@
 
-import React, { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { DataTable } from "@/components/ui/DataTable";
-import { agentsAPI, Agent } from "@/lib/supabase-database";
-import { toast } from "@/hooks/use-toast";
-import AgentForm from "@/components/forms/AgentForm";
-import { EditModal } from "@/components/shared/EditModal";
-import { DetailViewModal } from "@/components/shared/DetailViewModal";
-import { Plus, Search, Eye, Edit, Trash2 } from "lucide-react";
+import React, { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import MainLayout from "@/components/layout/MainLayout";
 import PageHeader from "@/components/shared/PageHeader";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import DataTable, { Column } from "@/components/ui/DataTable";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import EditModal from "@/components/shared/EditModal";
+import DetailViewModal from "@/components/shared/DetailViewModal";
+import AgentForm from "@/components/forms/AgentForm";
+import { toast } from "@/hooks/use-toast";
+import { Plus, Search, Eye, Edit, Trash, RefreshCw } from "lucide-react";
+import { agentsAPI, type Agent } from "@/lib/supabase-database";
+
+interface AgentFormData {
+  name: string;
+  contact_person: string;
+  email: string;
+  phone?: string;
+  location?: string;
+  commission_rate?: number;
+  status: 'active' | 'inactive';
+}
 
 const Agents = () => {
-  const [agents, setAgents] = useState<Agent[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
-  const [showForm, setShowForm] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
-  useEffect(() => {
-    loadAgents();
-  }, []);
+  // Fetch agents
+  const { data: agents = [], refetch, isLoading } = useQuery({
+    queryKey: ['agents'],
+    queryFn: agentsAPI.getAll,
+  });
 
-  const loadAgents = async () => {
-    try {
-      setLoading(true);
-      const data = await agentsAPI.getAll();
-      setAgents(data);
-    } catch (error) {
-      console.error('Error loading agents:', error);
+  // Create agent mutation
+  const createAgentMutation = useMutation({
+    mutationFn: agentsAPI.create,
+    onSuccess: () => {
+      toast({
+        title: "Agent Created",
+        description: "Agent has been created successfully.",
+      });
+      setIsCreateModalOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['agents'] });
+    },
+    onError: (error) => {
       toast({
         title: "Error",
-        description: "Failed to load agents",
+        description: "Failed to create agent.",
         variant: "destructive",
       });
-    } finally {
-      setLoading(false);
-    }
-  };
+      console.error('Create agent error:', error);
+    },
+  });
 
-  const handleCreateAgent = async (agentData: Omit<Agent, 'id' | 'created_at' | 'updated_at'>) => {
-    try {
-      await agentsAPI.create(agentData);
+  // Update agent mutation
+  const updateAgentMutation = useMutation({
+    mutationFn: ({ id, ...data }: { id: number } & Partial<Agent>) =>
+      agentsAPI.update(id, data),
+    onSuccess: () => {
       toast({
-        title: "Success",
-        description: "Agent created successfully",
+        title: "Agent Updated",
+        description: "Agent has been updated successfully.",
       });
-      loadAgents();
-      setShowForm(false);
-    } catch (error) {
-      console.error('Error creating agent:', error);
-      toast({
-        title: "Error",
-        description: "Failed to create agent",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleUpdateAgent = async (agentData: Partial<Agent>) => {
-    if (!selectedAgent) return;
-    
-    try {
-      await agentsAPI.update(selectedAgent.id, agentData);
-      toast({
-        title: "Success",
-        description: "Agent updated successfully",
-      });
-      loadAgents();
-      setShowEditModal(false);
+      setIsEditModalOpen(false);
       setSelectedAgent(null);
-    } catch (error) {
-      console.error('Error updating agent:', error);
+      queryClient.invalidateQueries({ queryKey: ['agents'] });
+    },
+    onError: (error) => {
       toast({
         title: "Error",
-        description: "Failed to update agent",
+        description: "Failed to update agent.",
         variant: "destructive",
+      });
+      console.error('Update agent error:', error);
+    },
+  });
+
+  // Delete agent mutation
+  const deleteAgentMutation = useMutation({
+    mutationFn: agentsAPI.delete,
+    onSuccess: () => {
+      toast({
+        title: "Agent Deleted",
+        description: "Agent has been deleted successfully.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['agents'] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to delete agent.",
+        variant: "destructive",
+      });
+      console.error('Delete agent error:', error);
+    },
+  });
+
+  // Filter agents based on search term
+  const filteredAgents = agents.filter((agent) => {
+    if (!searchTerm) return true;
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      agent.name.toLowerCase().includes(searchLower) ||
+      agent.contact_person.toLowerCase().includes(searchLower) ||
+      agent.email.toLowerCase().includes(searchLower) ||
+      (agent.location && agent.location.toLowerCase().includes(searchLower))
+    );
+  });
+
+  const handleCreateAgent = (agentData: AgentFormData) => {
+    createAgentMutation.mutate(agentData);
+  };
+
+  const handleEditAgent = (agentData: AgentFormData) => {
+    if (selectedAgent) {
+      updateAgentMutation.mutate({
+        id: selectedAgent.id,
+        ...agentData,
       });
     }
   };
 
-  const handleDeleteAgent = async (agent: Agent) => {
-    if (!confirm(`Are you sure you want to delete ${agent.name}?`)) return;
-    
-    try {
-      await agentsAPI.delete(agent.id);
-      toast({
-        title: "Success",
-        description: "Agent deleted successfully",
-      });
-      loadAgents();
-    } catch (error) {
-      console.error('Error deleting agent:', error);
-      toast({
-        title: "Error",
-        description: "Failed to delete agent",
-        variant: "destructive",
-      });
+  const handleDeleteAgent = (id: number) => {
+    if (window.confirm('Are you sure you want to delete this agent?')) {
+      deleteAgentMutation.mutate(id);
     }
   };
 
-  const filteredAgents = agents.filter(agent =>
-    agent.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    agent.contact_person.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    agent.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const handleViewAgent = (agent: Agent) => {
+    setSelectedAgent(agent);
+    setIsDetailModalOpen(true);
+  };
 
-  const columns = [
-    {
-      header: "Name",
-      accessorKey: "name" as keyof Agent,
-    },
-    {
-      header: "Contact Person",
-      accessorKey: "contact_person" as keyof Agent,
-    },
-    {
-      header: "Email",
-      accessorKey: "email" as keyof Agent,
-    },
+  const handleEditClick = (agent: Agent) => {
+    setSelectedAgent(agent);
+    setIsEditModalOpen(true);
+  };
+
+  const getStatusBadge = (status: string) => {
+    return (
+      <Badge variant={status === 'active' ? 'default' : 'secondary'}>
+        {status.charAt(0).toUpperCase() + status.slice(1)}
+      </Badge>
+    );
+  };
+
+  const columns: Column<Agent>[] = [
+    { header: "Name", accessorKey: "name" },
+    { header: "Contact Person", accessorKey: "contact_person" },
+    { header: "Email", accessorKey: "email" },
     {
       header: "Phone",
-      accessorKey: "phone" as keyof Agent,
+      accessorKey: "phone",
+      cell: (agent: Agent) => agent.phone || "N/A"
     },
     {
       header: "Location",
-      accessorKey: "location" as keyof Agent,
+      accessorKey: "location",
+      cell: (agent: Agent) => agent.location || "N/A"
     },
     {
-      header: "Commission",
-      accessorKey: "commission_rate" as keyof Agent,
-      cell: (row: Agent) => `${row.commission_rate}%`,
+      header: "Commission Rate",
+      accessorKey: "commission_rate",
+      cell: (agent: Agent) => `${agent.commission_rate || 0}%`
     },
     {
       header: "Status",
-      accessorKey: "status" as keyof Agent,
-      cell: (row: Agent) => (
-        <Badge variant={row.status === 'active' ? 'default' : 'secondary'}>
-          {row.status}
-        </Badge>
-      ),
+      accessorKey: "status",
+      cell: (agent: Agent) => getStatusBadge(agent.status)
     },
     {
       header: "Actions",
-      accessorKey: "actions" as keyof Agent | "actions",
-      cell: (row: Agent) => (
+      accessorKey: "actions",
+      cell: (agent: Agent) => (
         <div className="flex space-x-2">
           <Button
-            variant="ghost"
             size="sm"
-            onClick={() => {
-              setSelectedAgent(row);
-              setShowDetailModal(true);
-            }}
+            variant="outline"
+            onClick={() => handleViewAgent(agent)}
           >
             <Eye className="h-4 w-4" />
           </Button>
           <Button
-            variant="ghost"
             size="sm"
-            onClick={() => {
-              setSelectedAgent(row);
-              setShowEditModal(true);
-            }}
+            variant="outline"
+            onClick={() => handleEditClick(agent)}
           >
             <Edit className="h-4 w-4" />
           </Button>
           <Button
-            variant="ghost"
             size="sm"
-            onClick={() => handleDeleteAgent(row)}
+            variant="destructive"
+            onClick={() => handleDeleteAgent(agent.id)}
           >
-            <Trash2 className="h-4 w-4" />
+            <Trash className="h-4 w-4" />
           </Button>
         </div>
       ),
     },
   ];
 
-  if (showForm) {
-    return (
-      <MainLayout>
-        <PageHeader
-          title="Add New Agent"
-          description="Create a new agent profile"
-        />
-        <div className="max-w-2xl mx-auto">
-          <AgentForm
-            onSubmit={handleCreateAgent}
-            onCancel={() => setShowForm(false)}
-          />
-        </div>
-      </MainLayout>
-    );
-  }
-
   return (
     <MainLayout>
       <PageHeader
-        title="Agents Management"
-        description="Manage your education agents"
+        title="Agent Management"
+        description="Manage educational agents and their information"
       />
       
-      <div className="space-y-6">
-        {/* Search and Actions */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Search Agents</CardTitle>
-            <CardDescription>Find agents by name, contact person, or email</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex gap-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search agents..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-8"
-                />
-              </div>
-              <Button onClick={() => setShowForm(true)}>
+      <Card>
+        <CardHeader>
+          <div className="flex justify-between items-center">
+            <div>
+              <CardTitle>Agents</CardTitle>
+              <CardDescription>
+                Manage all educational agents in your system
+              </CardDescription>
+            </div>
+            <div className="flex space-x-2">
+              <Button onClick={() => setIsCreateModalOpen(true)}>
                 <Plus className="mr-2 h-4 w-4" />
                 Add Agent
               </Button>
+              <Button variant="outline" onClick={() => refetch()} disabled={isLoading}>
+                <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {/* Search */}
+          <div className="flex items-center space-x-2 mb-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search agents by name, contact person, email, or location..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+          </div>
 
-        {/* Agents Table */}
-        <Card>
-          <CardHeader>
-            <CardTitle>All Agents ({filteredAgents.length})</CardTitle>
-            <CardDescription>Manage your education agents</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <DataTable
-              data={filteredAgents}
-              columns={columns}
-              loading={loading}
-            />
-          </CardContent>
-        </Card>
-      </div>
+          {isLoading ? (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">Loading agents...</p>
+            </div>
+          ) : filteredAgents.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">
+                {searchTerm ? 'No agents found matching your search.' : 'No agents found. Create your first agent to get started.'}
+              </p>
+            </div>
+          ) : (
+            <DataTable columns={columns} data={filteredAgents} />
+          )}
+        </CardContent>
+      </Card>
 
-      {/* Edit Modal */}
-      {showEditModal && selectedAgent && (
-        <EditModal
-          isOpen={showEditModal}
-          onClose={() => {
-            setShowEditModal(false);
-            setSelectedAgent(null);
-          }}
-          title="Edit Agent"
-          data={selectedAgent}
-          onSave={handleUpdateAgent}
-          fields={[
-            { key: 'name', label: 'Name', type: 'text', required: true },
-            { key: 'contact_person', label: 'Contact Person', type: 'text', required: true },
-            { key: 'email', label: 'Email', type: 'email', required: true },
-            { key: 'phone', label: 'Phone', type: 'text' },
-            { key: 'location', label: 'Location', type: 'text' },
-            { key: 'commission_rate', label: 'Commission Rate (%)', type: 'number', min: 0, max: 100 },
-            { 
-              key: 'status', 
-              label: 'Status', 
-              type: 'select',
-              options: [
-                { value: 'active', label: 'Active' },
-                { value: 'inactive', label: 'Inactive' }
-              ]
-            }
-          ]}
-        />
-      )}
+      {/* Create Agent Modal */}
+      <EditModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        title="Create New Agent"
+        onSubmit={handleCreateAgent}
+        isSubmitting={createAgentMutation.isPending}
+      >
+        <AgentForm />
+      </EditModal>
 
-      {/* Detail Modal */}
-      {showDetailModal && selectedAgent && (
-        <DetailViewModal
-          isOpen={showDetailModal}
-          onClose={() => {
-            setShowDetailModal(false);
-            setSelectedAgent(null);
-          }}
-          title={`Agent Details: ${selectedAgent.name}`}
-          data={selectedAgent}
-          fields={[
-            { key: 'name', label: 'Name' },
-            { key: 'contact_person', label: 'Contact Person' },
-            { key: 'email', label: 'Email' },
-            { key: 'phone', label: 'Phone' },
-            { key: 'location', label: 'Location' },
-            { key: 'commission_rate', label: 'Commission Rate', format: (value) => `${value}%` },
-            { key: 'status', label: 'Status' },
-            { key: 'created_at', label: 'Created At', format: (value) => new Date(value).toLocaleDateString() }
-          ]}
-        />
-      )}
+      {/* Edit Agent Modal */}
+      <EditModal
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setSelectedAgent(null);
+        }}
+        title="Edit Agent"
+        onSubmit={handleEditAgent}
+        isSubmitting={updateAgentMutation.isPending}
+      >
+        <AgentForm defaultValues={selectedAgent || undefined} />
+      </EditModal>
+
+      {/* Agent Detail Modal */}
+      <DetailViewModal
+        isOpen={isDetailModalOpen}
+        onClose={() => {
+          setIsDetailModalOpen(false);
+          setSelectedAgent(null);
+        }}
+        title="Agent Details"
+        data={selectedAgent}
+      />
     </MainLayout>
   );
 };

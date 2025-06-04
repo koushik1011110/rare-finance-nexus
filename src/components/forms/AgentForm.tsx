@@ -1,113 +1,104 @@
 
 import React from "react";
+import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-export interface AgentFormData {
-  id?: string;
+interface AgentFormData {
   name: string;
-  contactPerson: string;
+  contact_person: string;
   email: string;
-  phone: string;
-  location: string;
-  commission: string;
-  status: "Active" | "Inactive";
+  phone?: string;
+  location?: string;
+  commission_rate?: number;
+  status: 'active' | 'inactive';
 }
 
 interface AgentFormProps {
-  initialData?: AgentFormData;
-  onSubmit: (data: AgentFormData) => void;
+  onSubmit?: (data: AgentFormData) => void;
+  defaultValues?: Partial<AgentFormData>;
   isSubmitting?: boolean;
 }
 
 const AgentForm: React.FC<AgentFormProps> = ({
-  initialData = {
-    name: "",
-    contactPerson: "",
-    email: "",
-    phone: "",
-    location: "",
-    commission: "10%",
-    status: "Active",
-  },
   onSubmit,
-  isSubmitting = false,
+  defaultValues,
+  isSubmitting = false
 }) => {
-  const [formData, setFormData] = React.useState<AgentFormData>(initialData);
+  const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<AgentFormData>({
+    defaultValues: {
+      name: defaultValues?.name || "",
+      contact_person: defaultValues?.contact_person || "",
+      email: defaultValues?.email || "",
+      phone: defaultValues?.phone || "",
+      location: defaultValues?.location || "",
+      commission_rate: defaultValues?.commission_rate || 10,
+      status: defaultValues?.status || 'active',
+    }
+  });
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
+  const status = watch('status');
 
-  const handleSelectChange = (name: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSubmit(formData);
+  const onFormSubmit = (data: AgentFormData) => {
+    if (onSubmit) {
+      onSubmit(data);
+    }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+    <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-4">
+      <div className="grid grid-cols-1 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="name">Agent Name</Label>
+          <Label htmlFor="name">Agent Name *</Label>
           <Input
             id="name"
-            name="name"
-            value={formData.name}
-            onChange={handleChange}
+            {...register("name", { required: "Agent name is required" })}
             placeholder="Enter agent name"
-            required
           />
+          {errors.name && (
+            <p className="text-sm text-red-600">{errors.name.message}</p>
+          )}
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="contactPerson">Contact Person</Label>
+          <Label htmlFor="contact_person">Contact Person *</Label>
           <Input
-            id="contactPerson"
-            name="contactPerson"
-            value={formData.contactPerson}
-            onChange={handleChange}
-            placeholder="Enter contact person"
-            required
+            id="contact_person"
+            {...register("contact_person", { required: "Contact person is required" })}
+            placeholder="Enter contact person name"
           />
+          {errors.contact_person && (
+            <p className="text-sm text-red-600">{errors.contact_person.message}</p>
+          )}
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email">Email *</Label>
           <Input
             id="email"
-            name="email"
             type="email"
-            value={formData.email}
-            onChange={handleChange}
+            {...register("email", { 
+              required: "Email is required",
+              pattern: {
+                value: /^\S+@\S+$/i,
+                message: "Invalid email address"
+              }
+            })}
             placeholder="Enter email address"
-            required
           />
+          {errors.email && (
+            <p className="text-sm text-red-600">{errors.email.message}</p>
+          )}
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="phone">Phone</Label>
           <Input
             id="phone"
-            name="phone"
-            value={formData.phone}
-            onChange={handleChange}
+            {...register("phone")}
             placeholder="Enter phone number"
-            required
           />
         </div>
 
@@ -115,44 +106,39 @@ const AgentForm: React.FC<AgentFormProps> = ({
           <Label htmlFor="location">Location</Label>
           <Input
             id="location"
-            name="location"
-            value={formData.location}
-            onChange={handleChange}
+            {...register("location")}
             placeholder="Enter location"
-            required
           />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="commission">Commission Rate</Label>
+          <Label htmlFor="commission_rate">Commission Rate (%)</Label>
           <Input
-            id="commission"
-            name="commission"
-            value={formData.commission}
-            onChange={handleChange}
-            placeholder="Enter commission rate (e.g., 10%)"
-            required
+            id="commission_rate"
+            type="number"
+            step="0.01"
+            min="0"
+            max="100"
+            {...register("commission_rate", { valueAsNumber: true })}
+            placeholder="Enter commission rate"
           />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="status">Status</Label>
-          <Select
-            value={formData.status}
-            onValueChange={(value) => handleSelectChange("status", value)}
-          >
+          <Label htmlFor="status">Status *</Label>
+          <Select value={status} onValueChange={(value) => setValue('status', value as 'active' | 'inactive')}>
             <SelectTrigger>
               <SelectValue placeholder="Select status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="Active">Active</SelectItem>
-              <SelectItem value="Inactive">Inactive</SelectItem>
+              <SelectItem value="active">Active</SelectItem>
+              <SelectItem value="inactive">Inactive</SelectItem>
             </SelectContent>
           </Select>
         </div>
       </div>
 
-      <Button type="submit" disabled={isSubmitting}>
+      <Button type="submit" disabled={isSubmitting} className="w-full">
         {isSubmitting ? "Saving..." : "Save Agent"}
       </Button>
     </form>

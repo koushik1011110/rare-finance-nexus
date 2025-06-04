@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 export interface University {
@@ -385,7 +384,8 @@ export const studentsAPI = {
     if (error) throw error;
     return (data || []).map(student => ({
       ...student,
-      submitted_by: student.submitted_by as 'admin' | 'agent'
+      submitted_by: student.submitted_by as 'admin' | 'agent',
+      status: student.status as 'active' | 'inactive' | 'completed'
     }));
   },
 
@@ -405,7 +405,8 @@ export const studentsAPI = {
     if (error) throw error;
     return data ? {
       ...data,
-      submitted_by: data.submitted_by as 'admin' | 'agent'
+      submitted_by: data.submitted_by as 'admin' | 'agent',
+      status: data.status as 'active' | 'inactive' | 'completed'
     } : null;
   },
 
@@ -419,7 +420,8 @@ export const studentsAPI = {
     if (error) throw error;
     return {
       ...data,
-      submitted_by: data.submitted_by as 'admin' | 'agent'
+      submitted_by: data.submitted_by as 'admin' | 'agent',
+      status: data.status as 'active' | 'inactive' | 'completed'
     };
   },
 
@@ -434,7 +436,8 @@ export const studentsAPI = {
     if (error) throw error;
     return {
       ...data,
-      submitted_by: data.submitted_by as 'admin' | 'agent'
+      submitted_by: data.submitted_by as 'admin' | 'agent',
+      status: data.status as 'active' | 'inactive' | 'completed'
     };
   },
 
@@ -555,6 +558,15 @@ export const feeStructuresAPI = {
       .eq('id', id);
     
     if (error) throw error;
+  },
+
+  async assignToStudents(structureId: number): Promise<number> {
+    const { data, error } = await supabase.rpc('assign_fee_structure_to_students', {
+      structure_id: structureId
+    });
+    
+    if (error) throw error;
+    return data || 0;
   }
 };
 
@@ -665,5 +677,104 @@ export const feePaymentsAPI = {
       .eq('id', id);
     
     if (error) throw error;
+  },
+
+  async getStudentsWithFeeStructures(): Promise<any[]> {
+    const { data, error } = await supabase
+      .from('students')
+      .select(`
+        *,
+        universities(name),
+        courses(name),
+        academic_sessions(session_name),
+        student_fee_assignments(
+          fee_structures(
+            name,
+            fee_structure_components(
+              fee_types(name),
+              amount,
+              frequency
+            )
+          )
+        )
+      `)
+      .eq('status', 'active');
+    
+    if (error) throw error;
+    return data || [];
+  },
+
+  async updatePayment(paymentId: number, amountPaid: number, paymentMethod: string): Promise<FeePayment> {
+    const { data, error } = await supabase
+      .from('fee_payments')
+      .update({
+        amount_paid: amountPaid,
+        last_payment_date: new Date().toISOString().split('T')[0],
+        payment_status: 'paid',
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', paymentId)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  },
+
+  async getPaymentHistory(dateRange: any, paymentMethodFilter: string): Promise<any[]> {
+    let query = supabase
+      .from('fee_payments')
+      .select(`
+        *,
+        students(first_name, last_name, admission_number, phone_number),
+        fee_structure_components(
+          fee_types(name),
+          fee_structures(name)
+        )
+      `)
+      .not('amount_paid', 'is', null)
+      .order('last_payment_date', { ascending: false });
+
+    if (dateRange.from) {
+      query = query.gte('last_payment_date', dateRange.from);
+    }
+    if (dateRange.to) {
+      query = query.lte('last_payment_date', dateRange.to);
+    }
+
+    const { data, error } = await query;
+    if (error) throw error;
+    return data || [];
+  },
+
+  async getFeeReports(dateRange: any, statusFilter: string): Promise<any[]> {
+    let query = supabase
+      .from('fee_payments')
+      .select(`
+        *,
+        students(first_name, last_name, admission_number, phone_number),
+        fee_structure_components(
+          fee_types(name),
+          fee_structures(name),
+          amount,
+          frequency
+        )
+      `)
+      .order('created_at', { ascending: false });
+
+    if (statusFilter !== 'all') {
+      query = query.eq('payment_status', statusFilter);
+    }
+
+    if (dateRange.from) {
+      query = query.gte('due_date', dateRange.from);
+    }
+    if (dateRange.to) {
+      query = query.lte('due_date', dateRange.to);
+    }
+
+    const { data, error } = await query;
+    if (error) throw error;
+    return data || [];
   }
 };
