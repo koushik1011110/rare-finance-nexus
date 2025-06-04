@@ -1,305 +1,327 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import MainLayout from "@/components/layout/MainLayout";
 import PageHeader from "@/components/shared/PageHeader";
+import DataTable from "@/components/ui/DataTable";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import DataTable, { Column } from "@/components/ui/DataTable";
+import { Plus, Download, Upload, Eye, Edit, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
+import { toast } from "@/hooks/use-toast";
 import EditModal from "@/components/shared/EditModal";
 import DetailViewModal from "@/components/shared/DetailViewModal";
-import AgentForm from "@/components/forms/AgentForm";
-import { toast } from "@/hooks/use-toast";
-import { Plus, Search, Eye, Edit, Trash, RefreshCw } from "lucide-react";
-import { agentsAPI, type Agent } from "@/lib/supabase-database";
-
-interface AgentFormData {
-  name: string;
-  contact_person: string;
-  email: string;
-  phone?: string;
-  location?: string;
-  commission_rate?: number;
-  status: 'active' | 'inactive';
-}
+import AgentForm, { AgentFormData } from "@/components/forms/AgentForm";
+import { agentsAPI, Agent } from "@/lib/supabase-database";
 
 const Agents = () => {
-  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [currentAgent, setCurrentAgent] = useState<Agent | null>(null);
+  
+  const queryClient = useQueryClient();
 
   // Fetch agents
-  const { data: agents = [], refetch, isLoading } = useQuery({
+  const { data: agents = [], isLoading } = useQuery({
     queryKey: ['agents'],
     queryFn: agentsAPI.getAll,
   });
 
   // Create agent mutation
-  const createAgentMutation = useMutation({
+  const createMutation = useMutation({
     mutationFn: agentsAPI.create,
     onSuccess: () => {
-      toast({
-        title: "Agent Created",
-        description: "Agent has been created successfully.",
-      });
-      setIsCreateModalOpen(false);
       queryClient.invalidateQueries({ queryKey: ['agents'] });
+      toast({
+        title: "Success",
+        description: "Agent created successfully",
+      });
+      setIsAddModalOpen(false);
     },
     onError: (error) => {
       toast({
         title: "Error",
-        description: "Failed to create agent.",
+        description: "Failed to create agent",
         variant: "destructive",
       });
-      console.error('Create agent error:', error);
     },
   });
 
   // Update agent mutation
-  const updateAgentMutation = useMutation({
-    mutationFn: ({ id, ...data }: { id: number } & Partial<Agent>) =>
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: Partial<Agent> }) =>
       agentsAPI.update(id, data),
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['agents'] });
       toast({
-        title: "Agent Updated",
-        description: "Agent has been updated successfully.",
+        title: "Success",
+        description: "Agent updated successfully",
       });
       setIsEditModalOpen(false);
-      setSelectedAgent(null);
-      queryClient.invalidateQueries({ queryKey: ['agents'] });
     },
     onError: (error) => {
       toast({
         title: "Error",
-        description: "Failed to update agent.",
+        description: "Failed to update agent",
         variant: "destructive",
       });
-      console.error('Update agent error:', error);
     },
   });
 
   // Delete agent mutation
-  const deleteAgentMutation = useMutation({
+  const deleteMutation = useMutation({
     mutationFn: agentsAPI.delete,
     onSuccess: () => {
-      toast({
-        title: "Agent Deleted",
-        description: "Agent has been deleted successfully.",
-      });
       queryClient.invalidateQueries({ queryKey: ['agents'] });
+      toast({
+        title: "Success",
+        description: "Agent deleted successfully",
+      });
     },
     onError: (error) => {
       toast({
         title: "Error",
-        description: "Failed to delete agent.",
+        description: "Failed to delete agent",
         variant: "destructive",
       });
-      console.error('Delete agent error:', error);
     },
   });
 
-  // Filter agents based on search term
-  const filteredAgents = agents.filter((agent) => {
-    if (!searchTerm) return true;
-    const searchLower = searchTerm.toLowerCase();
-    return (
-      agent.name.toLowerCase().includes(searchLower) ||
-      agent.contact_person.toLowerCase().includes(searchLower) ||
-      agent.email.toLowerCase().includes(searchLower) ||
-      (agent.location && agent.location.toLowerCase().includes(searchLower))
-    );
-  });
-
-  const handleCreateAgent = (agentData: AgentFormData) => {
-    createAgentMutation.mutate(agentData);
-  };
-
-  const handleEditAgent = (agentData: AgentFormData) => {
-    if (selectedAgent) {
-      updateAgentMutation.mutate({
-        id: selectedAgent.id,
-        ...agentData,
-      });
-    }
-  };
-
-  const handleDeleteAgent = (id: number) => {
-    if (window.confirm('Are you sure you want to delete this agent?')) {
-      deleteAgentMutation.mutate(id);
-    }
-  };
+  const filteredData = agents.filter(
+    (agent) =>
+      agent.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      agent.contact_person.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      agent.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (agent.location && agent.location.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
 
   const handleViewAgent = (agent: Agent) => {
-    setSelectedAgent(agent);
-    setIsDetailModalOpen(true);
+    setCurrentAgent(agent);
+    setIsViewModalOpen(true);
   };
 
-  const handleEditClick = (agent: Agent) => {
-    setSelectedAgent(agent);
+  const handleEditAgent = (agent: Agent) => {
+    setCurrentAgent(agent);
     setIsEditModalOpen(true);
   };
 
-  const getStatusBadge = (status: string) => {
-    return (
-      <Badge variant={status === 'active' ? 'default' : 'secondary'}>
-        {status.charAt(0).toUpperCase() + status.slice(1)}
-      </Badge>
-    );
+  const handleDeleteAgent = (agent: Agent) => {
+    if (confirm(`Are you sure you want to delete ${agent.name}?`)) {
+      deleteMutation.mutate(agent.id);
+    }
   };
 
-  const columns: Column<Agent>[] = [
-    { header: "Name", accessorKey: "name" },
-    { header: "Contact Person", accessorKey: "contact_person" },
-    { header: "Email", accessorKey: "email" },
-    {
-      header: "Phone",
-      accessorKey: "phone",
-      cell: (agent: Agent) => agent.phone || "N/A"
-    },
-    {
-      header: "Location",
-      accessorKey: "location",
-      cell: (agent: Agent) => agent.location || "N/A"
-    },
-    {
-      header: "Commission Rate",
-      accessorKey: "commission_rate",
-      cell: (agent: Agent) => `${agent.commission_rate || 0}%`
+  const handleAddAgent = () => {
+    setIsAddModalOpen(true);
+  };
+
+  const handleCreateAgent = (agentData: AgentFormData) => {
+    createMutation.mutate(agentData);
+  };
+
+  const handleUpdateAgent = (agentData: AgentFormData) => {
+    if (currentAgent) {
+      updateMutation.mutate({
+        id: currentAgent.id,
+        data: agentData,
+      });
+    }
+  };
+
+  const handleImport = () => {
+    toast({
+      title: "Feature Coming Soon",
+      description: "Import functionality will be available shortly.",
+    });
+  };
+
+  const handleExport = () => {
+    toast({
+      title: "Feature Coming Soon",
+      description: "Export functionality will be available shortly.",
+    });
+  };
+
+  const columns = [
+    { header: "Name", accessorKey: "name" as keyof Agent },
+    { header: "Contact Person", accessorKey: "contact_person" as keyof Agent },
+    { header: "Email", accessorKey: "email" as keyof Agent },
+    { header: "Phone", accessorKey: "phone" as keyof Agent },
+    { header: "Location", accessorKey: "location" as keyof Agent },
+    { 
+      header: "Commission Rate", 
+      accessorKey: "commission_rate" as keyof Agent,
+      cell: (row: Agent) => `${row.commission_rate}%`
     },
     {
       header: "Status",
-      accessorKey: "status",
-      cell: (agent: Agent) => getStatusBadge(agent.status)
+      accessorKey: "status" as keyof Agent,
+      cell: (row: Agent) => (
+        <span
+          className={`rounded-full px-2 py-1 text-xs font-medium ${
+            row.status === "active"
+              ? "bg-green-100 text-green-800"
+              : "bg-red-100 text-red-800"
+          }`}
+        >
+          {row.status === "active" ? "Active" : "Inactive"}
+        </span>
+      ),
     },
     {
       header: "Actions",
-      accessorKey: "actions",
-      cell: (agent: Agent) => (
+      accessorKey: "actions" as keyof Agent | "actions",
+      cell: (row: Agent) => (
         <div className="flex space-x-2">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => handleViewAgent(agent)}
-          >
-            <Eye className="h-4 w-4" />
+          <Button variant="outline" size="sm" onClick={() => handleViewAgent(row)}>
+            <Eye className="mr-2 h-4 w-4" />
+            View
           </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => handleEditClick(agent)}
-          >
-            <Edit className="h-4 w-4" />
+          <Button variant="outline" size="sm" onClick={() => handleEditAgent(row)}>
+            <Edit className="mr-2 h-4 w-4" />
+            Edit
           </Button>
-          <Button
-            size="sm"
-            variant="destructive"
-            onClick={() => handleDeleteAgent(agent.id)}
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => handleDeleteAgent(row)}
+            className="text-red-600 hover:text-red-700"
           >
-            <Trash className="h-4 w-4" />
+            <Trash2 className="mr-2 h-4 w-4" />
+            Delete
           </Button>
         </div>
       ),
     },
   ];
 
+  if (isLoading) {
+    return (
+      <MainLayout>
+        <div className="flex items-center justify-center h-64">
+          <div>Loading agents...</div>
+        </div>
+      </MainLayout>
+    );
+  }
+
   return (
     <MainLayout>
       <PageHeader
-        title="Agent Management"
-        description="Manage educational agents and their information"
+        title="Agents"
+        description="Manage education agents and their information"
+        actions={
+          <>
+            <Button variant="outline" size="sm" onClick={handleImport}>
+              <Upload className="mr-2 h-4 w-4" />
+              Import
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleExport}>
+              <Download className="mr-2 h-4 w-4" />
+              Export
+            </Button>
+            <Button variant="default" size="sm" onClick={handleAddAgent}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Agent
+            </Button>
+          </>
+        }
       />
-      
-      <Card>
-        <CardHeader>
-          <div className="flex justify-between items-center">
-            <div>
-              <CardTitle>Agents</CardTitle>
-              <CardDescription>
-                Manage all educational agents in your system
-              </CardDescription>
-            </div>
-            <div className="flex space-x-2">
-              <Button onClick={() => setIsCreateModalOpen(true)}>
-                <Plus className="mr-2 h-4 w-4" />
-                Add Agent
-              </Button>
-              <Button variant="outline" onClick={() => refetch()} disabled={isLoading}>
-                <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-                Refresh
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {/* Search */}
-          <div className="flex items-center space-x-2 mb-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search agents by name, contact person, email, or location..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-          </div>
 
-          {isLoading ? (
-            <div className="text-center py-8">
-              <p className="text-muted-foreground">Loading agents...</p>
-            </div>
-          ) : filteredAgents.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-muted-foreground">
-                {searchTerm ? 'No agents found matching your search.' : 'No agents found. Create your first agent to get started.'}
-              </p>
-            </div>
-          ) : (
-            <DataTable columns={columns} data={filteredAgents} />
-          )}
-        </CardContent>
-      </Card>
+      <div className="mb-6">
+        <Input
+          placeholder="Search by name, contact person, email or location..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="max-w-sm"
+        />
+      </div>
 
-      {/* Create Agent Modal */}
+      <div className="rounded-lg border bg-card shadow-sm">
+        <DataTable columns={columns} data={filteredData} />
+      </div>
+
+      {/* Add Agent Modal */}
       <EditModal
-        isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
-        title="Create New Agent"
-        onSubmit={handleCreateAgent}
-        isSubmitting={createAgentMutation.isPending}
+        title="Add New Agent"
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
       >
-        <AgentForm />
+        <AgentForm 
+          onSubmit={handleCreateAgent}
+          isSubmitting={createMutation.isPending}
+        />
       </EditModal>
 
       {/* Edit Agent Modal */}
-      <EditModal
-        isOpen={isEditModalOpen}
-        onClose={() => {
-          setIsEditModalOpen(false);
-          setSelectedAgent(null);
-        }}
-        title="Edit Agent"
-        onSubmit={handleEditAgent}
-        isSubmitting={updateAgentMutation.isPending}
-      >
-        <AgentForm defaultValues={selectedAgent || undefined} />
-      </EditModal>
+      {currentAgent && (
+        <EditModal
+          title={`Edit Agent: ${currentAgent.name}`}
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+        >
+          <AgentForm 
+            defaultValues={{
+              name: currentAgent.name,
+              contact_person: currentAgent.contact_person,
+              email: currentAgent.email,
+              phone: currentAgent.phone || "",
+              location: currentAgent.location || "",
+              commission_rate: currentAgent.commission_rate || 10,
+              status: currentAgent.status,
+            }}
+            onSubmit={handleUpdateAgent}
+            isSubmitting={updateMutation.isPending}
+          />
+        </EditModal>
+      )}
 
-      {/* Agent Detail Modal */}
-      <DetailViewModal
-        isOpen={isDetailModalOpen}
-        onClose={() => {
-          setIsDetailModalOpen(false);
-          setSelectedAgent(null);
-        }}
-        title="Agent Details"
-        data={selectedAgent}
-      />
+      {/* View Agent Modal */}
+      {currentAgent && (
+        <DetailViewModal
+          title={`Agent: ${currentAgent.name}`}
+          isOpen={isViewModalOpen}
+          onClose={() => setIsViewModalOpen(false)}
+        >
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div>
+              <h3 className="font-semibold">Agent Name</h3>
+              <p>{currentAgent.name}</p>
+            </div>
+            <div>
+              <h3 className="font-semibold">Contact Person</h3>
+              <p>{currentAgent.contact_person}</p>
+            </div>
+            <div>
+              <h3 className="font-semibold">Email</h3>
+              <p>{currentAgent.email}</p>
+            </div>
+            <div>
+              <h3 className="font-semibold">Phone</h3>
+              <p>{currentAgent.phone || "N/A"}</p>
+            </div>
+            <div>
+              <h3 className="font-semibold">Location</h3>
+              <p>{currentAgent.location || "N/A"}</p>
+            </div>
+            <div>
+              <h3 className="font-semibold">Commission Rate</h3>
+              <p>{currentAgent.commission_rate}%</p>
+            </div>
+            <div>
+              <h3 className="font-semibold">Status</h3>
+              <p className={`capitalize ${currentAgent.status === 'active' ? 'text-green-600' : 'text-red-600'}`}>
+                {currentAgent.status}
+              </p>
+            </div>
+            <div>
+              <h3 className="font-semibold">Created</h3>
+              <p>{currentAgent.created_at ? new Date(currentAgent.created_at).toLocaleDateString() : "N/A"}</p>
+            </div>
+          </div>
+        </DetailViewModal>
+      )}
     </MainLayout>
   );
 };

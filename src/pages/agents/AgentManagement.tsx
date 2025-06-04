@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import PageHeader from "@/components/shared/PageHeader";
@@ -126,12 +127,12 @@ const AgentManagement = () => {
               ? {
                   ...agent,
                   name: formData.name,
-                  contactPerson: formData.contactPerson,
+                  contactPerson: formData.contact_person,
                   email: formData.email,
                   phone: formData.phone,
                   location: formData.location,
-                  commission: formData.commission,
-                  status: formData.status,
+                  commission: `${formData.commission_rate}%`,
+                  status: formData.status === 'active' ? 'Active' : 'Inactive',
                 }
               : agent
           )
@@ -146,15 +147,15 @@ const AgentManagement = () => {
         const newAgent: Agent = {
           id: Date.now().toString(),
           name: formData.name,
-          contactPerson: formData.contactPerson,
+          contactPerson: formData.contact_person,
           email: formData.email,
-          phone: formData.phone,
-          location: formData.location,
+          phone: formData.phone || "",
+          location: formData.location || "",
           studentsCount: 0,
-          commission: formData.commission,
+          commission: `${formData.commission_rate}%`,
           totalReceived: "$0",
           commissionDue: "$0",
-          status: formData.status,
+          status: formData.status === 'active' ? 'Active' : 'Inactive',
         };
         
         setAgents([newAgent, ...agents]);
@@ -335,15 +336,14 @@ const AgentManagement = () => {
           onClose={() => setIsEditModalOpen(false)}
         >
           <AgentForm 
-            initialData={{
-              id: currentAgent.id,
+            defaultValues={{
               name: currentAgent.name,
-              contactPerson: currentAgent.contactPerson,
+              contact_person: currentAgent.contactPerson,
               email: currentAgent.email,
               phone: currentAgent.phone,
               location: currentAgent.location,
-              commission: currentAgent.commission,
-              status: currentAgent.status as "Active" | "Inactive",
+              commission_rate: parseFloat(currentAgent.commission.replace('%', '')),
+              status: currentAgent.status.toLowerCase() as 'active' | 'inactive',
             }}
             onSubmit={handleSaveAgent}
             isSubmitting={isSubmitting}
