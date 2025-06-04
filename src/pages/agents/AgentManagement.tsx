@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import PageHeader from "@/components/shared/PageHeader";
@@ -119,18 +118,18 @@ const AgentManagement = () => {
     
     // Simulating API call
     setTimeout(() => {
-      if (formData.id) {
+      if (currentAgent && isEditModalOpen) {
         // Update existing agent
         setAgents(
           agents.map((agent) =>
-            agent.id === formData.id
+            agent.id === currentAgent.id
               ? {
                   ...agent,
                   name: formData.name,
                   contactPerson: formData.contact_person,
                   email: formData.email,
-                  phone: formData.phone,
-                  location: formData.location,
+                  phone: formData.phone || "",
+                  location: formData.location || "",
                   commission: `${formData.commission_rate}%`,
                   status: formData.status === 'active' ? 'Active' : 'Inactive',
                 }
