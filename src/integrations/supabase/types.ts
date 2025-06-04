@@ -36,6 +36,45 @@ export type Database = {
         }
         Relationships: []
       }
+      agents: {
+        Row: {
+          commission_rate: number | null
+          contact_person: string
+          created_at: string | null
+          email: string
+          id: number
+          location: string | null
+          name: string
+          phone: string | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          commission_rate?: number | null
+          contact_person: string
+          created_at?: string | null
+          email: string
+          id?: number
+          location?: string | null
+          name: string
+          phone?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          commission_rate?: number | null
+          contact_person?: string
+          created_at?: string | null
+          email?: string
+          id?: number
+          location?: string | null
+          name?: string
+          phone?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       courses: {
         Row: {
           created_at: string | null
@@ -329,8 +368,14 @@ export type Database = {
       }
       students: {
         Row: {
+          aadhaar_number: string | null
+          aadhaar_url: string | null
           academic_session_id: number | null
+          address: string | null
           admission_number: string | null
+          agent_id: number | null
+          certificate_12th_url: string | null
+          city: string | null
           course_id: number | null
           created_at: string | null
           date_of_birth: string
@@ -339,15 +384,28 @@ export type Database = {
           first_name: string
           id: number
           last_name: string
+          marks_12th: number | null
           mother_name: string
+          passport_number: string | null
+          passport_url: string | null
           phone_number: string | null
+          photo_url: string | null
+          scores: string | null
+          seat_number: string | null
           status: string | null
+          submitted_by: string | null
           university_id: number | null
           updated_at: string | null
         }
         Insert: {
+          aadhaar_number?: string | null
+          aadhaar_url?: string | null
           academic_session_id?: number | null
+          address?: string | null
           admission_number?: string | null
+          agent_id?: number | null
+          certificate_12th_url?: string | null
+          city?: string | null
           course_id?: number | null
           created_at?: string | null
           date_of_birth: string
@@ -356,15 +414,28 @@ export type Database = {
           first_name: string
           id?: number
           last_name: string
+          marks_12th?: number | null
           mother_name: string
+          passport_number?: string | null
+          passport_url?: string | null
           phone_number?: string | null
+          photo_url?: string | null
+          scores?: string | null
+          seat_number?: string | null
           status?: string | null
+          submitted_by?: string | null
           university_id?: number | null
           updated_at?: string | null
         }
         Update: {
+          aadhaar_number?: string | null
+          aadhaar_url?: string | null
           academic_session_id?: number | null
+          address?: string | null
           admission_number?: string | null
+          agent_id?: number | null
+          certificate_12th_url?: string | null
+          city?: string | null
           course_id?: number | null
           created_at?: string | null
           date_of_birth?: string
@@ -373,9 +444,16 @@ export type Database = {
           first_name?: string
           id?: number
           last_name?: string
+          marks_12th?: number | null
           mother_name?: string
+          passport_number?: string | null
+          passport_url?: string | null
           phone_number?: string | null
+          photo_url?: string | null
+          scores?: string | null
+          seat_number?: string | null
           status?: string | null
+          submitted_by?: string | null
           university_id?: number | null
           updated_at?: string | null
         }
@@ -385,6 +463,13 @@ export type Database = {
             columns: ["academic_session_id"]
             isOneToOne: false
             referencedRelation: "academic_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "students_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
             referencedColumns: ["id"]
           },
           {
