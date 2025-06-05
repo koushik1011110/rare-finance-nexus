@@ -267,6 +267,7 @@ const AgentStudents = () => {
         onClose={() => setIsAddModalOpen(false)}
       >
         <AgentStudentForm 
+          agentName="General Agent"
           onSubmit={handleSaveStudent}
           isSubmitting={isSubmitting}
         />
@@ -336,6 +337,7 @@ const AgentStudents = () => {
           onClose={() => setIsEditModalOpen(false)}
         >
           <AgentStudentForm 
+            agentName={currentStudent.agentName}
             initialData={{
               id: currentStudent.id,
               studentName: currentStudent.studentName,

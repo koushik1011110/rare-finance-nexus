@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,13 +22,13 @@ export interface AgentFormData {
 }
 
 interface AgentFormProps {
-  initialData?: AgentFormData;
+  defaultValues?: AgentFormData;
   onSubmit: (data: AgentFormData) => void;
   isSubmitting?: boolean;
 }
 
 const AgentForm: React.FC<AgentFormProps> = ({
-  initialData = {
+  defaultValues = {
     name: "",
     contactPerson: "",
     email: "",
@@ -41,7 +40,7 @@ const AgentForm: React.FC<AgentFormProps> = ({
   onSubmit,
   isSubmitting = false,
 }) => {
-  const [formData, setFormData] = React.useState<AgentFormData>(initialData);
+  const [formData, setFormData] = React.useState<AgentFormData>(defaultValues);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement>

@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,28 +28,32 @@ export interface AgentStudentFormData {
 
 interface AgentStudentFormProps {
   agentName: string;
+  initialData?: AgentStudentFormData;
   onSubmit: (data: AgentStudentFormData) => void;
   isSubmitting?: boolean;
 }
 
 const AgentStudentForm: React.FC<AgentStudentFormProps> = ({
   agentName,
+  initialData,
   onSubmit,
   isSubmitting = false,
 }) => {
-  const [formData, setFormData] = useState<AgentStudentFormData>({
-    studentName: "",
-    agentName,
-    university: "",
-    course: "",
-    totalFee: "",
-    paidAmount: "",
-    dueAmount: "",
-    commission: "",
-    commissionDue: "",
-    status: "Active",
-    remarks: "",
-  });
+  const [formData, setFormData] = useState<AgentStudentFormData>(
+    initialData || {
+      studentName: "",
+      agentName,
+      university: "",
+      course: "",
+      totalFee: "",
+      paidAmount: "",
+      dueAmount: "",
+      commission: "",
+      commissionDue: "",
+      status: "Active",
+      remarks: "",
+    }
+  );
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
