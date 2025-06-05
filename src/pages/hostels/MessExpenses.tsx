@@ -16,16 +16,16 @@ import {
 import DetailViewModal from "@/components/shared/DetailViewModal";
 import EditModal from "@/components/shared/EditModal";
 import ExpenseForm from "@/components/forms/ExpenseForm";
-import { hostelExpensesAPI, HostelExpense, HostelExpenseFormData } from "@/lib/hostel-expenses-api";
+import { messExpensesAPI, MessExpense, MessExpenseFormData } from "@/lib/mess-expenses-api";
 
-const HostelExpenses = () => {
+const MessExpenses = () => {
   const [selectedHostel, setSelectedHostel] = useState<string>("all");
-  const [expenses, setExpenses] = useState<HostelExpense[]>([]);
+  const [expenses, setExpenses] = useState<MessExpense[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [addModalOpen, setAddModalOpen] = useState(false);
-  const [selectedExpense, setSelectedExpense] = useState<HostelExpense | null>(null);
+  const [selectedExpense, setSelectedExpense] = useState<MessExpense | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -35,13 +35,13 @@ const HostelExpenses = () => {
   const loadExpenses = async () => {
     try {
       setLoading(true);
-      const data = await hostelExpensesAPI.getAll();
+      const data = await messExpensesAPI.getAll();
       setExpenses(data);
     } catch (error) {
-      console.error('Error loading hostel expenses:', error);
+      console.error('Error loading mess expenses:', error);
       toast({
         title: "Error",
-        description: "Failed to load hostel expenses data.",
+        description: "Failed to load mess expenses data.",
         variant: "destructive",
       });
     } finally {
@@ -55,12 +55,12 @@ const HostelExpenses = () => {
         expense.hostel_id?.toString() === selectedHostel
       );
 
-  const handleViewExpense = (expense: HostelExpense) => {
+  const handleViewExpense = (expense: MessExpense) => {
     setSelectedExpense(expense);
     setViewModalOpen(true);
   };
 
-  const handleEditExpense = (expense: HostelExpense) => {
+  const handleEditExpense = (expense: MessExpense) => {
     setSelectedExpense(expense);
     setEditModalOpen(true);
   };
@@ -69,21 +69,21 @@ const HostelExpenses = () => {
     setAddModalOpen(true);
   };
 
-  const handleSaveExpense = async (formData: HostelExpenseFormData) => {
+  const handleSaveExpense = async (formData: MessExpenseFormData) => {
     setIsSubmitting(true);
     
     try {
       if (formData.id) {
-        await hostelExpensesAPI.update(formData.id, formData);
+        await messExpensesAPI.update(formData.id, formData);
         toast({
           title: "Expense Updated",
-          description: "Hostel expense has been updated successfully.",
+          description: "Mess expense has been updated successfully.",
         });
       } else {
-        await hostelExpensesAPI.create(formData);
+        await messExpensesAPI.create(formData);
         toast({
           title: "Expense Added",
-          description: "Hostel expense has been added successfully.",
+          description: "Mess expense has been added successfully.",
         });
       }
       
@@ -114,21 +114,21 @@ const HostelExpenses = () => {
   const columns = [
     { 
       header: "Hostel", 
-      accessorKey: "hostels" as keyof HostelExpense,
-      cell: (row: HostelExpense) => row.hostels?.name || 'N/A'
+      accessorKey: "hostels" as keyof MessExpense,
+      cell: (row: MessExpense) => row.hostels?.name || 'N/A'
     },
-    { header: "Expense Type", accessorKey: "expense_type" as keyof HostelExpense },
-    { header: "Category", accessorKey: "category" as keyof HostelExpense },
+    { header: "Expense Type", accessorKey: "expense_type" as keyof MessExpense },
+    { header: "Category", accessorKey: "category" as keyof MessExpense },
     { 
       header: "Amount", 
-      accessorKey: "amount" as keyof HostelExpense,
-      cell: (row: HostelExpense) => `$${row.amount.toFixed(2)}`
+      accessorKey: "amount" as keyof MessExpense,
+      cell: (row: MessExpense) => `$${row.amount.toFixed(2)}`
     },
-    { header: "Date", accessorKey: "expense_date" as keyof HostelExpense },
+    { header: "Date", accessorKey: "expense_date" as keyof MessExpense },
     {
       header: "Status",
-      accessorKey: "status" as keyof HostelExpense,
-      cell: (row: HostelExpense) => (
+      accessorKey: "status" as keyof MessExpense,
+      cell: (row: MessExpense) => (
         <span
           className={`rounded-full px-2 py-1 text-xs font-medium ${
             row.status === "Paid"
@@ -145,7 +145,7 @@ const HostelExpenses = () => {
     {
       header: "Actions",
       accessorKey: "actions" as "actions",
-      cell: (row: HostelExpense) => (
+      cell: (row: MessExpense) => (
         <div className="flex space-x-2">
           <Button 
             variant="outline" 
@@ -181,8 +181,8 @@ const HostelExpenses = () => {
   return (
     <MainLayout>
       <PageHeader
-        title="Hostel Expenses"
-        description="Track and manage all hostel-related expenses"
+        title="Mess Expenses"
+        description="Track and manage all mess-related expenses"
         actions={
           <>
             <Button variant="outline" size="sm" onClick={handleExport}>
@@ -224,21 +224,21 @@ const HostelExpenses = () => {
 
       {/* Add Expense Modal */}
       <EditModal
-        title="Add Hostel Expense"
+        title="Add Mess Expense"
         isOpen={addModalOpen}
         onClose={() => setAddModalOpen(false)}
       >
         <ExpenseForm 
           onSubmit={handleSaveExpense}
           isSubmitting={isSubmitting}
-          expenseType="hostel"
+          expenseType="mess"
         />
       </EditModal>
 
       {/* View Modal */}
       {selectedExpense && (
         <DetailViewModal
-          title={`Expense Details - ${selectedExpense.hostels?.name || 'N/A'}`}
+          title={`Mess Expense Details - ${selectedExpense.hostels?.name || 'N/A'}`}
           isOpen={viewModalOpen}
           onClose={() => setViewModalOpen(false)}
         >
@@ -290,7 +290,7 @@ const HostelExpenses = () => {
       {/* Edit Modal */}
       {selectedExpense && (
         <EditModal
-          title={`Edit Expense - ${selectedExpense.hostels?.name || 'N/A'}`}
+          title={`Edit Mess Expense - ${selectedExpense.hostels?.name || 'N/A'}`}
           isOpen={editModalOpen}
           onClose={() => setEditModalOpen(false)}
         >
@@ -311,7 +311,7 @@ const HostelExpenses = () => {
             }}
             onSubmit={handleSaveExpense}
             isSubmitting={isSubmitting}
-            expenseType="hostel"
+            expenseType="mess"
           />
         </EditModal>
       )}
@@ -319,4 +319,4 @@ const HostelExpenses = () => {
   );
 };
 
-export default HostelExpenses;
+export default MessExpenses;

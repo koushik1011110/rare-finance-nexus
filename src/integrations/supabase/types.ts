@@ -36,6 +36,42 @@ export type Database = {
         }
         Relationships: []
       }
+      agent_students: {
+        Row: {
+          agent_id: number
+          created_at: string | null
+          id: number
+          student_id: number
+        }
+        Insert: {
+          agent_id: number
+          created_at?: string | null
+          id?: number
+          student_id: number
+        }
+        Update: {
+          agent_id?: number
+          created_at?: string | null
+          id?: number
+          student_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_students_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_students_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agents: {
         Row: {
           commission_due: number | null
@@ -338,6 +374,175 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      hostel_expenses: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string | null
+          description: string | null
+          expense_date: string
+          expense_type: string
+          hostel_id: number
+          id: number
+          notes: string | null
+          payment_method: string | null
+          receipt_number: string | null
+          status: string | null
+          updated_at: string | null
+          vendor_name: string | null
+        }
+        Insert: {
+          amount: number
+          category?: string
+          created_at?: string | null
+          description?: string | null
+          expense_date?: string
+          expense_type: string
+          hostel_id: number
+          id?: number
+          notes?: string | null
+          payment_method?: string | null
+          receipt_number?: string | null
+          status?: string | null
+          updated_at?: string | null
+          vendor_name?: string | null
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string | null
+          description?: string | null
+          expense_date?: string
+          expense_type?: string
+          hostel_id?: number
+          id?: number
+          notes?: string | null
+          payment_method?: string | null
+          receipt_number?: string | null
+          status?: string | null
+          updated_at?: string | null
+          vendor_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hostel_expenses_hostel_id_fkey"
+            columns: ["hostel_id"]
+            isOneToOne: false
+            referencedRelation: "hostels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hostels: {
+        Row: {
+          address: string | null
+          capacity: number
+          contact_person: string | null
+          created_at: string | null
+          current_occupancy: number | null
+          email: string | null
+          facilities: string | null
+          id: number
+          location: string
+          monthly_rent: number
+          name: string
+          phone: string | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          address?: string | null
+          capacity?: number
+          contact_person?: string | null
+          created_at?: string | null
+          current_occupancy?: number | null
+          email?: string | null
+          facilities?: string | null
+          id?: number
+          location: string
+          monthly_rent?: number
+          name: string
+          phone?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          address?: string | null
+          capacity?: number
+          contact_person?: string | null
+          created_at?: string | null
+          current_occupancy?: number | null
+          email?: string | null
+          facilities?: string | null
+          id?: number
+          location?: string
+          monthly_rent?: number
+          name?: string
+          phone?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      mess_expenses: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string | null
+          description: string | null
+          expense_date: string
+          expense_type: string
+          hostel_id: number | null
+          id: number
+          notes: string | null
+          payment_method: string | null
+          receipt_number: string | null
+          status: string | null
+          updated_at: string | null
+          vendor_name: string | null
+        }
+        Insert: {
+          amount: number
+          category?: string
+          created_at?: string | null
+          description?: string | null
+          expense_date?: string
+          expense_type: string
+          hostel_id?: number | null
+          id?: number
+          notes?: string | null
+          payment_method?: string | null
+          receipt_number?: string | null
+          status?: string | null
+          updated_at?: string | null
+          vendor_name?: string | null
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string | null
+          description?: string | null
+          expense_date?: string
+          expense_type?: string
+          hostel_id?: number | null
+          id?: number
+          notes?: string | null
+          payment_method?: string | null
+          receipt_number?: string | null
+          status?: string | null
+          updated_at?: string | null
+          vendor_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mess_expenses_hostel_id_fkey"
+            columns: ["hostel_id"]
+            isOneToOne: false
+            referencedRelation: "hostels"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       student_fee_assignments: {
         Row: {
