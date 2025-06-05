@@ -36,6 +36,54 @@ export type Database = {
         }
         Relationships: []
       }
+      agents: {
+        Row: {
+          commission_due: number | null
+          commission_rate: number | null
+          contact_person: string
+          created_at: string | null
+          email: string
+          id: number
+          location: string | null
+          name: string
+          phone: string | null
+          status: string | null
+          students_count: number | null
+          total_received: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          commission_due?: number | null
+          commission_rate?: number | null
+          contact_person: string
+          created_at?: string | null
+          email: string
+          id?: number
+          location?: string | null
+          name: string
+          phone?: string | null
+          status?: string | null
+          students_count?: number | null
+          total_received?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          commission_due?: number | null
+          commission_rate?: number | null
+          contact_person?: string
+          created_at?: string | null
+          email?: string
+          id?: number
+          location?: string | null
+          name?: string
+          phone?: string | null
+          status?: string | null
+          students_count?: number | null
+          total_received?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       courses: {
         Row: {
           created_at: string | null

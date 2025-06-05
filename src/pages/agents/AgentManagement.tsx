@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import PageHeader from "@/components/shared/PageHeader";
 import DataTable from "@/components/ui/DataTable";
@@ -11,80 +11,12 @@ import DetailViewModal from "@/components/shared/DetailViewModal";
 import EditModal from "@/components/shared/EditModal";
 import AgentForm, { AgentFormData } from "@/components/forms/AgentForm";
 import AgentStudentForm from "@/components/forms/AgentStudentForm";
-
-// Sample data for agents
-const agentsData = [
-  {
-    id: "1",
-    name: "Global Education",
-    contactPerson: "James Wilson",
-    email: "james@globaledu.com",
-    phone: "+44 20 1234 5678",
-    location: "London, UK",
-    studentsCount: 15,
-    commission: "10%",
-    totalReceived: "$24,500",
-    commissionDue: "$3,200",
-    status: "Active",
-  },
-  {
-    id: "2",
-    name: "Academic Horizon",
-    contactPerson: "Sarah Chen",
-    email: "sarah@academichorizon.com",
-    phone: "+1 212 987 6543",
-    location: "New York, USA",
-    studentsCount: 8,
-    commission: "12%",
-    totalReceived: "$18,000",
-    commissionDue: "$2,400",
-    status: "Active",
-  },
-  {
-    id: "3",
-    name: "Future Scholars",
-    contactPerson: "Rahul Sharma",
-    email: "rahul@futurescholars.com",
-    phone: "+91 98765 43210",
-    location: "Mumbai, India",
-    studentsCount: 12,
-    commission: "8%",
-    totalReceived: "$15,500",
-    commissionDue: "$1,800",
-    status: "Active",
-  },
-  {
-    id: "4",
-    name: "Education First",
-    contactPerson: "Maria Garcia",
-    email: "maria@edufirst.com",
-    phone: "+34 91 234 5678",
-    location: "Madrid, Spain",
-    studentsCount: 5,
-    commission: "10%",
-    totalReceived: "$9,200",
-    commissionDue: "$1,100",
-    status: "Inactive",
-  },
-];
-
-interface Agent {
-  id: string;
-  name: string;
-  contactPerson: string;
-  email: string;
-  phone: string;
-  location: string;
-  studentsCount: number;
-  commission: string;
-  totalReceived: string;
-  commissionDue: string;
-  status: string;
-}
+import { agentsAPI, Agent } from "@/lib/agents-api";
 
 const AgentManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [agents, setAgents] = useState<Agent[]>(agentsData);
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [loading, setLoading] = useState(true);
   
   // Modal states
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -94,12 +26,34 @@ const AgentManagement = () => {
   const [currentAgent, setCurrentAgent] = useState<Agent | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Load agents data
+  useEffect(() => {
+    loadAgents();
+  }, []);
+
+  const loadAgents = async () => {
+    try {
+      setLoading(true);
+      const data = await agentsAPI.getAll();
+      setAgents(data);
+    } catch (error) {
+      console.error('Error loading agents:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load agents data.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const filteredData = agents.filter(
     (agent) =>
       agent.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      agent.contactPerson.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      agent.contact_person.toLowerCase().includes(searchTerm.toLowerCase()) ||
       agent.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      agent.location.toLowerCase().includes(searchTerm.toLowerCase())
+      (agent.location && agent.location.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   const handleViewAgent = (agent: Agent) => {
@@ -121,29 +75,13 @@ const AgentManagement = () => {
     setIsAddStudentModalOpen(true);
   };
 
-  const handleSaveAgent = (formData: AgentFormData) => {
+  const handleSaveAgent = async (formData: AgentFormData) => {
     setIsSubmitting(true);
     
-    // Simulating API call
-    setTimeout(() => {
+    try {
       if (formData.id) {
         // Update existing agent
-        setAgents(
-          agents.map((agent) =>
-            agent.id === formData.id
-              ? {
-                  ...agent,
-                  name: formData.name,
-                  contactPerson: formData.contactPerson,
-                  email: formData.email,
-                  phone: formData.phone,
-                  location: formData.location,
-                  commission: formData.commission,
-                  status: formData.status,
-                }
-              : agent
-          )
-        );
+        await agentsAPI.update(formData.id, formData);
         
         toast({
           title: "Agent Updated",
@@ -151,21 +89,7 @@ const AgentManagement = () => {
         });
       } else {
         // Add new agent
-        const newAgent: Agent = {
-          id: Date.now().toString(),
-          name: formData.name,
-          contactPerson: formData.contactPerson,
-          email: formData.email,
-          phone: formData.phone,
-          location: formData.location,
-          studentsCount: 0,
-          commission: formData.commission,
-          totalReceived: "$0",
-          commissionDue: "$0",
-          status: formData.status,
-        };
-        
-        setAgents([newAgent, ...agents]);
+        await agentsAPI.create(formData);
         
         toast({
           title: "Agent Added",
@@ -173,10 +97,21 @@ const AgentManagement = () => {
         });
       }
       
-      setIsSubmitting(false);
+      // Reload agents data
+      await loadAgents();
+      
       setIsAddModalOpen(false);
       setIsEditModalOpen(false);
-    }, 1000);
+    } catch (error) {
+      console.error('Error saving agent:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save agent data.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleSaveStudent = (studentData: any) => {
@@ -210,17 +145,29 @@ const AgentManagement = () => {
 
   const columns = [
     { header: "Agent Name", accessorKey: "name" },
-    { header: "Contact Person", accessorKey: "contactPerson" },
+    { header: "Contact Person", accessorKey: "contact_person" },
     { header: "Email", accessorKey: "email" },
     { header: "Location", accessorKey: "location" },
-    { header: "Students Count", accessorKey: "studentsCount" },
-    { header: "Commission Rate", accessorKey: "commission" },
-    { header: "Total Received", accessorKey: "totalReceived" },
-    { header: "Commission Due", accessorKey: "commissionDue" },
+    { header: "Students Count", accessorKey: "students_count" },
+    { 
+      header: "Commission Rate", 
+      accessorKey: "commission_rate",
+      cell: (row: Agent) => `${row.commission_rate}%`
+    },
+    { 
+      header: "Total Received", 
+      accessorKey: "total_received",
+      cell: (row: Agent) => `$${row.total_received.toFixed(2)}`
+    },
+    { 
+      header: "Commission Due", 
+      accessorKey: "commission_due",
+      cell: (row: Agent) => `$${row.commission_due.toFixed(2)}`
+    },
     {
       header: "Status",
       accessorKey: "status",
-      cell: (row: any) => (
+      cell: (row: Agent) => (
         <span
           className={`rounded-full px-2 py-1 text-xs font-medium ${
             row.status === "Active"
@@ -253,6 +200,16 @@ const AgentManagement = () => {
       ),
     },
   ];
+
+  if (loading) {
+    return (
+      <MainLayout>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-lg">Loading agents...</div>
+        </div>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>
@@ -316,7 +273,7 @@ const AgentManagement = () => {
             </div>
             <div>
               <h3 className="font-semibold">Contact Person</h3>
-              <p>{currentAgent.contactPerson}</p>
+              <p>{currentAgent.contact_person}</p>
             </div>
             <div>
               <h3 className="font-semibold">Email</h3>
@@ -324,27 +281,27 @@ const AgentManagement = () => {
             </div>
             <div>
               <h3 className="font-semibold">Phone</h3>
-              <p>{currentAgent.phone}</p>
+              <p>{currentAgent.phone || 'N/A'}</p>
             </div>
             <div>
               <h3 className="font-semibold">Location</h3>
-              <p>{currentAgent.location}</p>
+              <p>{currentAgent.location || 'N/A'}</p>
             </div>
             <div>
               <h3 className="font-semibold">Students Count</h3>
-              <p>{currentAgent.studentsCount}</p>
+              <p>{currentAgent.students_count}</p>
             </div>
             <div>
               <h3 className="font-semibold">Commission Rate</h3>
-              <p>{currentAgent.commission}</p>
+              <p>{currentAgent.commission_rate}%</p>
             </div>
             <div>
               <h3 className="font-semibold">Total Received</h3>
-              <p>{currentAgent.totalReceived}</p>
+              <p>${currentAgent.total_received.toFixed(2)}</p>
             </div>
             <div>
               <h3 className="font-semibold">Commission Due</h3>
-              <p>{currentAgent.commissionDue}</p>
+              <p>${currentAgent.commission_due.toFixed(2)}</p>
             </div>
             <div>
               <h3 className="font-semibold">Status</h3>
@@ -365,12 +322,12 @@ const AgentManagement = () => {
             defaultValues={{
               id: currentAgent.id,
               name: currentAgent.name,
-              contactPerson: currentAgent.contactPerson,
+              contactPerson: currentAgent.contact_person,
               email: currentAgent.email,
-              phone: currentAgent.phone,
-              location: currentAgent.location,
-              commission: currentAgent.commission,
-              status: currentAgent.status as "Active" | "Inactive",
+              phone: currentAgent.phone || '',
+              location: currentAgent.location || '',
+              commission: `${currentAgent.commission_rate}%`,
+              status: currentAgent.status,
             }}
             onSubmit={handleSaveAgent}
             isSubmitting={isSubmitting}
