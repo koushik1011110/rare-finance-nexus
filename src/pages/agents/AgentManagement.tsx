@@ -144,29 +144,29 @@ const AgentManagement = () => {
   };
 
   const columns = [
-    { header: "Agent Name", accessorKey: "name" },
-    { header: "Contact Person", accessorKey: "contact_person" },
-    { header: "Email", accessorKey: "email" },
-    { header: "Location", accessorKey: "location" },
-    { header: "Students Count", accessorKey: "students_count" },
+    { header: "Agent Name", accessorKey: "name" as keyof Agent },
+    { header: "Contact Person", accessorKey: "contact_person" as keyof Agent },
+    { header: "Email", accessorKey: "email" as keyof Agent },
+    { header: "Location", accessorKey: "location" as keyof Agent },
+    { header: "Students Count", accessorKey: "students_count" as keyof Agent },
     { 
       header: "Commission Rate", 
-      accessorKey: "commission_rate",
+      accessorKey: "commission_rate" as keyof Agent,
       cell: (row: Agent) => `${row.commission_rate}%`
     },
     { 
       header: "Total Received", 
-      accessorKey: "total_received",
+      accessorKey: "total_received" as keyof Agent,
       cell: (row: Agent) => `$${row.total_received.toFixed(2)}`
     },
     { 
       header: "Commission Due", 
-      accessorKey: "commission_due",
+      accessorKey: "commission_due" as keyof Agent,
       cell: (row: Agent) => `$${row.commission_due.toFixed(2)}`
     },
     {
       header: "Status",
-      accessorKey: "status",
+      accessorKey: "status" as keyof Agent,
       cell: (row: Agent) => (
         <span
           className={`rounded-full px-2 py-1 text-xs font-medium ${
@@ -181,7 +181,7 @@ const AgentManagement = () => {
     },
     {
       header: "Actions",
-      accessorKey: "actions",
+      accessorKey: "actions" as "actions",
       cell: (row: Agent) => (
         <div className="flex space-x-2">
           <Button variant="outline" size="sm" onClick={() => handleViewAgent(row)}>

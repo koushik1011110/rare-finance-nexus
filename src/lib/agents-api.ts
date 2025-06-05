@@ -41,7 +41,10 @@ export const agentsAPI = {
       throw error;
     }
     
-    return data || [];
+    return (data || []).map(agent => ({
+      ...agent,
+      status: agent.status as 'Active' | 'Inactive'
+    }));
   },
 
   create: async (agentData: Omit<AgentFormData, 'id'>): Promise<Agent> => {
@@ -64,7 +67,10 @@ export const agentsAPI = {
       throw error;
     }
     
-    return data;
+    return {
+      ...data,
+      status: data.status as 'Active' | 'Inactive'
+    };
   },
 
   update: async (id: number, agentData: Partial<Omit<AgentFormData, 'id'>>): Promise<Agent> => {
@@ -92,7 +98,10 @@ export const agentsAPI = {
       throw error;
     }
     
-    return data;
+    return {
+      ...data,
+      status: data.status as 'Active' | 'Inactive'
+    };
   },
 
   delete: async (id: number): Promise<void> => {
