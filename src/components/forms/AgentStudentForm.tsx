@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,17 +28,19 @@ export interface AgentStudentFormData {
 }
 
 interface AgentStudentFormProps {
-  initialData?: AgentStudentFormData;
+  agentName: string;
   onSubmit: (data: AgentStudentFormData) => void;
   isSubmitting?: boolean;
-  universities?: string[];
-  agents?: string[];
 }
 
 const AgentStudentForm: React.FC<AgentStudentFormProps> = ({
-  initialData = {
+  agentName,
+  onSubmit,
+  isSubmitting = false,
+}) => {
+  const [formData, setFormData] = useState<AgentStudentFormData>({
     studentName: "",
-    agentName: "",
+    agentName,
     university: "",
     course: "",
     totalFee: "",
@@ -48,13 +50,7 @@ const AgentStudentForm: React.FC<AgentStudentFormProps> = ({
     commissionDue: "",
     status: "Active",
     remarks: "",
-  },
-  onSubmit,
-  isSubmitting = false,
-  universities = ["London University", "Oxford University", "Cambridge University", "Harvard University"],
-  agents = ["Global Education", "Academic Horizon", "Future Scholars", "Education First"],
-}) => {
-  const [formData, setFormData] = React.useState<AgentStudentFormData>(initialData);
+  });
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -65,48 +61,6 @@ const AgentStudentForm: React.FC<AgentStudentFormProps> = ({
 
   const handleSelectChange = (name: string, value: string) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const recalculate = () => {
-    // Calculate due amount
-    const total = formData.totalFee.replace(/[^0-9.]/g, "") || "0";
-    const paid = formData.paidAmount.replace(/[^0-9.]/g, "") || "0";
-    const totalNum = parseFloat(total);
-    const paidNum = parseFloat(paid);
-    const due = totalNum - paidNum;
-    
-    // Calculate commission and due commission
-    const commissionRate = parseFloat(formData.commission.replace(/[^0-9.]/g, "")) || 10;
-    const totalCommission = (totalNum * commissionRate) / 100;
-    const paidRatio = paidNum / totalNum;
-    const commissionDue = totalCommission * (1 - paidRatio);
-    
-    return {
-      dueAmount: `$${due.toLocaleString()}`,
-      commissionDue: `$${commissionDue.toLocaleString()}`
-    };
-  };
-
-  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => {
-      const newData = { ...prev, [name]: value };
-      const calculated = recalculate();
-      return { 
-        ...newData, 
-        dueAmount: calculated.dueAmount, 
-        commissionDue: calculated.commissionDue 
-      };
-    });
-  };
-
-  const handleCommissionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => {
-      const newData = { ...prev, [name]: value };
-      const calculated = recalculate();
-      return { ...newData, commissionDue: calculated.commissionDue };
-    });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -131,40 +85,25 @@ const AgentStudentForm: React.FC<AgentStudentFormProps> = ({
 
         <div className="space-y-2">
           <Label htmlFor="agentName">Agent Name</Label>
-          <Select
+          <Input
+            id="agentName"
+            name="agentName"
             value={formData.agentName}
-            onValueChange={(value) => handleSelectChange("agentName", value)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select agent" />
-            </SelectTrigger>
-            <SelectContent>
-              {agents.map((agent) => (
-                <SelectItem key={agent} value={agent}>
-                  {agent}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            readOnly
+            className="bg-gray-100"
+          />
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="university">University</Label>
-          <Select
+          <Input
+            id="university"
+            name="university"
             value={formData.university}
-            onValueChange={(value) => handleSelectChange("university", value)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select university" />
-            </SelectTrigger>
-            <SelectContent>
-              {universities.map((university) => (
-                <SelectItem key={university} value={university}>
-                  {university}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            onChange={handleChange}
+            placeholder="Enter university name"
+            required
+          />
         </div>
 
         <div className="space-y-2">
@@ -185,7 +124,7 @@ const AgentStudentForm: React.FC<AgentStudentFormProps> = ({
             id="totalFee"
             name="totalFee"
             value={formData.totalFee}
-            onChange={handleAmountChange}
+            onChange={handleChange}
             placeholder="Enter total fee (e.g., $10,000)"
             required
           />
@@ -197,7 +136,7 @@ const AgentStudentForm: React.FC<AgentStudentFormProps> = ({
             id="paidAmount"
             name="paidAmount"
             value={formData.paidAmount}
-            onChange={handleAmountChange}
+            onChange={handleChange}
             placeholder="Enter paid amount (e.g., $5,000)"
             required
           />
@@ -209,19 +148,20 @@ const AgentStudentForm: React.FC<AgentStudentFormProps> = ({
             id="dueAmount"
             name="dueAmount"
             value={formData.dueAmount}
-            readOnly
-            placeholder="Due amount will be calculated"
+            onChange={handleChange}
+            placeholder="Enter due amount (e.g., $5,000)"
+            required
           />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="commission">Commission Rate (%)</Label>
+          <Label htmlFor="commission">Commission</Label>
           <Input
             id="commission"
             name="commission"
             value={formData.commission}
-            onChange={handleCommissionChange}
-            placeholder="Enter commission rate (e.g., 10%)"
+            onChange={handleChange}
+            placeholder="Enter commission amount (e.g., $1,000)"
             required
           />
         </div>
@@ -232,8 +172,9 @@ const AgentStudentForm: React.FC<AgentStudentFormProps> = ({
             id="commissionDue"
             name="commissionDue"
             value={formData.commissionDue}
-            readOnly
-            placeholder="Commission due will be calculated"
+            onChange={handleChange}
+            placeholder="Enter commission due (e.g., $500)"
+            required
           />
         </div>
 
@@ -268,7 +209,7 @@ const AgentStudentForm: React.FC<AgentStudentFormProps> = ({
       </div>
 
       <Button type="submit" disabled={isSubmitting}>
-        {isSubmitting ? "Saving..." : "Save Student"}
+        {isSubmitting ? "Adding Student..." : "Add Student"}
       </Button>
     </form>
   );
