@@ -23,6 +23,9 @@ import UniversityDetail from "./pages/universities/UniversityDetail";
 import HostelExpenses from "./pages/hostels/HostelExpenses";
 import HostelManagement from "./pages/hostels/HostelManagement";
 
+// Mess Management
+import MessManagement from "./pages/mess/MessManagement";
+
 // Office Expenses
 import OfficeExpenses from "./pages/office/OfficeExpenses";
 
@@ -71,6 +74,9 @@ const App = () => (
           {/* Hostel Expenses */}
           <Route path="/hostels/management" element={<HostelManagement />} />
           <Route path="/hostels/expenses" element={<HostelExpenses />} />
+          
+          {/* Mess Management */}
+          <Route path="/mess/management" element={<MessManagement />} />
           
           {/* Office Expenses */}
           <Route path="/office-expenses" element={<OfficeExpenses />} />

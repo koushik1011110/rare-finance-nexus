@@ -1,8 +1,9 @@
+
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { 
   BarChart3, Users, GraduationCap, Building2, Home, ClipboardList, 
-  Briefcase, DollarSign, LineChart, Settings, Menu, X, Download, User, ChevronLeft, ChevronRight
+  Briefcase, DollarSign, LineChart, Settings, Menu, X, Download, User, ChevronLeft, ChevronRight, Utensils
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -64,6 +65,14 @@ const navItems: NavItem[] = [
     subItems: [
       { title: "Hostel Management", href: "/hostels/management" },
       { title: "Hostel Expenses", href: "/hostels/expenses" },
+    ]
+  },
+  { 
+    title: "Mess", 
+    href: "/mess", 
+    icon: Utensils,
+    subItems: [
+      { title: "Mess Management", href: "/mess/management" },
     ]
   },
   { title: "Office Expenses", href: "/office-expenses", icon: ClipboardList },
