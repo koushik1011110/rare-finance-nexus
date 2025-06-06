@@ -42,12 +42,7 @@ export const messAPI = {
   getAll: async (): Promise<Mess[]> => {
     const { data, error } = await supabase
       .from('mess')
-      .select(`
-        *,
-        hostels (
-          name
-        )
-      `)
+      .select('*, hostels:hostel_id (name)')
       .order('created_at', { ascending: false });
     
     if (error) {
@@ -55,10 +50,7 @@ export const messAPI = {
       throw error;
     }
     
-    return (data || []).map(mess => ({
-      ...mess,
-      status: mess.status as 'Active' | 'Inactive' | 'Maintenance'
-    }));
+    return (data || []) as Mess[];
   },
 
   create: async (messData: Omit<MessFormData, 'id'>): Promise<Mess> => {
@@ -78,12 +70,7 @@ export const messAPI = {
         facilities: messData.facilities,
         status: messData.status,
       }])
-      .select(`
-        *,
-        hostels (
-          name
-        )
-      `)
+      .select('*, hostels:hostel_id (name)')
       .single();
     
     if (error) {
@@ -91,10 +78,7 @@ export const messAPI = {
       throw error;
     }
     
-    return {
-      ...data,
-      status: data.status as 'Active' | 'Inactive' | 'Maintenance'
-    };
+    return data as Mess;
   },
 
   update: async (id: number, messData: Partial<Omit<MessFormData, 'id'>>): Promise<Mess> => {
@@ -119,12 +103,7 @@ export const messAPI = {
       .from('mess')
       .update(updateData)
       .eq('id', id)
-      .select(`
-        *,
-        hostels (
-          name
-        )
-      `)
+      .select('*, hostels:hostel_id (name)')
       .single();
     
     if (error) {
@@ -132,10 +111,7 @@ export const messAPI = {
       throw error;
     }
     
-    return {
-      ...data,
-      status: data.status as 'Active' | 'Inactive' | 'Maintenance'
-    };
+    return data as Mess;
   },
 
   delete: async (id: number): Promise<void> => {

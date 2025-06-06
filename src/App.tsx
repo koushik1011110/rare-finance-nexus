@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -21,6 +22,8 @@ import UniversityDetail from "./pages/universities/UniversityDetail";
 // Hostel Expenses
 import HostelExpenses from "./pages/hostels/HostelExpenses";
 import HostelManagement from "./pages/hostels/HostelManagement";
+import MessManagement from "./pages/hostels/MessManagement";
+import MessExpenses from "./pages/hostels/MessExpenses";
 
 // Office Expenses
 import OfficeExpenses from "./pages/office/OfficeExpenses";
@@ -44,8 +47,6 @@ import Reports from "./pages/reports/Reports";
 // Settings
 import Settings from "./pages/settings/Settings";
 
-import MessManagement from "@/pages/hostels/MessManagement";
-
 const queryClient = new QueryClient();
 
 function App() {
@@ -65,15 +66,17 @@ function App() {
               <Route path="/students/admission" element={<StudentAdmission />} />
               
               {/* Agent Management */}
-              <Route path="/agents" element={<AgentManagement />} />
+              <Route path="/agents/management" element={<AgentManagement />} />
               
               {/* University Section */}
               <Route path="/universities" element={<Universities />} />
               <Route path="/universities/:universityId" element={<UniversityDetail />} />
               
-              {/* Hostel Expenses */}
+              {/* Hostel & Mess Management */}
               <Route path="/hostels/management" element={<HostelManagement />} />
               <Route path="/hostels/expenses" element={<HostelExpenses />} />
+              <Route path="/hostels/mess-management" element={<MessManagement />} />
+              <Route path="/hostels/mess-expenses" element={<MessExpenses />} />
               
               {/* Office Expenses */}
               <Route path="/office-expenses" element={<OfficeExpenses />} />
@@ -97,8 +100,7 @@ function App() {
               {/* Settings */}
               <Route path="/settings" element={<Settings />} />
               
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="/hostels/mess-management" element={<MessManagement />} />
+              {/* Catch-all route for 404 */}
               <Route path="*" element={<NotFound />} />
             </Routes>
           </div>
