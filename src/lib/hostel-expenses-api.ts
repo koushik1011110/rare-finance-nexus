@@ -53,7 +53,12 @@ export const hostelExpensesAPI = {
       throw error;
     }
     
-    return data || [];
+    return (data || []).map(expense => ({
+      ...expense,
+      category: expense.category as HostelExpense['category'],
+      payment_method: expense.payment_method as HostelExpense['payment_method'],
+      status: expense.status as HostelExpense['status']
+    }));
   },
 
   create: async (expenseData: Omit<HostelExpenseFormData, 'id'>): Promise<HostelExpense> => {
@@ -85,7 +90,12 @@ export const hostelExpensesAPI = {
       throw error;
     }
     
-    return data;
+    return {
+      ...data,
+      category: data.category as HostelExpense['category'],
+      payment_method: data.payment_method as HostelExpense['payment_method'],
+      status: data.status as HostelExpense['status']
+    };
   },
 
   update: async (id: number, expenseData: Partial<Omit<HostelExpenseFormData, 'id'>>): Promise<HostelExpense> => {
@@ -122,7 +132,12 @@ export const hostelExpensesAPI = {
       throw error;
     }
     
-    return data;
+    return {
+      ...data,
+      category: data.category as HostelExpense['category'],
+      payment_method: data.payment_method as HostelExpense['payment_method'],
+      status: data.status as HostelExpense['status']
+    };
   },
 
   delete: async (id: number): Promise<void> => {

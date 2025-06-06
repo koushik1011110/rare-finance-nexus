@@ -5,7 +5,20 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { HostelFormData } from "@/lib/hostels-api";
+
+export interface HostelFormData {
+  id?: number;
+  name: string;
+  location: string;
+  capacity: string;
+  monthly_rent: string;
+  contact_person: string;
+  phone: string;
+  email: string;
+  address: string;
+  facilities: string;
+  status: 'Active' | 'Inactive' | 'Maintenance';
+}
 
 interface HostelFormProps {
   defaultValues?: HostelFormData;

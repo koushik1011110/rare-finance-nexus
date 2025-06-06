@@ -53,7 +53,12 @@ export const messExpensesAPI = {
       throw error;
     }
     
-    return data || [];
+    return (data || []).map(expense => ({
+      ...expense,
+      category: expense.category as MessExpense['category'],
+      payment_method: expense.payment_method as MessExpense['payment_method'],
+      status: expense.status as MessExpense['status']
+    }));
   },
 
   create: async (expenseData: Omit<MessExpenseFormData, 'id'>): Promise<MessExpense> => {
@@ -85,7 +90,12 @@ export const messExpensesAPI = {
       throw error;
     }
     
-    return data;
+    return {
+      ...data,
+      category: data.category as MessExpense['category'],
+      payment_method: data.payment_method as MessExpense['payment_method'],
+      status: data.status as MessExpense['status']
+    };
   },
 
   update: async (id: number, expenseData: Partial<Omit<MessExpenseFormData, 'id'>>): Promise<MessExpense> => {
@@ -122,7 +132,12 @@ export const messExpensesAPI = {
       throw error;
     }
     
-    return data;
+    return {
+      ...data,
+      category: data.category as MessExpense['category'],
+      payment_method: data.payment_method as MessExpense['payment_method'],
+      status: data.status as MessExpense['status']
+    };
   },
 
   delete: async (id: number): Promise<void> => {
