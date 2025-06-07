@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import PageHeader from "@/components/shared/PageHeader";
 import { Button } from "@/components/ui/button";
-import { Plus, Search, Edit, Eye } from "lucide-react";
+import { Plus, Search, Edit, Eye, Users } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import DataTable from "@/components/ui/DataTable";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -101,7 +100,20 @@ const HostelManagement = () => {
     { header: "Hostel Name", accessorKey: "name" as keyof Hostel },
     { header: "Location", accessorKey: "location" as keyof Hostel },
     { header: "Capacity", accessorKey: "capacity" as keyof Hostel },
-    { header: "Occupancy", accessorKey: "current_occupancy" as keyof Hostel },
+    { 
+      header: "Occupancy", 
+      accessorKey: "current_occupancy" as keyof Hostel,
+      cell: (row: Hostel) => (
+        <div className="flex items-center space-x-2">
+          <Users className="h-4 w-4 text-blue-600" />
+          <span className="font-medium">{row.current_occupancy}</span>
+          <span className="text-muted-foreground">/ {row.capacity}</span>
+          <span className="text-xs text-muted-foreground">
+            ({Math.round((row.current_occupancy / row.capacity) * 100)}%)
+          </span>
+        </div>
+      )
+    },
     { 
       header: "Monthly Rent", 
       accessorKey: "monthly_rent" as keyof Hostel,
@@ -153,6 +165,10 @@ const HostelManagement = () => {
     );
   }
   
+  const totalCapacity = hostels.reduce((sum, hostel) => sum + hostel.capacity, 0);
+  const totalOccupancy = hostels.reduce((sum, hostel) => sum + hostel.current_occupancy, 0);
+  const occupancyPercentage = totalCapacity > 0 ? Math.round((totalOccupancy / totalCapacity) * 100) : 0;
+  
   return (
     <MainLayout>
       <PageHeader
@@ -180,9 +196,7 @@ const HostelManagement = () => {
             <CardTitle className="text-sm font-medium text-muted-foreground">Total Capacity</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {hostels.reduce((sum, hostel) => sum + hostel.capacity, 0)}
-            </div>
+            <div className="text-2xl font-bold">{totalCapacity}</div>
           </CardContent>
         </Card>
         <Card>
@@ -190,12 +204,9 @@ const HostelManagement = () => {
             <CardTitle className="text-sm font-medium text-muted-foreground">Current Occupancy</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {hostels.reduce((sum, hostel) => sum + hostel.current_occupancy, 0)}
-            </div>
+            <div className="text-2xl font-bold">{totalOccupancy}</div>
             <p className="text-xs text-muted-foreground mt-1">
-              {Math.round((hostels.reduce((sum, hostel) => sum + hostel.current_occupancy, 0) / 
-                hostels.reduce((sum, hostel) => sum + hostel.capacity, 0)) * 100)}% occupied
+              {occupancyPercentage}% occupied
             </p>
           </CardContent>
         </Card>

@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 export interface Hostel {
@@ -34,6 +33,9 @@ export interface HostelFormData {
 
 export const hostelsAPI = {
   getAll: async (): Promise<Hostel[]> => {
+    // First recalculate occupancies to ensure accuracy
+    await supabase.rpc('recalculate_all_hostel_occupancies');
+    
     const { data, error } = await supabase
       .from('hostels')
       .select('*')

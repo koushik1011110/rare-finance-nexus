@@ -120,6 +120,121 @@ export type Database = {
         }
         Relationships: []
       }
+      apply_students: {
+        Row: {
+          aadhaar_copy_url: string | null
+          aadhaar_number: string | null
+          academic_session_id: number | null
+          address: string | null
+          admission_number: string | null
+          application_status: string | null
+          city: string | null
+          country: string | null
+          course_id: number | null
+          created_at: string | null
+          date_of_birth: string
+          email: string | null
+          father_name: string
+          first_name: string
+          id: number
+          last_name: string
+          mother_name: string
+          passport_copy_url: string | null
+          passport_number: string | null
+          phone_number: string | null
+          photo_url: string | null
+          scores: string | null
+          seat_number: string | null
+          status: string | null
+          twelfth_certificate_url: string | null
+          twelfth_marks: number | null
+          university_id: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          aadhaar_copy_url?: string | null
+          aadhaar_number?: string | null
+          academic_session_id?: number | null
+          address?: string | null
+          admission_number?: string | null
+          application_status?: string | null
+          city?: string | null
+          country?: string | null
+          course_id?: number | null
+          created_at?: string | null
+          date_of_birth: string
+          email?: string | null
+          father_name: string
+          first_name: string
+          id?: number
+          last_name: string
+          mother_name: string
+          passport_copy_url?: string | null
+          passport_number?: string | null
+          phone_number?: string | null
+          photo_url?: string | null
+          scores?: string | null
+          seat_number?: string | null
+          status?: string | null
+          twelfth_certificate_url?: string | null
+          twelfth_marks?: number | null
+          university_id?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          aadhaar_copy_url?: string | null
+          aadhaar_number?: string | null
+          academic_session_id?: number | null
+          address?: string | null
+          admission_number?: string | null
+          application_status?: string | null
+          city?: string | null
+          country?: string | null
+          course_id?: number | null
+          created_at?: string | null
+          date_of_birth?: string
+          email?: string | null
+          father_name?: string
+          first_name?: string
+          id?: number
+          last_name?: string
+          mother_name?: string
+          passport_copy_url?: string | null
+          passport_number?: string | null
+          phone_number?: string | null
+          photo_url?: string | null
+          scores?: string | null
+          seat_number?: string | null
+          status?: string | null
+          twelfth_certificate_url?: string | null
+          twelfth_marks?: number | null
+          university_id?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "apply_students_academic_session_id_fkey"
+            columns: ["academic_session_id"]
+            isOneToOne: false
+            referencedRelation: "academic_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "apply_students_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "apply_students_university_id_fkey"
+            columns: ["university_id"]
+            isOneToOne: false
+            referencedRelation: "universities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       courses: {
         Row: {
           created_at: string | null
@@ -580,10 +695,60 @@ export type Database = {
           },
         ]
       }
+      student_hostel_assignments: {
+        Row: {
+          assigned_date: string
+          created_at: string | null
+          hostel_id: number
+          id: number
+          status: string
+          student_id: number
+          updated_at: string | null
+        }
+        Insert: {
+          assigned_date?: string
+          created_at?: string | null
+          hostel_id: number
+          id?: number
+          status?: string
+          student_id: number
+          updated_at?: string | null
+        }
+        Update: {
+          assigned_date?: string
+          created_at?: string | null
+          hostel_id?: number
+          id?: number
+          status?: string
+          student_id?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_hostel_assignments_hostel_id_fkey"
+            columns: ["hostel_id"]
+            isOneToOne: false
+            referencedRelation: "hostels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_hostel_assignments_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: true
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       students: {
         Row: {
+          aadhaar_copy_url: string | null
+          aadhaar_number: string | null
           academic_session_id: number | null
+          address: string | null
           admission_number: string | null
+          city: string | null
+          country: string | null
           course_id: number | null
           created_at: string | null
           date_of_birth: string
@@ -593,14 +758,26 @@ export type Database = {
           id: number
           last_name: string
           mother_name: string
+          passport_copy_url: string | null
+          passport_number: string | null
           phone_number: string | null
+          photo_url: string | null
+          scores: string | null
+          seat_number: string | null
           status: string | null
+          twelfth_certificate_url: string | null
+          twelfth_marks: number | null
           university_id: number | null
           updated_at: string | null
         }
         Insert: {
+          aadhaar_copy_url?: string | null
+          aadhaar_number?: string | null
           academic_session_id?: number | null
+          address?: string | null
           admission_number?: string | null
+          city?: string | null
+          country?: string | null
           course_id?: number | null
           created_at?: string | null
           date_of_birth: string
@@ -610,14 +787,26 @@ export type Database = {
           id?: number
           last_name: string
           mother_name: string
+          passport_copy_url?: string | null
+          passport_number?: string | null
           phone_number?: string | null
+          photo_url?: string | null
+          scores?: string | null
+          seat_number?: string | null
           status?: string | null
+          twelfth_certificate_url?: string | null
+          twelfth_marks?: number | null
           university_id?: number | null
           updated_at?: string | null
         }
         Update: {
+          aadhaar_copy_url?: string | null
+          aadhaar_number?: string | null
           academic_session_id?: number | null
+          address?: string | null
           admission_number?: string | null
+          city?: string | null
+          country?: string | null
           course_id?: number | null
           created_at?: string | null
           date_of_birth?: string
@@ -627,8 +816,15 @@ export type Database = {
           id?: number
           last_name?: string
           mother_name?: string
+          passport_copy_url?: string | null
+          passport_number?: string | null
           phone_number?: string | null
+          photo_url?: string | null
+          scores?: string | null
+          seat_number?: string | null
           status?: string | null
+          twelfth_certificate_url?: string | null
+          twelfth_marks?: number | null
           university_id?: number | null
           updated_at?: string | null
         }
@@ -674,6 +870,105 @@ export type Database = {
         }
         Relationships: []
       }
+      user_permissions: {
+        Row: {
+          action: string
+          created_at: string | null
+          id: number
+          resource: string
+          role: Database["public"]["Enums"]["user_role"]
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          id?: number
+          resource: string
+          role: Database["public"]["Enums"]["user_role"]
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          id?: number
+          resource?: string
+          role?: Database["public"]["Enums"]["user_role"]
+        }
+        Relationships: []
+      }
+      user_sessions: {
+        Row: {
+          created_at: string | null
+          expires_at: string
+          id: number
+          token: string
+          user_id: number
+        }
+        Insert: {
+          created_at?: string | null
+          expires_at: string
+          id?: number
+          token: string
+          user_id: number
+        }
+        Update: {
+          created_at?: string | null
+          expires_at?: string
+          id?: number
+          token?: string
+          user_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_user_sessions_user"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_sessions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      users: {
+        Row: {
+          created_at: string | null
+          email: string
+          first_name: string
+          id: number
+          is_active: boolean
+          last_name: string
+          password_hash: string
+          role: Database["public"]["Enums"]["user_role"]
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          first_name: string
+          id?: number
+          is_active?: boolean
+          last_name: string
+          password_hash: string
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          first_name?: string
+          id?: number
+          is_active?: boolean
+          last_name?: string
+          password_hash?: string
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -691,9 +986,13 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      recalculate_all_hostel_occupancies: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
     }
     Enums: {
-      [_ in never]: never
+      user_role: "admin" | "agent" | "hostel_team"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -808,6 +1107,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      user_role: ["admin", "agent", "hostel_team"],
+    },
   },
 } as const
