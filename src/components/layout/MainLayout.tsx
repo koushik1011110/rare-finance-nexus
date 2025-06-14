@@ -44,6 +44,7 @@ const navItems: NavItem[] = [
       { title: "Direct Students", href: "/students/direct" },
       { title: "Agent Students", href: "/students/agent" },
       { title: "Student Admission", href: "/students/admission" },
+      { title: "Application", href: "/students/application" },
     ]
   },
   { title: "Agents", href: "/agents", icon: Users },

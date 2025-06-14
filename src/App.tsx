@@ -11,6 +11,7 @@ import NotFound from "./pages/NotFound";
 import DirectStudents from "./pages/students/DirectStudents";
 import AgentStudents from "./pages/students/AgentStudents";
 import StudentAdmission from "./pages/students/StudentAdmission";
+import Application from "./pages/students/Application";
 
 // Agent Management
 import AgentManagement from "./pages/agents/AgentManagement";
@@ -63,6 +64,7 @@ const App = () => (
           <Route path="/students/direct" element={<DirectStudents />} />
           <Route path="/students/agent" element={<AgentStudents />} />
           <Route path="/students/admission" element={<StudentAdmission />} />
+          <Route path="/students/application" element={<Application />} />
           
           {/* Agent Management */}
           <Route path="/agents" element={<AgentManagement />} />
