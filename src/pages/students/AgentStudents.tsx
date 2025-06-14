@@ -8,74 +8,56 @@ import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
 import DetailViewModal from "@/components/shared/DetailViewModal";
 import EditModal from "@/components/shared/EditModal";
-import AgentStudentForm, { AgentStudentFormData } from "@/components/forms/AgentStudentForm";
+import ComprehensiveStudentForm, { ComprehensiveStudentFormData } from "@/components/forms/ComprehensiveStudentForm";
 import { useAuth } from "@/contexts/AuthContext";
-
-// Sample data for agent students
-const agentStudentsData = [
-  {
-    id: "1",
-    studentName: "David Lee",
-    agentName: "Global Education",
-    university: "London University",
-    course: "Data Science",
-    totalFee: "$13,500",
-    paidAmount: "$9,000",
-    dueAmount: "$4,500",
-    commission: "$1,350",
-    commissionDue: "$450",
-    status: "Active",
-    remarks: "Visa approved",
-  },
-  {
-    id: "2",
-    studentName: "Aisha Khan",
-    agentName: "Academic Horizon",
-    university: "Oxford University",
-    course: "International Business",
-    totalFee: "$15,000",
-    paidAmount: "$7,500",
-    dueAmount: "$7,500",
-    commission: "$1,500",
-    commissionDue: "$750",
-    status: "Active",
-    remarks: "",
-  },
-  {
-    id: "3",
-    studentName: "Carlos Rodriguez",
-    agentName: "Global Education",
-    university: "Cambridge University",
-    course: "Civil Engineering",
-    totalFee: "$14,000",
-    paidAmount: "$14,000",
-    dueAmount: "$0",
-    commission: "$1,400",
-    commissionDue: "$0",
-    status: "Completed",
-    remarks: "Graduated with distinction",
-  },
-];
+import { supabase } from "@/integrations/supabase/client";
+import { universitiesAPI, coursesAPI, academicSessionsAPI } from "@/lib/supabase-database";
 
 interface AgentStudent {
-  id: string;
-  studentName: string;
-  agentName: string;
-  university: string;
-  course: string;
-  totalFee: string;
-  paidAmount: string;
-  dueAmount: string;
-  commission: string;
-  commissionDue: string;
+  id: number;
+  first_name: string;
+  last_name: string;
+  father_name: string;
+  mother_name: string;
+  date_of_birth: string;
+  phone_number?: string;
+  email?: string;
+  university_id: number;
+  course_id: number;
+  academic_session_id: number;
   status: string;
-  remarks?: string;
+  admission_number?: string;
+  city?: string;
+  country?: string;
+  address?: string;
+  aadhaar_number?: string;
+  passport_number?: string;
+  seat_number?: string;
+  scores?: string;
+  twelfth_marks?: number;
+  photo_url?: string;
+  passport_copy_url?: string;
+  aadhaar_copy_url?: string;
+  twelfth_certificate_url?: string;
+  agent_id?: number;
+  created_at: string;
+  updated_at: string;
+  // Display fields
+  university_name?: string;
+  course_name?: string;
+  session_name?: string;
+  agent_name?: string;
 }
 
 const AgentStudents = () => {
   const { user, isAdmin } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [students, setStudents] = useState<AgentStudent[]>([]);
+  const [universities, setUniversities] = useState<any[]>([]);
+  const [courses, setCourses] = useState<any[]>([]);
+  const [academicSessions, setAcademicSessions] = useState<any[]>([]);
+  const [agents, setAgents] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   
   // Modal states
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -84,43 +66,109 @@ const AgentStudents = () => {
   const [currentStudent, setCurrentStudent] = useState<AgentStudent | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Load agent students data
+  // Load data
   useEffect(() => {
-    loadStudents();
+    loadData();
   }, [user]);
 
-  const loadStudents = () => {
+  const loadData = async () => {
     if (!user) return;
     
-    let filteredData = agentStudentsData;
-    
-    // Filter based on user role
-    if (user.role === 'agent' && user.email) {
-      // If user is an agent, only show students added by them
-      filteredData = agentStudentsData.filter(student => 
-        student.agentName === getAgentNameByEmail(user.email)
-      );
+    setLoading(true);
+    try {
+      // Load reference data
+      const [universitiesData, coursesData, sessionsData, agentsData] = await Promise.all([
+        universitiesAPI.getAll(),
+        coursesAPI.getAll(),
+        academicSessionsAPI.getAll(),
+        supabase.from('agents').select('*')
+      ]);
+
+      setUniversities(universitiesData);
+      setCourses(coursesData);
+      setAcademicSessions(sessionsData);
+      setAgents(agentsData.data || []);
+
+      // Load students
+      await loadStudents();
+    } catch (error) {
+      console.error('Error loading data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load data. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
-    // If user is admin, show all students (no filtering needed)
-    
-    setStudents(filteredData);
   };
 
-  const getAgentNameByEmail = (email: string): string => {
-    // Map emails to agent names - in a real app this would come from the agents table
-    const emailToAgentMap: { [key: string]: string } = {
-      'admin@rareeducation.com': 'Global Education', // For demo purposes
-    };
+  const loadStudents = async () => {
+    if (!user) return;
     
-    return emailToAgentMap[email] || 'Unknown Agent';
+    try {
+      let query = supabase
+        .from('students')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      // Filter based on user role
+      if (user.role === 'agent') {
+        // Get the agent record for the current user
+        const { data: agentData } = await supabase
+          .from('agents')
+          .select('id')
+          .eq('email', user.email)
+          .single();
+
+        if (agentData) {
+          query = query.eq('agent_id', agentData.id);
+        } else {
+          // If no agent record found, show no students
+          setStudents([]);
+          return;
+        }
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error('Error fetching students:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load students. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Enrich student data with display names
+      const enrichedStudents = data?.map(student => ({
+        ...student,
+        university_name: universities.find(u => u.id === student.university_id)?.name || 'Unknown',
+        course_name: courses.find(c => c.id === student.course_id)?.name || 'Unknown',
+        session_name: academicSessions.find(s => s.id === student.academic_session_id)?.session_name || 'Unknown',
+        agent_name: agents.find(a => a.id === student.agent_id)?.name || 'Unknown',
+      })) || [];
+
+      setStudents(enrichedStudents);
+    } catch (error) {
+      console.error('Error loading students:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load students. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const filteredData = students.filter(
     (student) =>
-      student.studentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.agentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.university.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.course.toLowerCase().includes(searchTerm.toLowerCase())
+      student.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      student.last_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      student.university_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      student.course_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      student.agent_name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleViewStudent = (student: AgentStudent) => {
@@ -137,67 +185,86 @@ const AgentStudents = () => {
     setIsAddModalOpen(true);
   };
 
-  const handleSaveStudent = (formData: AgentStudentFormData) => {
+  const handleSaveStudent = async (formData: ComprehensiveStudentFormData) => {
     setIsSubmitting(true);
     
-    // Simulating API call
-    setTimeout(() => {
+    try {
+      // Get agent ID for current user if they're an agent
+      let agentId = formData.agent_id;
+      if (user?.role === 'agent' && !agentId) {
+        const { data: agentData } = await supabase
+          .from('agents')
+          .select('id')
+          .eq('email', user.email)
+          .single();
+        agentId = agentData?.id;
+      }
+
       if (formData.id) {
         // Update existing student
-        setStudents(
-          students.map((student) =>
-            student.id === formData.id
-              ? {
-                  ...student,
-                  studentName: formData.studentName,
-                  agentName: formData.agentName,
-                  university: formData.university,
-                  course: formData.course,
-                  totalFee: formData.totalFee,
-                  paidAmount: formData.paidAmount,
-                  dueAmount: formData.dueAmount,
-                  commission: formData.commission,
-                  commissionDue: formData.commissionDue,
-                  status: formData.status,
-                  remarks: formData.remarks,
-                }
-              : student
-          )
-        );
+        const { error } = await supabase
+          .from('students')
+          .update({
+            ...formData,
+            agent_id: agentId,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', formData.id);
+
+        if (error) {
+          console.error('Error updating student:', error);
+          toast({
+            title: "Error",
+            description: "Failed to update student. Please try again.",
+            variant: "destructive",
+          });
+          return;
+        }
         
         toast({
           title: "Student Updated",
-          description: `${formData.studentName} has been updated successfully.`,
+          description: `${formData.first_name} ${formData.last_name} has been updated successfully.`,
         });
       } else {
         // Add new student
-        const newStudent: AgentStudent = {
-          id: Date.now().toString(),
-          studentName: formData.studentName,
-          agentName: formData.agentName,
-          university: formData.university,
-          course: formData.course,
-          totalFee: formData.totalFee,
-          paidAmount: formData.paidAmount,
-          dueAmount: formData.dueAmount,
-          commission: formData.commission,
-          commissionDue: formData.commissionDue,
-          status: formData.status,
-          remarks: formData.remarks,
-        };
-        
-        setStudents([newStudent, ...students]);
+        const { error } = await supabase
+          .from('students')
+          .insert([{
+            ...formData,
+            agent_id: agentId,
+          }]);
+
+        if (error) {
+          console.error('Error creating student:', error);
+          toast({
+            title: "Error",
+            description: "Failed to add student. Please try again.",
+            variant: "destructive",
+          });
+          return;
+        }
         
         toast({
           title: "Student Added",
-          description: `${formData.studentName} has been added successfully.`,
+          description: `${formData.first_name} ${formData.last_name} has been added successfully.`,
         });
       }
       
-      setIsSubmitting(false);
+      // Reload students data
+      await loadStudents();
+      
       setIsAddModalOpen(false);
       setIsEditModalOpen(false);
-    }, 1000);
+    } catch (error) {
+      console.error('Error saving student:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save student. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleImport = () => {
@@ -215,24 +282,28 @@ const AgentStudents = () => {
   };
 
   const columns = [
-    { header: "Student Name", accessorKey: "studentName" },
-    { header: "Agent Name", accessorKey: "agentName" },
-    { header: "University", accessorKey: "university" },
-    { header: "Course", accessorKey: "course" },
-    { header: "Total Fee", accessorKey: "totalFee" },
-    { header: "Paid Amount", accessorKey: "paidAmount" },
-    { header: "Due Amount", accessorKey: "dueAmount" },
-    { header: "Commission", accessorKey: "commission" },
-    { header: "Commission Due", accessorKey: "commissionDue" },
+    { 
+      header: "Student Name", 
+      accessorKey: "first_name",
+      cell: (row: AgentStudent) => `${row.first_name} ${row.last_name}`
+    },
+    { header: "Admission No.", accessorKey: "admission_number" },
+    { header: "University", accessorKey: "university_name" },
+    { header: "Course", accessorKey: "course_name" },
+    { header: "Session", accessorKey: "session_name" },
+    { header: "Phone", accessorKey: "phone_number" },
+    { header: "Email", accessorKey: "email" },
     {
       header: "Status",
       accessorKey: "status",
       cell: (row: any) => (
         <span
           className={`rounded-full px-2 py-1 text-xs font-medium ${
-            row.status === "Active"
+            row.status === "active"
               ? "bg-blue-100 text-blue-800"
-              : "bg-green-100 text-green-800"
+              : row.status === "completed"
+              ? "bg-green-100 text-green-800"
+              : "bg-gray-100 text-gray-800"
           }`}
         >
           {row.status}
@@ -248,7 +319,7 @@ const AgentStudents = () => {
             <Eye className="mr-2 h-4 w-4" />
             View
           </Button>
-          {(isAdmin || (user?.role === 'agent' && row.agentName === getAgentNameByEmail(user.email || ''))) && (
+          {(isAdmin || (user?.role === 'agent' && row.agent_id && agents.find(a => a.email === user.email)?.id === row.agent_id)) && (
             <Button variant="outline" size="sm" onClick={() => handleEditStudent(row)}>
               <Edit className="mr-2 h-4 w-4" />
               Edit
@@ -292,25 +363,28 @@ const AgentStudents = () => {
 
       <div className="mb-6">
         <Input
-          placeholder="Search by student name, agent, university or course..."
+          placeholder="Search by student name, university or course..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="max-w-sm"
         />
       </div>
 
-      <div className="rounded-lg border bg-card shadow-sm">
-        <DataTable columns={columns} data={filteredData} />
-      </div>
+      {loading ? (
+        <div className="text-center py-8">Loading...</div>
+      ) : (
+        <div className="rounded-lg border bg-card shadow-sm">
+          <DataTable columns={columns} data={filteredData} />
+        </div>
+      )}
       
       {/* Add Student Modal */}
       <EditModal
-        title="Add New Agent Student"
+        title="Add New Student"
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
       >
-        <AgentStudentForm 
-          agentName="General Agent"
+        <ComprehensiveStudentForm 
           onSubmit={handleSaveStudent}
           isSubmitting={isSubmitting}
         />
@@ -319,55 +393,77 @@ const AgentStudents = () => {
       {/* View Student Modal */}
       {currentStudent && (
         <DetailViewModal
-          title={`Student: ${currentStudent.studentName}`}
+          title={`Student: ${currentStudent.first_name} ${currentStudent.last_name}`}
           isOpen={isViewModalOpen}
           onClose={() => setIsViewModalOpen(false)}
         >
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
               <h3 className="font-semibold">Student Name</h3>
-              <p>{currentStudent.studentName}</p>
+              <p>{currentStudent.first_name} {currentStudent.last_name}</p>
             </div>
             <div>
-              <h3 className="font-semibold">Agent Name</h3>
-              <p>{currentStudent.agentName}</p>
+              <h3 className="font-semibold">Admission Number</h3>
+              <p>{currentStudent.admission_number || "Not assigned"}</p>
+            </div>
+            <div>
+              <h3 className="font-semibold">Father's Name</h3>
+              <p>{currentStudent.father_name}</p>
+            </div>
+            <div>
+              <h3 className="font-semibold">Mother's Name</h3>
+              <p>{currentStudent.mother_name}</p>
+            </div>
+            <div>
+              <h3 className="font-semibold">Date of Birth</h3>
+              <p>{currentStudent.date_of_birth}</p>
+            </div>
+            <div>
+              <h3 className="font-semibold">Phone Number</h3>
+              <p>{currentStudent.phone_number || "Not provided"}</p>
+            </div>
+            <div>
+              <h3 className="font-semibold">Email</h3>
+              <p>{currentStudent.email || "Not provided"}</p>
             </div>
             <div>
               <h3 className="font-semibold">University</h3>
-              <p>{currentStudent.university}</p>
+              <p>{currentStudent.university_name}</p>
             </div>
             <div>
               <h3 className="font-semibold">Course</h3>
-              <p>{currentStudent.course}</p>
+              <p>{currentStudent.course_name}</p>
             </div>
             <div>
-              <h3 className="font-semibold">Total Fee</h3>
-              <p>{currentStudent.totalFee}</p>
+              <h3 className="font-semibold">Academic Session</h3>
+              <p>{currentStudent.session_name}</p>
             </div>
             <div>
-              <h3 className="font-semibold">Paid Amount</h3>
-              <p>{currentStudent.paidAmount}</p>
+              <h3 className="font-semibold">City</h3>
+              <p>{currentStudent.city || "Not provided"}</p>
             </div>
             <div>
-              <h3 className="font-semibold">Due Amount</h3>
-              <p>{currentStudent.dueAmount}</p>
+              <h3 className="font-semibold">Country</h3>
+              <p>{currentStudent.country || "Not provided"}</p>
             </div>
             <div>
-              <h3 className="font-semibold">Commission</h3>
-              <p>{currentStudent.commission}</p>
-            </div>
-            <div>
-              <h3 className="font-semibold">Commission Due</h3>
-              <p>{currentStudent.commissionDue}</p>
+              <h3 className="font-semibold">12th Marks</h3>
+              <p>{currentStudent.twelfth_marks ? `${currentStudent.twelfth_marks}%` : "Not provided"}</p>
             </div>
             <div>
               <h3 className="font-semibold">Status</h3>
-              <p>{currentStudent.status}</p>
+              <p className="capitalize">{currentStudent.status}</p>
             </div>
             <div className="col-span-2">
-              <h3 className="font-semibold">Remarks</h3>
-              <p>{currentStudent.remarks || "No remarks"}</p>
+              <h3 className="font-semibold">Address</h3>
+              <p>{currentStudent.address || "Not provided"}</p>
             </div>
+            {currentStudent.scores && (
+              <div className="col-span-2">
+                <h3 className="font-semibold">Scores</h3>
+                <p>{currentStudent.scores}</p>
+              </div>
+            )}
           </div>
         </DetailViewModal>
       )}
@@ -375,25 +471,37 @@ const AgentStudents = () => {
       {/* Edit Student Modal */}
       {currentStudent && (
         <EditModal
-          title={`Edit Student: ${currentStudent.studentName}`}
+          title={`Edit Student: ${currentStudent.first_name} ${currentStudent.last_name}`}
           isOpen={isEditModalOpen}
           onClose={() => setIsEditModalOpen(false)}
         >
-          <AgentStudentForm 
-            agentName={currentStudent.agentName}
+          <ComprehensiveStudentForm 
             initialData={{
               id: currentStudent.id,
-              studentName: currentStudent.studentName,
-              agentName: currentStudent.agentName,
-              university: currentStudent.university,
-              course: currentStudent.course,
-              totalFee: currentStudent.totalFee,
-              paidAmount: currentStudent.paidAmount,
-              dueAmount: currentStudent.dueAmount,
-              commission: currentStudent.commission,
-              commissionDue: currentStudent.commissionDue,
-              status: currentStudent.status as "Active" | "Completed" | "Inactive",
-              remarks: currentStudent.remarks,
+              first_name: currentStudent.first_name,
+              last_name: currentStudent.last_name,
+              father_name: currentStudent.father_name,
+              mother_name: currentStudent.mother_name,
+              date_of_birth: currentStudent.date_of_birth,
+              phone_number: currentStudent.phone_number,
+              email: currentStudent.email,
+              university_id: currentStudent.university_id,
+              course_id: currentStudent.course_id,
+              academic_session_id: currentStudent.academic_session_id,
+              status: currentStudent.status as "active" | "inactive" | "completed",
+              city: currentStudent.city,
+              country: currentStudent.country,
+              address: currentStudent.address,
+              aadhaar_number: currentStudent.aadhaar_number,
+              passport_number: currentStudent.passport_number,
+              seat_number: currentStudent.seat_number,
+              scores: currentStudent.scores,
+              twelfth_marks: currentStudent.twelfth_marks,
+              photo_url: currentStudent.photo_url,
+              passport_copy_url: currentStudent.passport_copy_url,
+              aadhaar_copy_url: currentStudent.aadhaar_copy_url,
+              twelfth_certificate_url: currentStudent.twelfth_certificate_url,
+              agent_id: currentStudent.agent_id,
             }}
             onSubmit={handleSaveStudent}
             isSubmitting={isSubmitting}

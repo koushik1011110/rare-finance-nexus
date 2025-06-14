@@ -875,6 +875,7 @@ export type Database = {
           academic_session_id: number | null
           address: string | null
           admission_number: string | null
+          agent_id: number | null
           city: string | null
           country: string | null
           course_id: number | null
@@ -904,6 +905,7 @@ export type Database = {
           academic_session_id?: number | null
           address?: string | null
           admission_number?: string | null
+          agent_id?: number | null
           city?: string | null
           country?: string | null
           course_id?: number | null
@@ -933,6 +935,7 @@ export type Database = {
           academic_session_id?: number | null
           address?: string | null
           admission_number?: string | null
+          agent_id?: number | null
           city?: string | null
           country?: string | null
           course_id?: number | null
@@ -962,6 +965,13 @@ export type Database = {
             columns: ["academic_session_id"]
             isOneToOne: false
             referencedRelation: "academic_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "students_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
             referencedColumns: ["id"]
           },
           {
