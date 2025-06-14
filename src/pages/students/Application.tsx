@@ -73,12 +73,16 @@ export default function Application() {
 
   const updateStatusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: number; status: string }) => {
-      const { error } = await supabase
+      console.log("About to update database for ID:", id, "with status:", status);
+      const { data, error } = await supabase
         .from("apply_students")
         .update({ status, updated_at: new Date().toISOString() })
-        .eq("id", id);
+        .eq("id", id)
+        .select();
 
+      console.log("Database response:", { data, error });
       if (error) throw error;
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["apply-students"] });
