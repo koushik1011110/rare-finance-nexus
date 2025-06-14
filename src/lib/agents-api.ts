@@ -31,24 +31,38 @@ export interface AgentFormData {
 // Agents API
 export const agentsAPI = {
   getAll: async (): Promise<Agent[]> => {
-    const { data, error } = await supabase
+    // First get all agents
+    const { data: agentsData, error: agentsError } = await supabase
       .from('agents')
-      .select(`
-        *,
-        students_count:students(count)
-      `)
+      .select('*')
       .order('created_at', { ascending: false });
     
-    if (error) {
-      console.error('Error fetching agents:', error);
-      throw error;
+    if (agentsError) {
+      console.error('Error fetching agents:', agentsError);
+      throw agentsError;
     }
-    
-    return (data || []).map(agent => ({
-      ...agent,
-      students_count: agent.students_count?.[0]?.count || 0,
-      status: agent.status as 'Active' | 'Inactive'
-    }));
+
+    // Then get student counts for each agent
+    const agentsWithCounts = await Promise.all(
+      (agentsData || []).map(async (agent) => {
+        const { count, error: countError } = await supabase
+          .from('students')
+          .select('*', { count: 'exact', head: true })
+          .eq('agent_id', agent.id);
+        
+        if (countError) {
+          console.error('Error counting students for agent:', agent.id, countError);
+        }
+        
+        return {
+          ...agent,
+          students_count: count || 0,
+          status: agent.status as 'Active' | 'Inactive'
+        };
+      })
+    );
+
+    return agentsWithCounts;
   },
 
   create: async (agentData: Omit<AgentFormData, 'id'>): Promise<Agent> => {
