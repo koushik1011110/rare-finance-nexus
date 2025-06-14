@@ -31,38 +31,46 @@ export interface AgentFormData {
 // Agents API
 export const agentsAPI = {
   getAll: async (): Promise<Agent[]> => {
-    // First get all agents
-    const { data: agentsData, error: agentsError } = await supabase
-      .from('agents')
-      .select('*')
-      .order('created_at', { ascending: false });
-    
-    if (agentsError) {
-      console.error('Error fetching agents:', agentsError);
-      throw agentsError;
+    try {
+      // Call the edge function to get agents with calculated commissions
+      const { data, error } = await supabase.functions.invoke('calculate-agent-commissions');
+      
+      if (error) {
+        console.error('Error calling calculate-agent-commissions function:', error);
+        throw error;
+      }
+      
+      if (!data) {
+        console.error('No data returned from calculate-agent-commissions function');
+        return [];
+      }
+      
+      return data.map((agent: any) => ({
+        ...agent,
+        status: agent.status as 'Active' | 'Inactive'
+      }));
+    } catch (error) {
+      console.error('Error fetching agents with commissions:', error);
+      
+      // Fallback to basic agent data without commissions
+      const { data: agentsData, error: agentsError } = await supabase
+        .from('agents')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (agentsError) {
+        console.error('Error fetching basic agents data:', agentsError);
+        throw agentsError;
+      }
+
+      return (agentsData || []).map(agent => ({
+        ...agent,
+        students_count: 0,
+        total_received: 0,
+        commission_due: 0,
+        status: agent.status as 'Active' | 'Inactive'
+      }));
     }
-
-    // Then get student counts for each agent
-    const agentsWithCounts = await Promise.all(
-      (agentsData || []).map(async (agent) => {
-        const { count, error: countError } = await supabase
-          .from('students')
-          .select('*', { count: 'exact', head: true })
-          .eq('agent_id', agent.id);
-        
-        if (countError) {
-          console.error('Error counting students for agent:', agent.id, countError);
-        }
-        
-        return {
-          ...agent,
-          students_count: count || 0,
-          status: agent.status as 'Active' | 'Inactive'
-        };
-      })
-    );
-
-    return agentsWithCounts;
   },
 
   create: async (agentData: Omit<AgentFormData, 'id'>): Promise<Agent> => {
