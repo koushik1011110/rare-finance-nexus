@@ -7,6 +7,7 @@ import { Plus, Download, Upload, Eye, Edit } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
 import DetailViewModal from "@/components/shared/DetailViewModal";
+import StudentProfileModal from "@/components/students/StudentProfileModal";
 import EditModal from "@/components/shared/EditModal";
 import ComprehensiveStudentForm, { ComprehensiveStudentFormData } from "@/components/forms/ComprehensiveStudentForm";
 import { useAuth } from "@/contexts/AuthContext";
@@ -460,88 +461,12 @@ const AgentStudents = () => {
       </EditModal>
       
       {/* View Student Modal */}
-      {currentStudent && (
-        <DetailViewModal
-          title={`Student: ${currentStudent.first_name} ${currentStudent.last_name}`}
-          isOpen={isViewModalOpen}
-          onClose={() => setIsViewModalOpen(false)}
-        >
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div>
-              <h3 className="font-semibold">Student Name</h3>
-              <p>{currentStudent.first_name} {currentStudent.last_name}</p>
-            </div>
-            <div>
-              <h3 className="font-semibold">Admission Number</h3>
-              <p>{currentStudent.admission_number || "Not assigned"}</p>
-            </div>
-            <div>
-              <h3 className="font-semibold">Father's Name</h3>
-              <p>{currentStudent.father_name}</p>
-            </div>
-            <div>
-              <h3 className="font-semibold">Mother's Name</h3>
-              <p>{currentStudent.mother_name}</p>
-            </div>
-            <div>
-              <h3 className="font-semibold">Date of Birth</h3>
-              <p>{currentStudent.date_of_birth}</p>
-            </div>
-            <div>
-              <h3 className="font-semibold">Phone Number</h3>
-              <p>{currentStudent.phone_number || "Not provided"}</p>
-            </div>
-            <div>
-              <h3 className="font-semibold">Email</h3>
-              <p>{currentStudent.email || "Not provided"}</p>
-            </div>
-            <div>
-              <h3 className="font-semibold">University</h3>
-              <p>{currentStudent.university_name}</p>
-            </div>
-            <div>
-              <h3 className="font-semibold">Course</h3>
-              <p>{currentStudent.course_name}</p>
-            </div>
-            <div>
-              <h3 className="font-semibold">Academic Session</h3>
-              <p>{currentStudent.session_name}</p>
-            </div>
-            <div>
-              <h3 className="font-semibold">City</h3>
-              <p>{currentStudent.city || "Not provided"}</p>
-            </div>
-            <div>
-              <h3 className="font-semibold">Country</h3>
-              <p>{currentStudent.country || "Not provided"}</p>
-            </div>
-            <div>
-              <h3 className="font-semibold">12th Marks</h3>
-              <p>{currentStudent.twelfth_marks ? `${currentStudent.twelfth_marks}%` : "Not provided"}</p>
-            </div>
-            <div>
-              <h3 className="font-semibold">Status</h3>
-              <p className="capitalize">{currentStudent.status}</p>
-            </div>
-            {isAdmin && (
-              <div>
-                <h3 className="font-semibold">Agent</h3>
-                <p>{currentStudent.agent_name}</p>
-              </div>
-            )}
-            <div className="col-span-2">
-              <h3 className="font-semibold">Address</h3>
-              <p>{currentStudent.address || "Not provided"}</p>
-            </div>
-            {currentStudent.scores && (
-              <div className="col-span-2">
-                <h3 className="font-semibold">Scores</h3>
-                <p>{currentStudent.scores}</p>
-              </div>
-            )}
-          </div>
-        </DetailViewModal>
-      )}
+      <StudentProfileModal
+        student={currentStudent}
+        isOpen={isViewModalOpen}
+        onClose={() => setIsViewModalOpen(false)}
+        showAgentInfo={isAdmin}
+      />
       
       {/* Edit Student Modal */}
       {currentStudent && (

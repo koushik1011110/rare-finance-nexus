@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import DataTable, { Column } from "@/components/ui/DataTable";
 import { Badge } from "@/components/ui/badge";
 import DetailViewModal from "@/components/shared/DetailViewModal";
+import StudentProfileModal from "@/components/students/StudentProfileModal";
 import EditModal from "@/components/shared/EditModal";
 import SupabaseDirectStudentForm, { SupabaseDirectStudentFormData } from "@/components/forms/SupabaseDirectStudentForm";
 import { toast } from "@/hooks/use-toast";
@@ -263,66 +264,16 @@ const DirectStudents = () => {
         </CardContent>
       </Card>
 
-      <DetailViewModal
-        title={`Student Details - ${selectedStudent?.first_name || ""} ${selectedStudent?.last_name || ""}`}
+      <StudentProfileModal
+        student={selectedStudent ? {
+          ...selectedStudent,
+          university_name: getUniversityName(selectedStudent.university_id),
+          course_name: getCourseName(selectedStudent.course_id),
+          session_name: getSessionName(selectedStudent.academic_session_id)
+        } : null}
         isOpen={isDetailModalOpen}
         onClose={() => setIsDetailModalOpen(false)}
-      >
-        {selectedStudent && (
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-muted-foreground">Admission Number</p>
-                <p className="font-medium font-mono">{selectedStudent.admission_number || 'N/A'}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Status</p>
-                {getStatusBadge(selectedStudent.status)}
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">First Name</p>
-                <p className="font-medium">{selectedStudent.first_name}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Last Name</p>
-                <p className="font-medium">{selectedStudent.last_name}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Father's Name</p>
-                <p className="font-medium">{selectedStudent.father_name}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Mother's Name</p>
-                <p className="font-medium">{selectedStudent.mother_name}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Date of Birth</p>
-                <p className="font-medium">{selectedStudent.date_of_birth}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Phone Number</p>
-                <p className="font-medium">{selectedStudent.phone_number || 'N/A'}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Email</p>
-                <p className="font-medium">{selectedStudent.email || 'N/A'}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">University</p>
-                <p className="font-medium">{getUniversityName(selectedStudent.university_id)}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Course</p>
-                <p className="font-medium">{getCourseName(selectedStudent.course_id)}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Academic Session</p>
-                <p className="font-medium">{getSessionName(selectedStudent.academic_session_id)}</p>
-              </div>
-            </div>
-          </div>
-        )}
-      </DetailViewModal>
+      />
 
       <EditModal
         title={selectedStudent ? "Edit Student" : "Add New Student"}
