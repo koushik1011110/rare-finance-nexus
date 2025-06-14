@@ -923,6 +923,68 @@ export type Database = {
           },
         ]
       }
+      student_visa: {
+        Row: {
+          application_submitted: boolean | null
+          created_at: string | null
+          expiration_date: string | null
+          id: number
+          issue_date: string | null
+          local_id_number: string | null
+          residency_address: string | null
+          residency_deadline: string | null
+          residency_registration: boolean | null
+          student_id: number
+          updated_at: string | null
+          visa_approved: boolean | null
+          visa_interview: boolean | null
+          visa_number: string | null
+          visa_type: string
+        }
+        Insert: {
+          application_submitted?: boolean | null
+          created_at?: string | null
+          expiration_date?: string | null
+          id?: number
+          issue_date?: string | null
+          local_id_number?: string | null
+          residency_address?: string | null
+          residency_deadline?: string | null
+          residency_registration?: boolean | null
+          student_id: number
+          updated_at?: string | null
+          visa_approved?: boolean | null
+          visa_interview?: boolean | null
+          visa_number?: string | null
+          visa_type?: string
+        }
+        Update: {
+          application_submitted?: boolean | null
+          created_at?: string | null
+          expiration_date?: string | null
+          id?: number
+          issue_date?: string | null
+          local_id_number?: string | null
+          residency_address?: string | null
+          residency_deadline?: string | null
+          residency_registration?: boolean | null
+          student_id?: number
+          updated_at?: string | null
+          visa_approved?: boolean | null
+          visa_interview?: boolean | null
+          visa_number?: string | null
+          visa_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_visa_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       students: {
         Row: {
           aadhaar_copy_url: string | null
