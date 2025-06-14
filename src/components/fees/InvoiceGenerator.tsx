@@ -170,13 +170,13 @@ const InvoiceGenerator: React.FC<InvoiceGeneratorProps> = ({
               <tr>
                 <td>${payment.fee_structure_components.fee_types.name}</td>
                 <td>${payment.fee_structure_components.fee_structures.name}</td>
-                <td>₹${payment.amount_paid.toLocaleString()}</td>
+                <td>$${payment.amount_paid.toLocaleString()}</td>
               </tr>
             </tbody>
           </table>
           
           <div class="total-section">
-            <p>Total Amount Paid: <span class="total-amount">₹${payment.amount_paid.toLocaleString()}</span></p>
+            <p>Total Amount Paid: <span class="total-amount">$${payment.amount_paid.toLocaleString()}</span></p>
           </div>
           
           <div class="footer">

@@ -106,7 +106,7 @@ const PaymentHistory = () => {
       accessorKey: "amount_paid",
       cell: (payment: PaymentHistoryData) => (
         <span className="font-semibold text-green-600">
-          ₹{payment.amount_paid.toLocaleString()}
+          ${payment.amount_paid.toLocaleString()}
         </span>
       )
     },
@@ -173,7 +173,7 @@ const PaymentHistory = () => {
           <CardTitle className="text-sm font-medium text-muted-foreground">Total Collections</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-3xl font-bold text-green-600">₹{totalCollected.toLocaleString()}</div>
+          <div className="text-3xl font-bold text-green-600">${totalCollected.toLocaleString()}</div>
           <p className="text-sm text-muted-foreground mt-1">
             From {filteredHistory.filter(p => p.amount_paid > 0).length} transactions
           </p>

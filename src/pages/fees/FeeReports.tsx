@@ -106,12 +106,12 @@ const FeeReports = () => {
     {
       header: "Amount Due",
       accessorKey: "amount_due",
-      cell: (report: FeeReportData) => `₹${report.amount_due.toLocaleString()}`
+      cell: (report: FeeReportData) => `$${report.amount_due.toLocaleString()}`
     },
     {
       header: "Amount Paid",
       accessorKey: "amount_paid",
-      cell: (report: FeeReportData) => `₹${(report.amount_paid || 0).toLocaleString()}`
+      cell: (report: FeeReportData) => `$${(report.amount_paid || 0).toLocaleString()}`
     },
     {
       header: "Balance",
@@ -120,7 +120,7 @@ const FeeReports = () => {
         const balance = report.amount_due - (report.amount_paid || 0);
         return (
           <span className={balance > 0 ? "text-red-600 font-medium" : "text-green-600 font-medium"}>
-            ₹{balance.toLocaleString()}
+            ${balance.toLocaleString()}
           </span>
         );
       }
@@ -185,7 +185,7 @@ const FeeReports = () => {
             <CardTitle className="text-sm font-medium text-muted-foreground">Total Due</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">₹{totalStats.totalDue.toLocaleString()}</div>
+            <div className="text-2xl font-bold">${totalStats.totalDue.toLocaleString()}</div>
           </CardContent>
         </Card>
         <Card>
@@ -193,7 +193,7 @@ const FeeReports = () => {
             <CardTitle className="text-sm font-medium text-muted-foreground">Total Collected</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">₹{totalStats.totalPaid.toLocaleString()}</div>
+            <div className="text-2xl font-bold text-green-600">${totalStats.totalPaid.toLocaleString()}</div>
           </CardContent>
         </Card>
         <Card>
@@ -201,7 +201,7 @@ const FeeReports = () => {
             <CardTitle className="text-sm font-medium text-muted-foreground">Outstanding</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">₹{totalStats.totalPending.toLocaleString()}</div>
+            <div className="text-2xl font-bold text-red-600">${totalStats.totalPending.toLocaleString()}</div>
           </CardContent>
         </Card>
       </div>

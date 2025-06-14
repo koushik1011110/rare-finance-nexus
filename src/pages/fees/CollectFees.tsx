@@ -201,7 +201,7 @@ const CollectFees = () => {
       accessorKey: "fee_payments",
       cell: (student: StudentWithFees) => {
         const totalDue = student.fee_payments.reduce((sum, payment) => sum + payment.amount_due, 0);
-        return `₹${totalDue.toLocaleString()}`;
+        return `$${totalDue.toLocaleString()}`;
       }
     },
     {
@@ -209,7 +209,7 @@ const CollectFees = () => {
       accessorKey: "fee_payments",
       cell: (student: StudentWithFees) => {
         const totalPaid = student.fee_payments.reduce((sum, payment) => sum + payment.amount_paid, 0);
-        return `₹${totalPaid.toLocaleString()}`;
+        return `$${totalPaid.toLocaleString()}`;
       }
     },
     {
@@ -221,7 +221,7 @@ const CollectFees = () => {
         const balance = totalDue - totalPaid;
         return (
           <span className={balance > 0 ? "text-red-600 font-medium" : "text-green-600 font-medium"}>
-            ₹{balance.toLocaleString()}
+            ${balance.toLocaleString()}
           </span>
         );
       }
@@ -289,7 +289,7 @@ const CollectFees = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-red-600">
-              ₹{filteredStudents.reduce((total, student) => {
+              ${filteredStudents.reduce((total, student) => {
                 const studentBalance = student.fee_payments.reduce((sum, payment) => 
                   sum + (payment.amount_due - payment.amount_paid), 0
                 );
@@ -380,11 +380,11 @@ const CollectFees = () => {
                           </div>
                           <div>
                             <p className="text-sm text-muted-foreground">Total Due</p>
-                            <p className="font-medium">₹{feePayment.amount_due.toLocaleString()}</p>
+                            <p className="font-medium">${feePayment.amount_due.toLocaleString()}</p>
                           </div>
                           <div>
                             <p className="text-sm text-muted-foreground">Balance</p>
-                            <p className="font-medium text-red-600">₹{balance.toLocaleString()}</p>
+                            <p className="font-medium text-red-600">${balance.toLocaleString()}</p>
                           </div>
                           <div>
                             <p className="text-sm text-muted-foreground">Collect Amount</p>
@@ -455,7 +455,7 @@ const CollectFees = () => {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <p className="text-sm text-muted-foreground">Total Collecting</p>
-                    <p className="text-xl font-bold text-green-600">₹{getTotalAmount().toLocaleString()}</p>
+                    <p className="text-xl font-bold text-green-600">${getTotalAmount().toLocaleString()}</p>
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Payment Method</p>
@@ -480,7 +480,7 @@ const CollectFees = () => {
               disabled={isSubmitting || getTotalAmount() === 0}
               className="bg-green-600 hover:bg-green-700"
             >
-              {isSubmitting ? "Processing..." : `Collect ₹${getTotalAmount().toLocaleString()}`}
+              {isSubmitting ? "Processing..." : `Collect $${getTotalAmount().toLocaleString()}`}
             </Button>
           </div>
         </DialogContent>
