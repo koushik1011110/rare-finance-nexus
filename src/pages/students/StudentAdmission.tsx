@@ -77,10 +77,24 @@ const StudentAdmission = () => {
     }
   };
 
-  const uploadToCloudinary = async (file: File): Promise<string> => {
-    // For now, return empty string - file upload can be implemented later
-    console.log('File upload placeholder for:', file.name);
-    return '';
+  const uploadToFirebase = async (file: File, documentType: string): Promise<string> => {
+    const { uploadStudentDocument, validateFile } = await import('@/lib/firebase-storage');
+    
+    // Validate file
+    const validation = validateFile(file, {
+      maxSize: documentType === 'photo' ? 2 : 5, // 2MB for photos, 5MB for documents
+      allowedTypes: documentType === 'photo' 
+        ? ['image/jpeg', 'image/png', 'image/webp']
+        : ['image/jpeg', 'image/png', 'image/webp', 'application/pdf']
+    });
+    
+    if (!validation.isValid) {
+      throw new Error(validation.error);
+    }
+    
+    // Use timestamp as student ID for now (in production, use actual student ID)
+    const studentId = Date.now().toString();
+    return await uploadStudentDocument(file, studentId, documentType as any);
   };
 
   const handleDateSelect = (date: Date | undefined) => {
@@ -114,16 +128,16 @@ const StudentAdmission = () => {
       };
 
       if (formData.studentImage) {
-        documentUrls.photo_url = await uploadToCloudinary(formData.studentImage);
+        documentUrls.photo_url = await uploadToFirebase(formData.studentImage, 'photo');
       }
       if (formData.passportCopy) {
-        documentUrls.passport_copy_url = await uploadToCloudinary(formData.passportCopy);
+        documentUrls.passport_copy_url = await uploadToFirebase(formData.passportCopy, 'passport');
       }
       if (formData.aadhaarCopy) {
-        documentUrls.aadhaar_copy_url = await uploadToCloudinary(formData.aadhaarCopy);
+        documentUrls.aadhaar_copy_url = await uploadToFirebase(formData.aadhaarCopy, 'aadhaar');
       }
       if (formData.twelfthCertificate) {
-        documentUrls.twelfth_certificate_url = await uploadToCloudinary(formData.twelfthCertificate);
+        documentUrls.twelfth_certificate_url = await uploadToFirebase(formData.twelfthCertificate, 'certificate');
       }
 
       setUploadingDocuments(false);
