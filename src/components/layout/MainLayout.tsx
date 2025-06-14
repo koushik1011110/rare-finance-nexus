@@ -1,13 +1,45 @@
 
 import React, { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
-import { 
-  BarChart3, Users, GraduationCap, Building2, Home, ClipboardList, 
-  Briefcase, DollarSign, LineChart, Settings, Menu, X, Download, User, ChevronLeft, ChevronRight, Utensils
-} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import {
+  Menu,
+  Home,
+  Users,
+  GraduationCap,
+  Building2,
+  DollarSign,
+  FileText,
+  Settings,
+  BookOpen,
+  UserCheck,
+  Calendar,
+  BarChart3,
+  Utensils,
+  Calculator,
+  CreditCard,
+  MapPin,
+  User,
+  Receipt,
+  Building,
+  ChevronDown,
+  LogOut,
+  UserPlus,
+  ChevronLeft,
+  ChevronRight,
+  Download,
+} from "lucide-react";
+import { Link, useLocation } from "react-router-dom";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import ThemeToggle from "@/components/theme/ThemeToggle";
+import { useAuth } from "@/contexts/AuthContext";
 
 type NavItem = {
   title: string;
@@ -30,9 +62,7 @@ const navItems: NavItem[] = [
       { title: "Fees Type", href: "/fees/types" },
       { title: "Fees Master", href: "/fees/master" },
       { title: "Collect Fees", href: "/fees/collect" },
-      { title: "Fees Report", href: "/fees/report" },
-      { title: "Student Ledger", href: "/fees/student-ledger" },
-      { title: "Due Report", href: "/fees/due-report" },
+      { title: "Fees Report", href: "/fees/reports" },
       { title: "Payment History", href: "/fees/payment-history" },
     ]
   },
@@ -52,12 +82,6 @@ const navItems: NavItem[] = [
     title: "Universities", 
     href: "/universities", 
     icon: Building2,
-    subItems: [
-      { title: "Tashkent State Medical University", href: "/universities/tashkent" },
-      { title: "Samarkand State Medical University", href: "/universities/samarkand" },
-      { title: "Bukhara State Medical Institute", href: "/universities/bukhara" },
-      { title: "Qarshi State University", href: "/universities/qarshi" },
-    ]
   },
   { 
     title: "Hostels", 
@@ -76,11 +100,12 @@ const navItems: NavItem[] = [
       { title: "Mess Management", href: "/mess/management" },
     ]
   },
-  { title: "Office Expenses", href: "/office-expenses", icon: ClipboardList },
-  { title: "Salary Management", href: "/salary", icon: Briefcase },
-  { title: "Personal Expenses", href: "/personal-expenses", icon: DollarSign },
-  { title: "Reports", href: "/reports", icon: LineChart },
+  { title: "Office Expenses", href: "/office-expenses", icon: FileText },
+  { title: "Salary Management", href: "/salary", icon: Receipt },
+  { title: "Personal Expenses", href: "/personal-expenses", icon: Calculator },
+  { title: "Reports", href: "/reports", icon: BarChart3 },
   { title: "Settings", href: "/settings", icon: Settings },
+  { title: "Staff", href: "/staff", icon: UserPlus },
 ];
 
 interface MainLayoutProps {
@@ -96,6 +121,8 @@ export default function MainLayout({ children }: MainLayoutProps) {
   
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const location = useLocation();
+  
+  const { user, logout } = useAuth();
   
   // Save sidebar state to localStorage whenever it changes
   useEffect(() => {
@@ -250,9 +277,42 @@ export default function MainLayout({ children }: MainLayoutProps) {
               <Download className="mr-2 h-4 w-4" />
               Export
             </Button>
-            <Button variant="outline" size="sm">
-              <User className="h-4 w-4" />
-            </Button>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="flex items-center gap-2">
+                  <User className="h-4 w-4" />
+                  {user && sidebarOpen && (
+                    <span className="hidden md:inline-block">{user.firstName}</span>
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {user && (
+                  <>
+                    <div className="px-2 py-1.5">
+                      <p className="text-sm font-medium">{user.firstName} {user.lastName}</p>
+                      <p className="text-xs text-muted-foreground">{user.email}</p>
+                      <p className="mt-1 text-xs font-medium bg-primary/10 text-primary rounded-sm px-1.5 py-0.5 inline-block">
+                        {user.role.replace('_', ' ').toUpperCase()}
+                      </p>
+                    </div>
+                    <DropdownMenuSeparator />
+                  </>
+                )}
+                <Link to="/settings">
+                  <DropdownMenuItem>
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>Settings</span>
+                  </DropdownMenuItem>
+                </Link>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => logout()}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Logout</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </header>
         <main className="flex-1 overflow-y-auto p-4 lg:p-6">

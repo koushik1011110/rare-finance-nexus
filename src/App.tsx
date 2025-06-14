@@ -4,6 +4,8 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "@/contexts/AuthContext";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 
@@ -49,64 +51,79 @@ import Reports from "./pages/reports/Reports";
 // Settings
 import Settings from "./pages/settings/Settings";
 
+// Auth
+import Login from "./pages/auth/Login";
+
+// Staff Management
+import StaffManagement from "./pages/staff/StaffManagement";
+
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          
-          {/* Student Module */}
-          <Route path="/students/direct" element={<DirectStudents />} />
-          <Route path="/students/agent" element={<AgentStudents />} />
-          <Route path="/students/admission" element={<StudentAdmission />} />
-          <Route path="/students/application" element={<Application />} />
-          
-          {/* Agent Management */}
-          <Route path="/agents" element={<AgentManagement />} />
-          
-          {/* University Section */}
-          <Route path="/universities" element={<Universities />} />
-          <Route path="/universities/:universityId" element={<UniversityDetail />} />
-          
-          {/* Hostel Expenses */}
-          <Route path="/hostels/management" element={<HostelManagement />} />
-          <Route path="/hostels/expenses" element={<HostelExpenses />} />
-          
-          {/* Mess Management */}
-          <Route path="/mess/management" element={<MessManagement />} />
-          
-          {/* Office Expenses */}
-          <Route path="/office-expenses" element={<OfficeExpenses />} />
-          
-          {/* Salary Management */}
-          <Route path="/salary" element={<SalaryManagement />} />
-          
-          {/* Personal Expenses */}
-          <Route path="/personal-expenses" element={<PersonalExpenses />} />
-          
-          {/* Fees Collection Module */}
-          <Route path="/fees/types" element={<FeesType />} />
-          <Route path="/fees/master" element={<FeesMaster />} />
-          <Route path="/fees/collect" element={<CollectFees />} />
-          <Route path="/fees/reports" element={<FeeReports />} />
-          <Route path="/fees/payment-history" element={<PaymentHistory />} />
-          
-          {/* Reports Section */}
-          <Route path="/reports" element={<Reports />} />
-          
-          {/* Settings */}
-          <Route path="/settings" element={<Settings />} />
-          
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
+    <AuthProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/login" element={<Login />} />
+            
+            {/* Protected Routes */}
+            <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            
+            {/* Student Module */}
+            <Route path="/students/direct" element={<ProtectedRoute><DirectStudents /></ProtectedRoute>} />
+            <Route path="/students/agent" element={<ProtectedRoute><AgentStudents /></ProtectedRoute>} />
+            <Route path="/students/admission" element={<ProtectedRoute><StudentAdmission /></ProtectedRoute>} />
+            <Route path="/students/application" element={<ProtectedRoute><Application /></ProtectedRoute>} />
+            
+            {/* Agent Management */}
+            <Route path="/agents" element={<ProtectedRoute><AgentManagement /></ProtectedRoute>} />
+            
+            {/* University Section */}
+            <Route path="/universities" element={<ProtectedRoute><Universities /></ProtectedRoute>} />
+            <Route path="/universities/:universityId" element={<ProtectedRoute><UniversityDetail /></ProtectedRoute>} />
+            
+            {/* Hostel Expenses */}
+            <Route path="/hostels/management" element={<ProtectedRoute allowedRoles={['admin', 'hostel_team']}><HostelManagement /></ProtectedRoute>} />
+            <Route path="/hostels/expenses" element={<ProtectedRoute allowedRoles={['admin', 'hostel_team']}><HostelExpenses /></ProtectedRoute>} />
+            
+            {/* Mess Management */}
+            <Route path="/mess/management" element={<ProtectedRoute allowedRoles={['admin', 'hostel_team']}><MessManagement /></ProtectedRoute>} />
+            
+            {/* Office Expenses */}
+            <Route path="/office-expenses" element={<ProtectedRoute allowedRoles={['admin', 'finance']}><OfficeExpenses /></ProtectedRoute>} />
+            
+            {/* Salary Management */}
+            <Route path="/salary" element={<ProtectedRoute allowedRoles={['admin', 'finance']}><SalaryManagement /></ProtectedRoute>} />
+            
+            {/* Personal Expenses */}
+            <Route path="/personal-expenses" element={<ProtectedRoute allowedRoles={['admin', 'finance']}><PersonalExpenses /></ProtectedRoute>} />
+            
+            {/* Fees Collection Module */}
+            <Route path="/fees/types" element={<ProtectedRoute allowedRoles={['admin', 'finance']}><FeesType /></ProtectedRoute>} />
+            <Route path="/fees/master" element={<ProtectedRoute allowedRoles={['admin', 'finance']}><FeesMaster /></ProtectedRoute>} />
+            <Route path="/fees/collect" element={<ProtectedRoute allowedRoles={['admin', 'finance']}><CollectFees /></ProtectedRoute>} />
+            <Route path="/fees/reports" element={<ProtectedRoute allowedRoles={['admin', 'finance']}><FeeReports /></ProtectedRoute>} />
+            <Route path="/fees/payment-history" element={<ProtectedRoute allowedRoles={['admin', 'finance']}><PaymentHistory /></ProtectedRoute>} />
+            
+            {/* Reports Section */}
+            <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
+            
+            {/* Settings */}
+            <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+            
+            {/* Staff Management - Admin only */}
+            <Route path="/staff" element={<ProtectedRoute requiredRole="admin"><StaffManagement /></ProtectedRoute>} />
+            
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 

@@ -1110,12 +1110,48 @@ export type Database = {
         Args: { structure_id: number }
         Returns: number
       }
+      authenticate_user: {
+        Args: { email_param: string; password_param: string }
+        Returns: {
+          user_id: number
+          email: string
+          first_name: string
+          last_name: string
+          role: Database["public"]["Enums"]["user_role"]
+          is_active: boolean
+        }[]
+      }
+      cleanup_expired_sessions: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      create_staff_member: {
+        Args: {
+          email_param: string
+          password_param: string
+          first_name_param: string
+          last_name_param: string
+          role_param: Database["public"]["Enums"]["user_role"]
+          agent_name_param?: string
+          agent_phone_param?: string
+          agent_location_param?: string
+        }
+        Returns: number
+      }
       create_student_credentials: {
         Args: { student_id_param: number }
         Returns: undefined
       }
+      create_user_session: {
+        Args: { user_id_param: number }
+        Returns: string
+      }
       generate_admission_number: {
         Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      generate_random_password: {
+        Args: { length?: number }
         Returns: string
       }
       generate_receipt_number: {
@@ -1130,6 +1166,14 @@ export type Database = {
         Args: { student_id_param: number }
         Returns: string
       }
+      generate_username: {
+        Args: { first_name: string; last_name: string; student_id: number }
+        Returns: string
+      }
+      logout_user: {
+        Args: { token_param: string }
+        Returns: undefined
+      }
       recalculate_all_hostel_occupancies: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -1141,9 +1185,31 @@ export type Database = {
           status: string
         }[]
       }
+      validate_session: {
+        Args: { token_param: string }
+        Returns: {
+          user_id: number
+          email: string
+          first_name: string
+          last_name: string
+          role: Database["public"]["Enums"]["user_role"]
+          is_active: boolean
+        }[]
+      }
+      verify_student_login: {
+        Args: { input_username: string; input_password: string }
+        Returns: {
+          student_id: number
+          username: string
+          first_name: string
+          last_name: string
+          email: string
+          admission_number: string
+        }[]
+      }
     }
     Enums: {
-      user_role: "admin" | "agent" | "hostel_team"
+      user_role: "admin" | "agent" | "hostel_team" | "finance" | "staff"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1259,7 +1325,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      user_role: ["admin", "agent", "hostel_team"],
+      user_role: ["admin", "agent", "hostel_team", "finance", "staff"],
     },
   },
 } as const
