@@ -192,21 +192,58 @@ const AgentStudents = () => {
       // Get agent ID for current user if they're an agent
       let agentId = formData.agent_id;
       if (user?.role === 'agent' && !agentId) {
-        const { data: agentData } = await supabase
+        const { data: agentData, error: agentError } = await supabase
           .from('agents')
           .select('id')
           .eq('email', user.email)
           .single();
+        
+        if (agentError) {
+          console.error('Error fetching agent:', agentError);
+          toast({
+            title: "Error",
+            description: "Could not find agent record. Please contact administrator.",
+            variant: "destructive",
+          });
+          return;
+        }
         agentId = agentData?.id;
       }
+
+      // Prepare student data, removing id for new students
+      const studentData = {
+        first_name: formData.first_name,
+        last_name: formData.last_name,
+        father_name: formData.father_name,
+        mother_name: formData.mother_name,
+        date_of_birth: formData.date_of_birth,
+        phone_number: formData.phone_number || null,
+        email: formData.email || null,
+        university_id: formData.university_id,
+        course_id: formData.course_id,
+        academic_session_id: formData.academic_session_id,
+        status: formData.status,
+        city: formData.city || null,
+        country: formData.country || null,
+        address: formData.address || null,
+        aadhaar_number: formData.aadhaar_number || null,
+        passport_number: formData.passport_number || null,
+        seat_number: formData.seat_number || null,
+        scores: formData.scores || null,
+        twelfth_marks: formData.twelfth_marks || null,
+        photo_url: formData.photo_url || null,
+        passport_copy_url: formData.passport_copy_url || null,
+        aadhaar_copy_url: formData.aadhaar_copy_url || null,
+        twelfth_certificate_url: formData.twelfth_certificate_url || null,
+        agent_id: agentId,
+      };
 
       if (formData.id) {
         // Update existing student
         const { error } = await supabase
           .from('students')
           .update({
-            ...formData,
-            agent_id: agentId,
+            ...studentData,
             updated_at: new Date().toISOString()
           })
           .eq('id', formData.id);
@@ -215,7 +252,7 @@ const AgentStudents = () => {
           console.error('Error updating student:', error);
           toast({
             title: "Error",
-            description: "Failed to update student. Please try again.",
+            description: `Failed to update student: ${error.message}`,
             variant: "destructive",
           });
           return;
@@ -227,18 +264,16 @@ const AgentStudents = () => {
         });
       } else {
         // Add new student
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('students')
-          .insert([{
-            ...formData,
-            agent_id: agentId,
-          }]);
+          .insert([studentData])
+          .select();
 
         if (error) {
           console.error('Error creating student:', error);
           toast({
             title: "Error",
-            description: "Failed to add student. Please try again.",
+            description: `Failed to add student: ${error.message}`,
             variant: "destructive",
           });
           return;
