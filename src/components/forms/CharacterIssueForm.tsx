@@ -3,9 +3,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Loader2 } from "lucide-react";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Check, ChevronsUpDown, Plus, Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { characterIssuesAPI, CreateCharacterIssueRequest } from "@/lib/character-issues-api";
 
@@ -23,6 +25,10 @@ interface CharacterIssueFormProps {
 export default function CharacterIssueForm({ onSuccess }: CharacterIssueFormProps) {
   const [open, setOpen] = useState(false);
   const [students, setStudents] = useState<Student[]>([]);
+  const [filteredStudents, setFilteredStudents] = useState<Student[]>([]);
+  const [studentOpen, setStudentOpen] = useState(false);
+  const [searchValue, setSearchValue] = useState("");
+  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [formData, setFormData] = useState<CreateCharacterIssueRequest>({
     student_id: 0,
     complaint: "",
@@ -39,12 +45,23 @@ export default function CharacterIssueForm({ onSuccess }: CharacterIssueFormProp
     }
   }, [open]);
 
+  useEffect(() => {
+    const filtered = students.filter(student =>
+      `${student.first_name} ${student.last_name} ${student.admission_number}`
+        .toLowerCase()
+        .includes(searchValue.toLowerCase())
+    );
+    setFilteredStudents(filtered);
+  }, [students, searchValue]);
+
   const loadStudents = async () => {
     try {
       setStudentsLoading(true);
       const data = await characterIssuesAPI.getStudents();
       setStudents(data);
+      setFilteredStudents(data);
     } catch (error) {
+      console.error("Failed to load students:", error);
       toast({
         title: "Error",
         description: "Failed to load students",
@@ -58,10 +75,10 @@ export default function CharacterIssueForm({ onSuccess }: CharacterIssueFormProp
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.student_id || !formData.complaint || formData.fine_amount <= 0) {
+    if (!formData.student_id || formData.student_id === 0 || !formData.complaint.trim() || formData.fine_amount <= 0) {
       toast({
         title: "Error",
-        description: "Please fill in all required fields",
+        description: "Please fill in all required fields with valid values",
         variant: "destructive",
       });
       return;
@@ -69,6 +86,7 @@ export default function CharacterIssueForm({ onSuccess }: CharacterIssueFormProp
 
     try {
       setLoading(true);
+      console.log("Creating character issue with data:", formData);
       await characterIssuesAPI.create(formData);
       
       toast({
@@ -82,9 +100,12 @@ export default function CharacterIssueForm({ onSuccess }: CharacterIssueFormProp
         fine_amount: 0,
         created_by: ""
       });
+      setSelectedStudent(null);
+      setSearchValue("");
       setOpen(false);
       onSuccess();
     } catch (error) {
+      console.error("Error creating character issue:", error);
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Failed to add character issue",
@@ -110,22 +131,57 @@ export default function CharacterIssueForm({ onSuccess }: CharacterIssueFormProp
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <Label htmlFor="student">Student *</Label>
-            <Select 
-              value={formData.student_id.toString()} 
-              onValueChange={(value) => setFormData({ ...formData, student_id: parseInt(value) })}
-              disabled={studentsLoading}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder={studentsLoading ? "Loading students..." : "Select a student"} />
-              </SelectTrigger>
-              <SelectContent>
-                {students.map((student) => (
-                  <SelectItem key={student.id} value={student.id.toString()}>
-                    {student.first_name} {student.last_name} ({student.admission_number})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Popover open={studentOpen} onOpenChange={setStudentOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={studentOpen}
+                  className="w-full justify-between"
+                  disabled={studentsLoading}
+                >
+                  {selectedStudent
+                    ? `${selectedStudent.first_name} ${selectedStudent.last_name} (${selectedStudent.admission_number})`
+                    : studentsLoading
+                    ? "Loading students..."
+                    : "Select student..."}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-full p-0">
+                <Command>
+                  <CommandInput 
+                    placeholder="Search students..." 
+                    value={searchValue}
+                    onValueChange={setSearchValue}
+                  />
+                  <CommandList>
+                    <CommandEmpty>No student found.</CommandEmpty>
+                    <CommandGroup>
+                      {filteredStudents.map((student) => (
+                        <CommandItem
+                          key={student.id}
+                          value={`${student.first_name} ${student.last_name} ${student.admission_number}`}
+                          onSelect={() => {
+                            setSelectedStudent(student);
+                            setFormData({ ...formData, student_id: student.id });
+                            setStudentOpen(false);
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              selectedStudent?.id === student.id ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          {student.first_name} {student.last_name} ({student.admission_number})
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
           </div>
 
           <div>
