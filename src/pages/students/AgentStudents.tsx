@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import PageHeader from "@/components/shared/PageHeader";
 import DataTable from "@/components/ui/DataTable";
@@ -71,40 +71,8 @@ const AgentStudents = () => {
     loadData();
   }, [user]);
 
-  const loadData = async () => {
-    if (!user) return;
-    
-    setLoading(true);
-    try {
-      // Load reference data
-      const [universitiesData, coursesData, sessionsData, agentsData] = await Promise.all([
-        universitiesAPI.getAll(),
-        coursesAPI.getAll(),
-        academicSessionsAPI.getAll(),
-        supabase.from('agents').select('*')
-      ]);
-
-      setUniversities(universitiesData);
-      setCourses(coursesData);
-      setAcademicSessions(sessionsData);
-      setAgents(agentsData.data || []);
-
-      // Load students
-      await loadStudents();
-    } catch (error) {
-      console.error('Error loading data:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load data. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadStudents = async () => {
-    if (!user) return;
+  const loadStudents = useCallback(async () => {
+    if (!user || universities.length === 0 || courses.length === 0 || academicSessions.length === 0) return;
     
     try {
       let query = supabase
@@ -148,7 +116,7 @@ const AgentStudents = () => {
         university_name: universities.find(u => u.id === student.university_id)?.name || 'Unknown',
         course_name: courses.find(c => c.id === student.course_id)?.name || 'Unknown',
         session_name: academicSessions.find(s => s.id === student.academic_session_id)?.session_name || 'Unknown',
-        agent_name: agents.find(a => a.id === student.agent_id)?.name || 'Unknown',
+        agent_name: agents.find(a => a.id === student.agent_id)?.name || (student.agent_id ? 'Unknown Agent' : 'Direct'),
       })) || [];
 
       setStudents(enrichedStudents);
@@ -159,6 +127,42 @@ const AgentStudents = () => {
         description: "Failed to load students. Please try again.",
         variant: "destructive",
       });
+    }
+  }, [user, universities, courses, academicSessions, agents]);
+
+  // Load students when reference data is available
+  useEffect(() => {
+    if (universities.length > 0 && courses.length > 0 && academicSessions.length > 0 && agents.length > 0) {
+      loadStudents();
+    }
+  }, [universities, courses, academicSessions, agents, loadStudents]);
+
+  const loadData = async () => {
+    if (!user) return;
+    
+    setLoading(true);
+    try {
+      // Load reference data
+      const [universitiesData, coursesData, sessionsData, agentsData] = await Promise.all([
+        universitiesAPI.getAll(),
+        coursesAPI.getAll(),
+        academicSessionsAPI.getAll(),
+        supabase.from('agents').select('*')
+      ]);
+
+      setUniversities(universitiesData);
+      setCourses(coursesData);
+      setAcademicSessions(sessionsData);
+      setAgents(agentsData.data || []);
+    } catch (error) {
+      console.error('Error loading data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load data. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -355,6 +359,7 @@ const AgentStudents = () => {
     { header: "University", accessorKey: "university_name" },
     { header: "Course", accessorKey: "course_name" },
     { header: "Session", accessorKey: "session_name" },
+    ...(isAdmin ? [{ header: "Agent", accessorKey: "agent_name" }] : []),
     { header: "Phone", accessorKey: "phone_number" },
     { header: "Email", accessorKey: "email" },
     {
@@ -518,6 +523,12 @@ const AgentStudents = () => {
               <h3 className="font-semibold">Status</h3>
               <p className="capitalize">{currentStudent.status}</p>
             </div>
+            {isAdmin && (
+              <div>
+                <h3 className="font-semibold">Agent</h3>
+                <p>{currentStudent.agent_name}</p>
+              </div>
+            )}
             <div className="col-span-2">
               <h3 className="font-semibold">Address</h3>
               <p>{currentStudent.address || "Not provided"}</p>
