@@ -72,7 +72,7 @@ export default function Application() {
     mutationFn: async ({ id, status }: { id: number; status: string }) => {
       const { error } = await supabase
         .from("apply_students")
-        .update({ status, updated_at: new Date().toISOString() })
+        .update({ application_status: status, updated_at: new Date().toISOString() })
         .eq("id", id);
 
       if (error) throw error;
@@ -135,7 +135,7 @@ export default function Application() {
       header: "Status",
       accessorKey: "status" as keyof ApplyStudent,
       cell: (row: ApplyStudent) => {
-        const status = row.status;
+        const status = row.application_status;
         const statusOption = statusOptions.find(opt => opt.value === status);
         
         return (
