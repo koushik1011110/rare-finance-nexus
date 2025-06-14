@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { MapPin, Calendar, FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import VisaForm from "@/components/forms/VisaForm";
+import StudentSearch from "@/components/fees/StudentSearch";
 import { supabase } from "@/integrations/supabase/client";
 
 interface Student {
@@ -38,9 +39,11 @@ interface StudentVisa {
 
 export default function Visa() {
   const [students, setStudents] = useState<Student[]>([]);
+  const [filteredStudents, setFilteredStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [formOpen, setFormOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
 
   useEffect(() => {
@@ -74,6 +77,7 @@ export default function Visa() {
       }));
 
       setStudents(studentsWithVisa);
+      setFilteredStudents(studentsWithVisa);
     } catch (error) {
       console.error("Error loading students:", error);
       toast({
@@ -99,7 +103,15 @@ export default function Visa() {
 
   const getVisaStatus = (student: Student) => {
     if (!student.visa_info) return "pending";
-    return student.visa_info.visa_approved ? "approved" : "pending";
+    
+    // Check if all 4 steps are completed for approval
+    const allStepsCompleted = 
+      student.visa_info.application_submitted &&
+      student.visa_info.visa_interview &&
+      student.visa_info.visa_approved &&
+      student.visa_info.residency_registration;
+    
+    return allStepsCompleted ? "approved" : "pending";
   };
 
   const getProgressSteps = (visa: StudentVisa | undefined) => {
@@ -112,8 +124,23 @@ export default function Visa() {
     return steps;
   };
 
-  const pendingStudents = students.filter(student => getVisaStatus(student) === "pending");
-  const approvedStudents = students.filter(student => getVisaStatus(student) === "approved");
+  // Handle search filtering
+  useEffect(() => {
+    if (searchTerm.trim() === "") {
+      setFilteredStudents(students);
+    } else {
+      const filtered = students.filter(student => 
+        student.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        student.last_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        student.admission_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        student.email?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      setFilteredStudents(filtered);
+    }
+  }, [searchTerm, students]);
+
+  const pendingStudents = filteredStudents.filter(student => getVisaStatus(student) === "pending");
+  const approvedStudents = filteredStudents.filter(student => getVisaStatus(student) === "approved");
 
   const StudentCard = ({ student }: { student: Student }) => (
     <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => handleStudentClick(student)}>
@@ -167,6 +194,11 @@ export default function Visa() {
         <PageHeader
           title="Student Visa Management"
           description="Track and manage student visa applications and statuses"
+        />
+
+        <StudentSearch
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
         />
 
         <Tabs defaultValue="pending" className="w-full">
