@@ -1087,6 +1087,13 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      update_application_status: {
+        Args: { application_id: number; new_status: string }
+        Returns: {
+          id: number
+          status: string
+        }[]
+      }
     }
     Enums: {
       user_role: "admin" | "agent" | "hostel_team"

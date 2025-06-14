@@ -73,14 +73,14 @@ export default function Application() {
 
   const updateStatusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: number; status: string }) => {
-      console.log("About to update database for ID:", id, "with status:", status);
+      console.log("Using function to update ID:", id, "with status:", status);
       const { data, error } = await supabase
-        .from("apply_students")
-        .update({ status, updated_at: new Date().toISOString() })
-        .eq("id", id)
-        .select();
+        .rpc('update_application_status', {
+          application_id: id,
+          new_status: status
+        });
 
-      console.log("Database response:", { data, error });
+      console.log("Function response:", { data, error });
       if (error) throw error;
       return data;
     },
