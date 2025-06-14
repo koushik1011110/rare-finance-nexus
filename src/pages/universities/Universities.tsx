@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
 import PageHeader from "@/components/shared/PageHeader";
@@ -10,140 +10,150 @@ import { toast } from "@/hooks/use-toast";
 import EditModal from "@/components/shared/EditModal";
 import UniversityForm, { UniversityFormData } from "@/components/forms/UniversityForm";
 import UniversityPieChart from "@/components/dashboard/UniversityPieChart";
+import { universitiesAPI } from "@/lib/supabase-database";
+import { supabase } from "@/integrations/supabase/client";
 
-// Sample data for universities
-const universitiesData = [
-  {
-    id: "tashkent",
-    name: "Tashkent State Medical University",
-    studentCount: 42,
-    totalFeesExpected: "$630,000",
-    amountPaid: "$420,000",
-    amountPending: "$210,000",
-    lastPayment: "2025-05-01",
-    status: "Active",
-    location: "Tashkent, Uzbekistan",
-    contactPerson: "Dr. Alisher Navoiy",
-    email: "admin@tsmu.edu.uz",
-    phone: "+998 71 123 4567",
-  },
-  {
-    id: "samarkand",
-    name: "Samarkand State Medical University",
-    studentCount: 35,
-    totalFeesExpected: "$525,000",
-    amountPaid: "$350,000",
-    amountPending: "$175,000",
-    lastPayment: "2025-04-28",
-    status: "Active",
-    location: "Samarkand, Uzbekistan",
-    contactPerson: "Prof. Bobur Mirzayev",
-    email: "admin@sammi.uz",
-    phone: "+998 66 234 5678",
-  },
-  {
-    id: "bukhara",
-    name: "Bukhara State Medical Institute",
-    studentCount: 28,
-    totalFeesExpected: "$420,000",
-    amountPaid: "$420,000",
-    amountPending: "$0",
-    lastPayment: "2025-04-15",
-    status: "Paid",
-    location: "Bukhara, Uzbekistan",
-    contactPerson: "Dr. Nodira Azizova",
-    email: "admin@bsmi.uz",
-    phone: "+998 65 223 4455",
-  },
-  {
-    id: "qarshi",
-    name: "Qarshi State University",
-    studentCount: 22,
-    totalFeesExpected: "$330,000",
-    amountPaid: "$220,000",
-    amountPending: "$110,000",
-    lastPayment: "2025-04-10",
-    status: "Active",
-    location: "Qarshi, Uzbekistan",
-    contactPerson: "Prof. Aziza Karimova",
-    email: "admin@qsu.uz",
-    phone: "+998 75 221 3344",
-  },
-];
-
-interface University {
-  id: string;
+interface UniversityData {
+  id: number;
   name: string;
   studentCount: number;
-  totalFeesExpected: string;
-  amountPaid: string;
-  amountPending: string;
+  totalFeesExpected: number;
+  amountPaid: number;
+  amountPending: number;
   lastPayment: string;
   status: string;
-  location: string;
-  contactPerson: string;
-  email: string;
-  phone: string;
 }
 
 const Universities = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
-  const [universities, setUniversities] = useState<University[]>(universitiesData);
+  const [universities, setUniversities] = useState<UniversityData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [paymentStatusData, setPaymentStatusData] = useState<any[]>([]);
+  const [universityPaymentData, setUniversityPaymentData] = useState<any[]>([]);
   
   // Modal states
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [currentUniversity, setCurrentUniversity] = useState<University | null>(null);
+  const [currentUniversity, setCurrentUniversity] = useState<UniversityData | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Create data for pie chart
-  const paymentStatusData = [
-    { 
-      name: "Paid", 
-      value: 420000, // From Bukhara State Medical Institute
-      color: "#4CAF50" 
-    },
-    { 
-      name: "Pending", 
-      value: 495000, // Sum of pending amounts from other universities
-      color: "#FF9800" 
-    },
-  ];
+  useEffect(() => {
+    loadUniversities();
+  }, []);
 
-  const universityPaymentData = [
-    { 
-      name: "Tashkent", 
-      value: 420000, 
-      color: "#1E88E5" 
-    },
-    { 
-      name: "Samarkand", 
-      value: 350000, 
-      color: "#7E57C2" 
-    },
-    { 
-      name: "Bukhara", 
-      value: 420000, 
-      color: "#43A047" 
-    },
-    { 
-      name: "Qarshi", 
-      value: 220000, 
-      color: "#F9A825" 
-    },
-  ];
+  const loadUniversities = async () => {
+    try {
+      setLoading(true);
+      
+      // Fetch universities
+      const universitiesData = await universitiesAPI.getAll();
+      
+      // Fetch student counts per university
+      const { data: studentCounts } = await supabase
+        .from('students')
+        .select('university_id')
+        .eq('status', 'active');
+
+      // Count students per university
+      const universityCounts: Record<number, number> = {};
+      studentCounts?.forEach(student => {
+        if (student.university_id) {
+          universityCounts[student.university_id] = (universityCounts[student.university_id] || 0) + 1;
+        }
+      });
+
+      // Fetch fee payments data
+      const { data: feePayments } = await supabase
+        .from('fee_payments')
+        .select(`
+          amount_due,
+          amount_paid,
+          payment_status,
+          last_payment_date,
+          students!inner(university_id)
+        `);
+
+      // Calculate fee statistics per university
+      const universityFeeStats: Record<number, { totalExpected: number; amountPaid: number; lastPayment: string }> = {};
+      
+      feePayments?.forEach(payment => {
+        const universityId = payment.students.university_id;
+        if (!universityFeeStats[universityId]) {
+          universityFeeStats[universityId] = { totalExpected: 0, amountPaid: 0, lastPayment: '' };
+        }
+        
+        universityFeeStats[universityId].totalExpected += payment.amount_due || 0;
+        universityFeeStats[universityId].amountPaid += payment.amount_paid || 0;
+        
+        if (payment.last_payment_date && payment.last_payment_date > universityFeeStats[universityId].lastPayment) {
+          universityFeeStats[universityId].lastPayment = payment.last_payment_date;
+        }
+      });
+
+      // Transform universities data
+      const transformedUniversities: UniversityData[] = universitiesData.map(university => {
+        const studentCount = universityCounts[university.id] || 0;
+        const feeStats = universityFeeStats[university.id] || { totalExpected: 0, amountPaid: 0, lastPayment: '' };
+        const amountPending = feeStats.totalExpected - feeStats.amountPaid;
+        
+        return {
+          id: university.id,
+          name: university.name,
+          studentCount,
+          totalFeesExpected: feeStats.totalExpected,
+          amountPaid: feeStats.amountPaid,
+          amountPending,
+          lastPayment: feeStats.lastPayment || '-',
+          status: amountPending <= 0 ? 'Paid' : 'Active'
+        };
+      });
+
+      setUniversities(transformedUniversities);
+
+      // Calculate payment status data for pie chart
+      const totalPaid = transformedUniversities.reduce((sum, uni) => sum + uni.amountPaid, 0);
+      const totalPending = transformedUniversities.reduce((sum, uni) => sum + uni.amountPending, 0);
+      
+      setPaymentStatusData([
+        { name: "Paid", value: totalPaid, color: "#4CAF50" },
+        { name: "Pending", value: totalPending, color: "#FF9800" }
+      ]);
+
+      // Calculate university payment data for pie chart
+      const colors = ["#1E88E5", "#7E57C2", "#43A047", "#F9A825", "#FF5722", "#9C27B0"];
+      setUniversityPaymentData(
+        transformedUniversities
+          .filter(uni => uni.amountPaid > 0)
+          .map((uni, index) => ({
+            name: uni.name.split(' ')[0], // Use first word of university name
+            value: uni.amountPaid,
+            color: colors[index % colors.length]
+          }))
+      );
+
+    } catch (error) {
+      console.error('Error loading universities:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load universities data.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredData = universities.filter(
     (university) =>
       university.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleViewUniversity = (university: University) => {
+  const handleViewUniversity = (university: UniversityData) => {
     navigate(`/universities/${university.id}`);
   };
 
-  const handleEditUniversity = (university: University) => {
+  const handleEditUniversity = (university: UniversityData) => {
     setCurrentUniversity(university);
     setIsEditModalOpen(true);
   };
@@ -152,62 +162,52 @@ const Universities = () => {
     setIsAddModalOpen(true);
   };
 
-  const handleSaveUniversity = (formData: UniversityFormData) => {
+  const handleSaveUniversity = async (formData: UniversityFormData) => {
     setIsSubmitting(true);
     
-    // Simulating API call
-    setTimeout(() => {
+    try {
       if (formData.id) {
-        // Update existing university
-        setUniversities(
-          universities.map((university) =>
-            university.id === formData.id
-              ? {
-                  ...university,
-                  name: formData.name,
-                  location: formData.location,
-                  contactPerson: formData.contactPerson,
-                  email: formData.email,
-                  phone: formData.phone,
-                  status: formData.status,
-                }
-              : university
-          )
-        );
-        
+        // Update existing university (only name can be updated in current schema)
+        const { error } = await supabase
+          .from('universities')
+          .update({ name: formData.name })
+          .eq('id', parseInt(formData.id));
+
+        if (error) throw error;
+
         toast({
           title: "University Updated",
           description: `${formData.name} has been updated successfully.`,
         });
       } else {
         // Add new university
-        const newUniversity: University = {
-          id: formData.name.toLowerCase().replace(/\s+/g, '-'),
-          name: formData.name,
-          location: formData.location,
-          contactPerson: formData.contactPerson,
-          email: formData.email,
-          phone: formData.phone,
-          studentCount: 0,
-          totalFeesExpected: "$0",
-          amountPaid: "$0",
-          amountPending: "$0",
-          lastPayment: "-",
-          status: formData.status,
-        };
-        
-        setUniversities([newUniversity, ...universities]);
-        
+        const { error } = await supabase
+          .from('universities')
+          .insert([{ name: formData.name }]);
+
+        if (error) throw error;
+
         toast({
           title: "University Added",
           description: `${formData.name} has been added successfully.`,
         });
       }
       
-      setIsSubmitting(false);
+      // Reload data
+      await loadUniversities();
+      
       setIsAddModalOpen(false);
       setIsEditModalOpen(false);
-    }, 1000);
+    } catch (error) {
+      console.error('Error saving university:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save university.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleImport = () => {
@@ -224,6 +224,13 @@ const Universities = () => {
     });
   };
 
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD'
+    }).format(amount);
+  };
+
   const columns = [
     { 
       header: "University Name", 
@@ -238,9 +245,21 @@ const Universities = () => {
       )
     },
     { header: "Student Count", accessorKey: "studentCount" },
-    { header: "Total Fees Expected", accessorKey: "totalFeesExpected" },
-    { header: "Amount Paid", accessorKey: "amountPaid" },
-    { header: "Amount Pending", accessorKey: "amountPending" },
+    { 
+      header: "Total Fees Expected", 
+      accessorKey: "totalFeesExpected",
+      cell: (row: any) => formatCurrency(row.totalFeesExpected)
+    },
+    { 
+      header: "Amount Paid", 
+      accessorKey: "amountPaid",
+      cell: (row: any) => formatCurrency(row.amountPaid)
+    },
+    { 
+      header: "Amount Pending", 
+      accessorKey: "amountPending",
+      cell: (row: any) => formatCurrency(row.amountPending)
+    },
     { header: "Last Payment", accessorKey: "lastPayment" },
     {
       header: "Status",
@@ -260,7 +279,7 @@ const Universities = () => {
     {
       header: "Actions",
       accessorKey: "actions",
-      cell: (row: University) => (
+      cell: (row: UniversityData) => (
         <Button variant="outline" size="sm" onClick={() => handleEditUniversity(row)}>
           <Edit className="mr-2 h-4 w-4" />
           Edit
@@ -268,6 +287,16 @@ const Universities = () => {
       ),
     },
   ];
+
+  if (loading) {
+    return (
+      <MainLayout>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-lg">Loading universities...</div>
+        </div>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>
@@ -292,18 +321,22 @@ const Universities = () => {
         }
       />
 
-      <div className="grid grid-cols-1 gap-6 mb-6 lg:grid-cols-2">
-        <UniversityPieChart 
-          title="Payment Status"
-          description="Paid vs Pending Amounts"
-          data={paymentStatusData}
-        />
-        <UniversityPieChart 
-          title="University Payments"
-          description="Amount Paid to Each University"
-          data={universityPaymentData}
-        />
-      </div>
+      {paymentStatusData.length > 0 && (
+        <div className="grid grid-cols-1 gap-6 mb-6 lg:grid-cols-2">
+          <UniversityPieChart 
+            title="Payment Status"
+            description="Paid vs Pending Amounts"
+            data={paymentStatusData}
+          />
+          {universityPaymentData.length > 0 && (
+            <UniversityPieChart 
+              title="University Payments"
+              description="Amount Paid to Each University"
+              data={universityPaymentData}
+            />
+          )}
+        </div>
+      )}
 
       <div className="mb-6">
         <Input
@@ -339,12 +372,12 @@ const Universities = () => {
         >
           <UniversityForm 
             initialData={{
-              id: currentUniversity.id,
+              id: currentUniversity.id.toString(),
               name: currentUniversity.name,
-              location: currentUniversity.location,
-              contactPerson: currentUniversity.contactPerson,
-              email: currentUniversity.email,
-              phone: currentUniversity.phone,
+              location: '',
+              contactPerson: '',
+              email: '',
+              phone: '',
               status: currentUniversity.status as "Active" | "Paid" | "Inactive",
             }}
             onSubmit={handleSaveUniversity}
