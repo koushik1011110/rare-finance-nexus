@@ -18,6 +18,7 @@ const HostelManagement = () => {
   const [hostels, setHostels] = useState<Hostel[]>([]);
   const [loading, setLoading] = useState(true);
   const [totalStudents, setTotalStudents] = useState(0);
+  const [hostelStudentCounts, setHostelStudentCounts] = useState<Record<number, number>>({});
   
   // Modal states
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -33,13 +34,25 @@ const HostelManagement = () => {
   const loadHostels = async () => {
     try {
       setLoading(true);
-      const [hostelsData, studentsCount] = await Promise.all([
+      const [hostelsData, studentsCount, hostelAssignments] = await Promise.all([
         hostelsAPI.getAll(),
-        supabase.from('students').select('id', { count: 'exact' })
+        supabase.from('students').select('id', { count: 'exact' }),
+        supabase
+          .from('student_hostel_assignments')
+          .select('hostel_id')
+          .eq('status', 'Active')
       ]);
+      
+      // Count students per hostel
+      const studentCounts: Record<number, number> = {};
+      hostelAssignments.data?.forEach(assignment => {
+        const hostelId = assignment.hostel_id;
+        studentCounts[hostelId] = (studentCounts[hostelId] || 0) + 1;
+      });
       
       setHostels(hostelsData);
       setTotalStudents(studentsCount.count || 0);
+      setHostelStudentCounts(studentCounts);
     } catch (error) {
       console.error('Error loading hostels:', error);
       toast({
@@ -110,16 +123,19 @@ const HostelManagement = () => {
     { 
       header: "Occupancy", 
       accessorKey: "current_occupancy" as keyof Hostel,
-      cell: (row: Hostel) => (
-        <div className="flex items-center space-x-2">
-          <Users className="h-4 w-4 text-blue-600" />
-          <span className="font-medium">{row.current_occupancy}</span>
-          <span className="text-muted-foreground">/ {row.capacity}</span>
-          <span className="text-xs text-muted-foreground">
-            ({Math.round((row.current_occupancy / row.capacity) * 100)}%)
-          </span>
-        </div>
-      )
+      cell: (row: Hostel) => {
+        const studentCount = hostelStudentCounts[row.id] || 0;
+        return (
+          <div className="flex items-center space-x-2">
+            <Users className="h-4 w-4 text-blue-600" />
+            <span className="font-medium">{studentCount}</span>
+            <span className="text-muted-foreground">/ {row.capacity}</span>
+            <span className="text-xs text-muted-foreground">
+              ({Math.round((studentCount / row.capacity) * 100)}%)
+            </span>
+          </div>
+        );
+      }
     },
     { 
       header: "Monthly Rent", 
@@ -173,8 +189,8 @@ const HostelManagement = () => {
   }
   
   const totalCapacity = hostels.reduce((sum, hostel) => sum + hostel.capacity, 0);
-  const totalOccupancy = hostels.reduce((sum, hostel) => sum + hostel.current_occupancy, 0);
-  const occupancyPercentage = totalCapacity > 0 ? Math.round((totalOccupancy / totalCapacity) * 100) : 0;
+  const totalActualOccupancy = Object.values(hostelStudentCounts).reduce((sum, count) => sum + count, 0);
+  const occupancyPercentage = totalCapacity > 0 ? Math.round((totalActualOccupancy / totalCapacity) * 100) : 0;
   
   return (
     <MainLayout>
@@ -211,7 +227,7 @@ const HostelManagement = () => {
             <CardTitle className="text-sm font-medium text-muted-foreground">Current Occupancy</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalOccupancy}</div>
+            <div className="text-2xl font-bold">{totalActualOccupancy}</div>
             <p className="text-xs text-muted-foreground mt-1">
               {occupancyPercentage}% occupied
             </p>
@@ -277,7 +293,7 @@ const HostelManagement = () => {
             </div>
             <div>
               <h3 className="font-semibold">Current Occupancy</h3>
-              <p>{currentHostel.current_occupancy}</p>
+              <p>{hostelStudentCounts[currentHostel.id] || 0} students</p>
             </div>
             <div>
               <h3 className="font-semibold">Monthly Rent</h3>
