@@ -11,6 +11,8 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { universitiesAPI, coursesAPI, academicSessionsAPI } from "@/lib/supabase-database";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 export interface ComprehensiveStudentFormData {
   id?: number;
@@ -82,18 +84,22 @@ const ComprehensiveStudentForm: React.FC<ComprehensiveStudentFormProps> = ({
   const [universities, setUniversities] = useState<any[]>([]);
   const [courses, setCourses] = useState<any[]>([]);
   const [academicSessions, setAcademicSessions] = useState<any[]>([]);
+  const [agents, setAgents] = useState<any[]>([]);
+  const { user, isAdmin } = useAuth();
 
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [universitiesData, coursesData, sessionsData] = await Promise.all([
+        const [universitiesData, coursesData, sessionsData, agentsData] = await Promise.all([
           universitiesAPI.getAll(),
           coursesAPI.getAll(),
-          academicSessionsAPI.getAll()
+          academicSessionsAPI.getAll(),
+          supabase.from('agents').select('*').eq('status', 'Active')
         ]);
         setUniversities(universitiesData);
         setCourses(coursesData);
         setAcademicSessions(sessionsData);
+        setAgents(agentsData.data || []);
       } catch (error) {
         console.error("Error loading form data:", error);
       }
@@ -115,7 +121,7 @@ const ComprehensiveStudentForm: React.FC<ComprehensiveStudentFormProps> = ({
   const handleSelectChange = (name: string, value: string) => {
     setFormData((prev) => ({ 
       ...prev, 
-      [name]: name.includes('_id') ? (value ? parseInt(value) : null) : value 
+      [name]: name.includes('_id') ? (value && value !== '0' ? parseInt(value) : undefined) : value 
     }));
   };
 
@@ -369,6 +375,28 @@ const ComprehensiveStudentForm: React.FC<ComprehensiveStudentFormProps> = ({
               placeholder="Enter test scores (e.g., IELTS, TOEFL)"
             />
           </div>
+
+          {isAdmin && (
+            <div className="space-y-2">
+              <Label htmlFor="agent_id">Agent (Optional)</Label>
+              <Select
+                value={formData.agent_id?.toString() || ""}
+                onValueChange={(value) => handleSelectChange("agent_id", value || "0")}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select agent (optional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="0">Direct Student (No Agent)</SelectItem>
+                  {agents.map((agent) => (
+                    <SelectItem key={agent.id} value={agent.id.toString()}>
+                      {agent.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </div>
       </div>
 
