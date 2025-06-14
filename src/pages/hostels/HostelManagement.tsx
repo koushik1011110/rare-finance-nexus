@@ -118,6 +118,11 @@ const HostelManagement = () => {
   
   const columns = [
     { header: "Hostel Name", accessorKey: "name" as keyof Hostel },
+    { 
+      header: "University", 
+      accessorKey: "universities" as keyof Hostel,
+      cell: (row: Hostel) => row.universities?.name || 'N/A'
+    },
     { header: "Location", accessorKey: "location" as keyof Hostel },
     { header: "Capacity", accessorKey: "capacity" as keyof Hostel },
     { 
@@ -280,6 +285,10 @@ const HostelManagement = () => {
         >
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
+              <h3 className="font-semibold">University</h3>
+              <p>{currentHostel.universities?.name || 'N/A'}</p>
+            </div>
+            <div>
               <h3 className="font-semibold">Hostel Name</h3>
               <p>{currentHostel.name}</p>
             </div>
@@ -347,6 +356,7 @@ const HostelManagement = () => {
               address: currentHostel.address || '',
               facilities: currentHostel.facilities || '',
               status: currentHostel.status,
+              university_id: currentHostel.university_id?.toString() || '',
             }}
             onSubmit={handleSaveHostel}
             isSubmitting={isSubmitting}

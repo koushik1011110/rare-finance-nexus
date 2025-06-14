@@ -13,6 +13,10 @@ export interface Hostel {
   address?: string;
   facilities?: string;
   status: 'Active' | 'Inactive' | 'Maintenance';
+  university_id?: number;
+  universities?: {
+    name: string;
+  };
   created_at: string;
   updated_at: string;
 }
@@ -29,6 +33,7 @@ export interface HostelFormData {
   address: string;
   facilities: string;
   status: 'Active' | 'Inactive' | 'Maintenance';
+  university_id: string;
 }
 
 export const hostelsAPI = {
@@ -38,7 +43,12 @@ export const hostelsAPI = {
     
     const { data, error } = await supabase
       .from('hostels')
-      .select('*')
+      .select(`
+        *,
+        universities (
+          name
+        )
+      `)
       .order('created_at', { ascending: false });
     
     if (error) {
@@ -66,8 +76,14 @@ export const hostelsAPI = {
         address: hostelData.address,
         facilities: hostelData.facilities,
         status: hostelData.status,
+        university_id: parseInt(hostelData.university_id),
       }])
-      .select()
+      .select(`
+        *,
+        universities (
+          name
+        )
+      `)
       .single();
     
     if (error) {
@@ -96,12 +112,18 @@ export const hostelsAPI = {
     if (hostelData.address) updateData.address = hostelData.address;
     if (hostelData.facilities) updateData.facilities = hostelData.facilities;
     if (hostelData.status) updateData.status = hostelData.status;
+    if (hostelData.university_id) updateData.university_id = parseInt(hostelData.university_id);
 
     const { data, error } = await supabase
       .from('hostels')
       .update(updateData)
       .eq('id', id)
-      .select()
+      .select(`
+        *,
+        universities (
+          name
+        )
+      `)
       .single();
     
     if (error) {

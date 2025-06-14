@@ -1,10 +1,12 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
 export interface HostelFormData {
   id?: number;
@@ -18,6 +20,12 @@ export interface HostelFormData {
   address: string;
   facilities: string;
   status: 'Active' | 'Inactive' | 'Maintenance';
+  university_id: string;
+}
+
+interface University {
+  id: number;
+  name: string;
 }
 
 interface HostelFormProps {
@@ -31,6 +39,9 @@ const HostelForm: React.FC<HostelFormProps> = ({
   onSubmit,
   isSubmitting = false,
 }) => {
+  const [universities, setUniversities] = useState<University[]>([]);
+  const [loadingUniversities, setLoadingUniversities] = useState(true);
+
   const [formData, setFormData] = useState<HostelFormData>({
     name: defaultValues?.name || "",
     location: defaultValues?.location || "",
@@ -42,8 +53,35 @@ const HostelForm: React.FC<HostelFormProps> = ({
     address: defaultValues?.address || "",
     facilities: defaultValues?.facilities || "",
     status: defaultValues?.status || "Active",
+    university_id: defaultValues?.university_id || "",
     ...defaultValues,
   });
+
+  useEffect(() => {
+    loadUniversities();
+  }, []);
+
+  const loadUniversities = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('universities')
+        .select('id, name')
+        .order('name');
+      
+      if (error) throw error;
+      
+      setUniversities(data || []);
+    } catch (error) {
+      console.error('Error loading universities:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load universities.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingUniversities(false);
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,6 +95,21 @@ const HostelForm: React.FC<HostelFormProps> = ({
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="university">University *</Label>
+          <Select value={formData.university_id} onValueChange={(value) => handleChange("university_id", value)}>
+            <SelectTrigger>
+              <SelectValue placeholder={loadingUniversities ? "Loading universities..." : "Select a university"} />
+            </SelectTrigger>
+            <SelectContent>
+              {universities.map((university) => (
+                <SelectItem key={university.id} value={university.id.toString()}>
+                  {university.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
         <div className="space-y-2">
           <Label htmlFor="name">Hostel Name *</Label>
           <Input

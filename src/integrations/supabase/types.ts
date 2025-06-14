@@ -657,6 +657,7 @@ export type Database = {
           name: string
           phone: string | null
           status: string | null
+          university_id: number | null
           updated_at: string | null
         }
         Insert: {
@@ -673,6 +674,7 @@ export type Database = {
           name: string
           phone?: string | null
           status?: string | null
+          university_id?: number | null
           updated_at?: string | null
         }
         Update: {
@@ -689,9 +691,18 @@ export type Database = {
           name?: string
           phone?: string | null
           status?: string | null
+          university_id?: number | null
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "hostels_university_id_fkey"
+            columns: ["university_id"]
+            isOneToOne: false
+            referencedRelation: "universities"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       mess_expenses: {
         Row: {
