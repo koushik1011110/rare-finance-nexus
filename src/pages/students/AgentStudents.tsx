@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import PageHeader from "@/components/shared/PageHeader";
 import DataTable from "@/components/ui/DataTable";
@@ -9,6 +9,7 @@ import { toast } from "@/hooks/use-toast";
 import DetailViewModal from "@/components/shared/DetailViewModal";
 import EditModal from "@/components/shared/EditModal";
 import AgentStudentForm, { AgentStudentFormData } from "@/components/forms/AgentStudentForm";
+import { useAuth } from "@/contexts/AuthContext";
 
 // Sample data for agent students
 const agentStudentsData = [
@@ -72,8 +73,9 @@ interface AgentStudent {
 }
 
 const AgentStudents = () => {
+  const { user, isAdmin } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
-  const [students, setStudents] = useState<AgentStudent[]>(agentStudentsData);
+  const [students, setStudents] = useState<AgentStudent[]>([]);
   
   // Modal states
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -81,6 +83,37 @@ const AgentStudents = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [currentStudent, setCurrentStudent] = useState<AgentStudent | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Load agent students data
+  useEffect(() => {
+    loadStudents();
+  }, [user]);
+
+  const loadStudents = () => {
+    if (!user) return;
+    
+    let filteredData = agentStudentsData;
+    
+    // Filter based on user role
+    if (user.role === 'agent' && user.email) {
+      // If user is an agent, only show students added by them
+      filteredData = agentStudentsData.filter(student => 
+        student.agentName === getAgentNameByEmail(user.email)
+      );
+    }
+    // If user is admin, show all students (no filtering needed)
+    
+    setStudents(filteredData);
+  };
+
+  const getAgentNameByEmail = (email: string): string => {
+    // Map emails to agent names - in a real app this would come from the agents table
+    const emailToAgentMap: { [key: string]: string } = {
+      'admin@rareeducation.com': 'Global Education', // For demo purposes
+    };
+    
+    return emailToAgentMap[email] || 'Unknown Agent';
+  };
 
   const filteredData = students.filter(
     (student) =>
@@ -215,10 +248,12 @@ const AgentStudents = () => {
             <Eye className="mr-2 h-4 w-4" />
             View
           </Button>
-          <Button variant="outline" size="sm" onClick={() => handleEditStudent(row)}>
-            <Edit className="mr-2 h-4 w-4" />
-            Edit
-          </Button>
+          {(isAdmin || (user?.role === 'agent' && row.agentName === getAgentNameByEmail(user.email || ''))) && (
+            <Button variant="outline" size="sm" onClick={() => handleEditStudent(row)}>
+              <Edit className="mr-2 h-4 w-4" />
+              Edit
+            </Button>
+          )}
         </div>
       ),
     },
@@ -227,18 +262,26 @@ const AgentStudents = () => {
   return (
     <MainLayout>
       <PageHeader
-        title="Agent Students"
-        description="Manage all agent-referred student records and commissions"
+        title={user?.role === 'agent' ? "My Students" : "Agent Students"}
+        description={
+          user?.role === 'agent' 
+            ? "Manage your referred student records and commissions" 
+            : "Manage all agent-referred student records and commissions"
+        }
         actions={
           <>
-            <Button variant="outline" size="sm" onClick={handleImport}>
-              <Upload className="mr-2 h-4 w-4" />
-              Import
-            </Button>
-            <Button variant="outline" size="sm" onClick={handleExport}>
-              <Download className="mr-2 h-4 w-4" />
-              Export
-            </Button>
+            {isAdmin && (
+              <>
+                <Button variant="outline" size="sm" onClick={handleImport}>
+                  <Upload className="mr-2 h-4 w-4" />
+                  Import
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleExport}>
+                  <Download className="mr-2 h-4 w-4" />
+                  Export
+                </Button>
+              </>
+            )}
             <Button variant="default" size="sm" onClick={handleAddStudent}>
               <Plus className="mr-2 h-4 w-4" />
               Add Student
