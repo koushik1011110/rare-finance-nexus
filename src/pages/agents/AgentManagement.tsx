@@ -12,8 +12,10 @@ import EditModal from "@/components/shared/EditModal";
 import AgentForm, { AgentFormData } from "@/components/forms/AgentForm";
 import AgentStudentForm from "@/components/forms/AgentStudentForm";
 import { agentsAPI, Agent } from "@/lib/agents-api";
+import { useAuth } from "@/contexts/AuthContext";
 
 const AgentManagement = () => {
+  const { user, isAdmin } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [agents, setAgents] = useState<Agent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -35,7 +37,16 @@ const AgentManagement = () => {
     try {
       setLoading(true);
       const data = await agentsAPI.getAll();
-      setAgents(data);
+      
+      // Filter agents based on user role
+      if (user?.role === 'agent' && user?.email) {
+        // If user is an agent, only show their own record
+        const filteredData = data.filter(agent => agent.email === user.email);
+        setAgents(filteredData);
+      } else {
+        // If user is admin or other roles, show all agents
+        setAgents(data);
+      }
     } catch (error) {
       console.error('Error loading agents:', error);
       toast({
@@ -188,14 +199,18 @@ const AgentManagement = () => {
             <Eye className="mr-2 h-4 w-4" />
             View
           </Button>
-          <Button variant="outline" size="sm" onClick={() => handleEditAgent(row)}>
-            <Edit className="mr-2 h-4 w-4" />
-            Edit
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => handleAddStudentForAgent(row)}>
-            <Users className="mr-2 h-4 w-4" />
-            Add Student
-          </Button>
+          {(isAdmin || user?.email === row.email) && (
+            <Button variant="outline" size="sm" onClick={() => handleEditAgent(row)}>
+              <Edit className="mr-2 h-4 w-4" />
+              Edit
+            </Button>
+          )}
+          {(isAdmin || user?.email === row.email) && (
+            <Button variant="outline" size="sm" onClick={() => handleAddStudentForAgent(row)}>
+              <Users className="mr-2 h-4 w-4" />
+              Add Student
+            </Button>
+          )}
         </div>
       ),
     },
@@ -214,23 +229,29 @@ const AgentManagement = () => {
   return (
     <MainLayout>
       <PageHeader
-        title="Agent Management"
-        description="Manage all education agents, their students, and commission structures"
+        title={user?.role === 'agent' ? "My Agent Profile" : "Agent Management"}
+        description={
+          user?.role === 'agent' 
+            ? "View and manage your agent profile and students" 
+            : "Manage all education agents, their students, and commission structures"
+        }
         actions={
-          <>
-            <Button variant="outline" size="sm" onClick={handleImport}>
-              <Upload className="mr-2 h-4 w-4" />
-              Import
-            </Button>
-            <Button variant="outline" size="sm" onClick={handleExport}>
-              <Download className="mr-2 h-4 w-4" />
-              Export
-            </Button>
-            <Button variant="default" size="sm" onClick={handleAddAgent}>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Agent
-            </Button>
-          </>
+          isAdmin ? (
+            <>
+              <Button variant="outline" size="sm" onClick={handleImport}>
+                <Upload className="mr-2 h-4 w-4" />
+                Import
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleExport}>
+                <Download className="mr-2 h-4 w-4" />
+                Export
+              </Button>
+              <Button variant="default" size="sm" onClick={handleAddAgent}>
+                <Plus className="mr-2 h-4 w-4" />
+                Add Agent
+              </Button>
+            </>
+          ) : undefined
         }
       />
 
