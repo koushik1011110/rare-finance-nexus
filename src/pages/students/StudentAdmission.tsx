@@ -78,26 +78,9 @@ const StudentAdmission = () => {
   };
 
   const uploadToCloudinary = async (file: File): Promise<string> => {
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('upload_preset', 'student_documents'); // You'll need to set this up in Cloudinary
-    
-    try {
-      const response = await fetch('https://api.cloudinary.com/v1_1/YOUR_CLOUD_NAME/upload', {
-        method: 'POST',
-        body: formData,
-      });
-      
-      if (!response.ok) {
-        throw new Error('Upload failed');
-      }
-      
-      const data = await response.json();
-      return data.secure_url;
-    } catch (error) {
-      console.error('Upload error:', error);
-      throw error;
-    }
+    // For now, return empty string - file upload can be implemented later
+    console.log('File upload placeholder for:', file.name);
+    return '';
   };
 
   const handleDateSelect = (date: Date | undefined) => {
