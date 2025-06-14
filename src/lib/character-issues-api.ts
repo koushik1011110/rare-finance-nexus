@@ -10,7 +10,7 @@ export interface CharacterIssue {
   updated_at: string;
   created_by?: string;
   resolved_at?: string;
-  student?: {
+  students?: {
     first_name: string;
     last_name: string;
     admission_number: string;
@@ -25,14 +25,20 @@ export interface CreateCharacterIssueRequest {
   created_by?: string;
 }
 
-export const characterIssuesApi = {
-  // Get all unresolved character issues
-  async getAll(): Promise<CharacterIssue[]> {
+export interface Student {
+  id: number;
+  first_name: string;
+  last_name: string;
+  admission_number: string;
+}
+
+export const characterIssuesAPI = {
+  getAll: async (): Promise<CharacterIssue[]> => {
     const { data, error } = await supabase
       .from('character_issues')
       .select(`
         *,
-        student:students(
+        students (
           first_name,
           last_name,
           admission_number,
@@ -50,14 +56,13 @@ export const characterIssuesApi = {
     return data || [];
   },
 
-  // Create a new character issue
-  async create(data: CreateCharacterIssueRequest): Promise<CharacterIssue> {
-    const { data: newIssue, error } = await supabase
+  create: async (issueData: CreateCharacterIssueRequest): Promise<CharacterIssue> => {
+    const { data, error } = await supabase
       .from('character_issues')
-      .insert([data])
+      .insert([issueData])
       .select(`
         *,
-        student:students(
+        students (
           first_name,
           last_name,
           admission_number,
@@ -71,11 +76,10 @@ export const characterIssuesApi = {
       throw error;
     }
 
-    return newIssue;
+    return data;
   },
 
-  // Mark fine as collected and resolve issue
-  async resolveFine(id: number): Promise<void> {
+  resolveFine: async (id: number): Promise<void> => {
     const { error } = await supabase.rpc('resolve_character_issue', {
       issue_id: id
     });
@@ -86,15 +90,17 @@ export const characterIssuesApi = {
     }
   },
 
-  // Update character issue
-  async update(id: number, updates: Partial<CreateCharacterIssueRequest>): Promise<CharacterIssue> {
+  update: async (id: number, updates: Partial<CharacterIssue>): Promise<CharacterIssue> => {
     const { data, error } = await supabase
       .from('character_issues')
-      .update({ ...updates, updated_at: new Date().toISOString() })
+      .update({
+        ...updates,
+        updated_at: new Date().toISOString()
+      })
       .eq('id', id)
       .select(`
         *,
-        student:students(
+        students (
           first_name,
           last_name,
           admission_number,
@@ -111,8 +117,7 @@ export const characterIssuesApi = {
     return data;
   },
 
-  // Delete character issue
-  async delete(id: number): Promise<void> {
+  delete: async (id: number): Promise<void> => {
     const { error } = await supabase
       .from('character_issues')
       .delete()
@@ -122,5 +127,20 @@ export const characterIssuesApi = {
       console.error('Error deleting character issue:', error);
       throw error;
     }
+  },
+
+  getStudents: async (): Promise<Student[]> => {
+    const { data, error } = await supabase
+      .from('students')
+      .select('id, first_name, last_name, admission_number')
+      .eq('status', 'active')
+      .order('first_name');
+
+    if (error) {
+      console.error('Error fetching students:', error);
+      throw error;
+    }
+
+    return data || [];
   }
 };

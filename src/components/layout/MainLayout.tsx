@@ -75,6 +75,7 @@ const navItems: NavItem[] = [
       { title: "Agent Students", href: "/students/agent" },
       { title: "Student Admission", href: "/students/admission" },
       { title: "Application", href: "/students/application" },
+      { title: "Character", href: "/students/character" },
     ]
   },
   { title: "Agents", href: "/agents", icon: Users },
