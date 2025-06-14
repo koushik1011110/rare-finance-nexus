@@ -10,9 +10,6 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Upload, FileText, User } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
 import { universitiesAPI, coursesAPI, academicSessionsAPI, University, Course, AcademicSession } from "@/lib/supabase-database";
 
 export interface SupabaseDirectStudentFormData {
@@ -28,10 +25,6 @@ export interface SupabaseDirectStudentFormData {
   course_id: number;
   academic_session_id: number;
   status: "active" | "inactive" | "completed";
-  photo_url?: string;
-  passport_copy_url?: string;
-  aadhaar_copy_url?: string;
-  twelfth_certificate_url?: string;
 }
 
 interface SupabaseDirectStudentFormProps {
@@ -62,13 +55,6 @@ const SupabaseDirectStudentForm: React.FC<SupabaseDirectStudentFormProps> = ({
   const [courses, setCourses] = useState<Course[]>([]);
   const [academicSessions, setAcademicSessions] = useState<AcademicSession[]>([]);
   const [loading, setLoading] = useState(true);
-  const [uploadingFiles, setUploadingFiles] = useState(false);
-  const [files, setFiles] = useState({
-    studentImage: null as File | null,
-    passportCopy: null as File | null,
-    aadhaarCopy: null as File | null,
-    twelfthCertificate: null as File | null,
-  });
 
   useEffect(() => {
     loadDropdownData();
@@ -105,69 +91,9 @@ const SupabaseDirectStudentForm: React.FC<SupabaseDirectStudentFormProps> = ({
     }));
   };
 
-  const handleFileChange = (field: string, e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setFiles(prev => ({ ...prev, [field]: file }));
-    }
-  };
-
-  const uploadToFirebase = async (file: File, documentType: string): Promise<string> => {
-    const { uploadStudentDocument, validateFile } = await import('@/lib/firebase-storage');
-    
-    // Validate file
-    const validation = validateFile(file, {
-      maxSize: documentType === 'photo' ? 2 : 5, // 2MB for photos, 5MB for documents
-      allowedTypes: documentType === 'photo' 
-        ? ['image/jpeg', 'image/png', 'image/webp']
-        : ['image/jpeg', 'image/png', 'image/webp', 'application/pdf']
-    });
-    
-    if (!validation.isValid) {
-      throw new Error(validation.error);
-    }
-    
-    // Use timestamp as student ID for now (in production, use actual student ID)
-    const studentId = Date.now().toString();
-    return await uploadStudentDocument(file, studentId, documentType as any);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    try {
-      let updatedFormData = { ...formData };
-      
-      // Upload files if they exist
-      if (files.studentImage || files.passportCopy || files.aadhaarCopy || files.twelfthCertificate) {
-        setUploadingFiles(true);
-        
-        if (files.studentImage) {
-          updatedFormData.photo_url = await uploadToFirebase(files.studentImage, 'photo');
-        }
-        if (files.passportCopy) {
-          updatedFormData.passport_copy_url = await uploadToFirebase(files.passportCopy, 'passport');
-        }
-        if (files.aadhaarCopy) {
-          updatedFormData.aadhaar_copy_url = await uploadToFirebase(files.aadhaarCopy, 'aadhaar');
-        }
-        if (files.twelfthCertificate) {
-          updatedFormData.twelfth_certificate_url = await uploadToFirebase(files.twelfthCertificate, 'certificate');
-        }
-        
-        setUploadingFiles(false);
-      }
-      
-      onSubmit(updatedFormData);
-    } catch (error) {
-      console.error('Error uploading files:', error);
-      toast({
-        title: "Upload Error",
-        description: "Failed to upload files. Please try again.",
-        variant: "destructive",
-      });
-      setUploadingFiles(false);
-    }
+    onSubmit(formData);
   };
 
   if (loading) {
@@ -335,98 +261,8 @@ const SupabaseDirectStudentForm: React.FC<SupabaseDirectStudentFormProps> = ({
         </div>
       </div>
 
-      {/* Document Upload Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <FileText className="mr-2 h-5 w-5" />
-            Document Uploads
-          </CardTitle>
-          <CardDescription>Upload student documents (PDF, JPG, PNG accepted)</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="studentImage">Student Photo</Label>
-              <div className="relative">
-                <Upload className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="studentImage"
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => handleFileChange("studentImage", e)}
-                  className="pl-10 file:mr-4 file:py-1 file:px-2 file:rounded file:border-0 file:text-sm file:font-medium file:bg-muted file:text-muted-foreground hover:file:bg-muted/80"
-                />
-              </div>
-              {files.studentImage && (
-                <p className="text-sm text-muted-foreground">
-                  Selected: {files.studentImage.name}
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="passportCopy">Passport Copy</Label>
-              <div className="relative">
-                <Upload className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="passportCopy"
-                  type="file"
-                  accept=".pdf,.jpg,.jpeg,.png"
-                  onChange={(e) => handleFileChange("passportCopy", e)}
-                  className="pl-10 file:mr-4 file:py-1 file:px-2 file:rounded file:border-0 file:text-sm file:font-medium file:bg-muted file:text-muted-foreground hover:file:bg-muted/80"
-                />
-              </div>
-              {files.passportCopy && (
-                <p className="text-sm text-muted-foreground">
-                  Selected: {files.passportCopy.name}
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="aadhaarCopy">Aadhaar Copy</Label>
-              <div className="relative">
-                <Upload className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="aadhaarCopy"
-                  type="file"
-                  accept=".pdf,.jpg,.jpeg,.png"
-                  onChange={(e) => handleFileChange("aadhaarCopy", e)}
-                  className="pl-10 file:mr-4 file:py-1 file:px-2 file:rounded file:border-0 file:text-sm file:font-medium file:bg-muted file:text-muted-foreground hover:file:bg-muted/80"
-                />
-              </div>
-              {files.aadhaarCopy && (
-                <p className="text-sm text-muted-foreground">
-                  Selected: {files.aadhaarCopy.name}
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="twelfthCertificate">12th Grade Certificate</Label>
-              <div className="relative">
-                <Upload className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="twelfthCertificate"
-                  type="file"
-                  accept=".pdf,.jpg,.jpeg,.png"
-                  onChange={(e) => handleFileChange("twelfthCertificate", e)}
-                  className="pl-10 file:mr-4 file:py-1 file:px-2 file:rounded file:border-0 file:text-sm file:font-medium file:bg-muted file:text-muted-foreground hover:file:bg-muted/80"
-                />
-              </div>
-              {files.twelfthCertificate && (
-                <p className="text-sm text-muted-foreground">
-                  Selected: {files.twelfthCertificate.name}
-                </p>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Button type="submit" disabled={isSubmitting || uploadingFiles}>
-        {uploadingFiles ? "Uploading Documents..." : isSubmitting ? "Saving..." : "Save Student"}
+      <Button type="submit" disabled={isSubmitting}>
+        {isSubmitting ? "Saving..." : "Save Student"}
       </Button>
     </form>
   );
