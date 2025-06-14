@@ -10,6 +10,7 @@ import { Eye, Download } from "lucide-react";
 import MainLayout from "@/components/layout/MainLayout";
 import PageHeader from "@/components/shared/PageHeader";
 import DataTable from "@/components/ui/DataTable";
+import StudentDetailModal from "@/components/students/StudentDetailModal";
 
 interface ApplyStudent {
   id: number;
@@ -51,6 +52,8 @@ const statusOptions = [
 export default function Application() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [selectedStudent, setSelectedStudent] = useState<ApplyStudent | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const { data: applications = [], isLoading } = useQuery({
     queryKey: ["apply-students"],
@@ -95,7 +98,18 @@ export default function Application() {
   });
 
   const handleStatusChange = (id: number, newStatus: string) => {
+    console.log("Updating status for ID:", id, "to:", newStatus);
     updateStatusMutation.mutate({ id, status: newStatus });
+  };
+
+  const handleViewStudent = (student: ApplyStudent) => {
+    setSelectedStudent(student);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedStudent(null);
   };
 
   const columns = [
@@ -173,7 +187,7 @@ export default function Application() {
       accessorKey: "actions" as keyof ApplyStudent,
       cell: (row: ApplyStudent) => (
         <div className="flex items-center space-x-2">
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={() => handleViewStudent(row)}>
             <Eye className="h-4 w-4 mr-1" />
             View
           </Button>
@@ -214,6 +228,12 @@ export default function Application() {
             )}
           </CardContent>
         </Card>
+
+        <StudentDetailModal
+          student={selectedStudent}
+          isOpen={isModalOpen}
+          onClose={handleCloseModal}
+        />
       </div>
     </MainLayout>
   );
