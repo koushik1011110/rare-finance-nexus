@@ -278,6 +278,35 @@ const AgentStudents = () => {
           });
           return;
         }
+
+        // Create credentials for the new student
+        if (data && data[0]) {
+          try {
+            // Check if credentials already exist
+            const { data: existingCredentials } = await supabase
+              .from('student_credentials')
+              .select('id')
+              .eq('student_id', data[0].id)
+              .single();
+
+            if (!existingCredentials) {
+              // Generate username and password
+              const username = `${formData.first_name.slice(0,3).toLowerCase()}${formData.last_name.slice(0,3).toLowerCase()}${data[0].id}`;
+              const password = Math.random().toString(36).slice(-10);
+
+              await supabase
+                .from('student_credentials')
+                .insert([{
+                  student_id: data[0].id,
+                  username: username,
+                  password: password
+                }]);
+            }
+          } catch (credError) {
+            console.warn('Credentials creation failed:', credError);
+            // Don't fail the whole operation if credentials creation fails
+          }
+        }
         
         toast({
           title: "Student Added",
