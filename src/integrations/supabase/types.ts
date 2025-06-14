@@ -328,6 +328,42 @@ export type Database = {
         }
         Relationships: []
       }
+      character_issues: {
+        Row: {
+          complaint: string
+          created_at: string
+          created_by: string | null
+          fine_amount: number
+          fine_collected: boolean
+          id: number
+          resolved_at: string | null
+          student_id: number
+          updated_at: string
+        }
+        Insert: {
+          complaint: string
+          created_at?: string
+          created_by?: string | null
+          fine_amount?: number
+          fine_collected?: boolean
+          id?: number
+          resolved_at?: string | null
+          student_id: number
+          updated_at?: string
+        }
+        Update: {
+          complaint?: string
+          created_at?: string
+          created_by?: string | null
+          fine_amount?: number
+          fine_collected?: boolean
+          id?: number
+          resolved_at?: string | null
+          student_id?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       courses: {
         Row: {
           created_at: string | null
@@ -1197,6 +1233,10 @@ export type Database = {
       }
       recalculate_all_hostel_occupancies: {
         Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      resolve_character_issue: {
+        Args: { issue_id: number }
         Returns: undefined
       }
       update_application_status: {
