@@ -29,7 +29,10 @@ export const studentHostelAssignmentsAPI = {
       throw error;
     }
     
-    return data || [];
+    return (data || []).map(assignment => ({
+      ...assignment,
+      status: assignment.status as 'Active' | 'Inactive'
+    }));
   },
 
   getByHostelId: async (hostelId: number): Promise<StudentHostelAssignment[]> => {
@@ -45,7 +48,10 @@ export const studentHostelAssignmentsAPI = {
       throw error;
     }
     
-    return data || [];
+    return (data || []).map(assignment => ({
+      ...assignment,
+      status: assignment.status as 'Active' | 'Inactive'
+    }));
   },
 
   create: async (assignmentData: StudentHostelAssignmentFormData): Promise<StudentHostelAssignment> => {
@@ -60,7 +66,10 @@ export const studentHostelAssignmentsAPI = {
       throw error;
     }
     
-    return data;
+    return {
+      ...data,
+      status: data.status as 'Active' | 'Inactive'
+    };
   },
 
   update: async (id: number, assignmentData: Partial<StudentHostelAssignmentFormData>): Promise<StudentHostelAssignment> => {
@@ -79,7 +88,10 @@ export const studentHostelAssignmentsAPI = {
       throw error;
     }
     
-    return data;
+    return {
+      ...data,
+      status: data.status as 'Active' | 'Inactive'
+    };
   },
 
   delete: async (id: number): Promise<void> => {

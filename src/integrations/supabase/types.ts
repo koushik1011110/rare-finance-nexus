@@ -235,6 +235,99 @@ export type Database = {
           },
         ]
       }
+      apply_students_backup: {
+        Row: {
+          aadhaar_copy_url: string | null
+          aadhaar_number: string | null
+          academic_session_id: number | null
+          address: string | null
+          admission_number: string | null
+          application_status: string | null
+          city: string | null
+          country: string | null
+          course_id: number | null
+          created_at: string | null
+          date_of_birth: string | null
+          email: string | null
+          father_name: string | null
+          first_name: string | null
+          id: number | null
+          last_name: string | null
+          mother_name: string | null
+          passport_copy_url: string | null
+          passport_number: string | null
+          phone_number: string | null
+          photo_url: string | null
+          scores: string | null
+          seat_number: string | null
+          status: string | null
+          twelfth_certificate_url: string | null
+          twelfth_marks: number | null
+          university_id: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          aadhaar_copy_url?: string | null
+          aadhaar_number?: string | null
+          academic_session_id?: number | null
+          address?: string | null
+          admission_number?: string | null
+          application_status?: string | null
+          city?: string | null
+          country?: string | null
+          course_id?: number | null
+          created_at?: string | null
+          date_of_birth?: string | null
+          email?: string | null
+          father_name?: string | null
+          first_name?: string | null
+          id?: number | null
+          last_name?: string | null
+          mother_name?: string | null
+          passport_copy_url?: string | null
+          passport_number?: string | null
+          phone_number?: string | null
+          photo_url?: string | null
+          scores?: string | null
+          seat_number?: string | null
+          status?: string | null
+          twelfth_certificate_url?: string | null
+          twelfth_marks?: number | null
+          university_id?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          aadhaar_copy_url?: string | null
+          aadhaar_number?: string | null
+          academic_session_id?: number | null
+          address?: string | null
+          admission_number?: string | null
+          application_status?: string | null
+          city?: string | null
+          country?: string | null
+          course_id?: number | null
+          created_at?: string | null
+          date_of_birth?: string | null
+          email?: string | null
+          father_name?: string | null
+          first_name?: string | null
+          id?: number | null
+          last_name?: string | null
+          mother_name?: string | null
+          passport_copy_url?: string | null
+          passport_number?: string | null
+          phone_number?: string | null
+          photo_url?: string | null
+          scores?: string | null
+          seat_number?: string | null
+          status?: string | null
+          twelfth_certificate_url?: string | null
+          twelfth_marks?: number | null
+          university_id?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       courses: {
         Row: {
           created_at: string | null
@@ -974,6 +1067,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      approve_student_application: {
+        Args: { application_id: number }
+        Returns: undefined
+      }
       assign_fee_structure_to_students: {
         Args: { structure_id: number }
         Returns: number
