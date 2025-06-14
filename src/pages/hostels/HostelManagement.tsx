@@ -11,11 +11,13 @@ import DetailViewModal from "@/components/shared/DetailViewModal";
 import EditModal from "@/components/shared/EditModal";
 import HostelForm, { HostelFormData } from "@/components/forms/HostelForm";
 import { hostelsAPI, Hostel } from "@/lib/hostels-api";
+import { supabase } from "@/integrations/supabase/client";
 
 const HostelManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [hostels, setHostels] = useState<Hostel[]>([]);
   const [loading, setLoading] = useState(true);
+  const [totalStudents, setTotalStudents] = useState(0);
   
   // Modal states
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -31,8 +33,13 @@ const HostelManagement = () => {
   const loadHostels = async () => {
     try {
       setLoading(true);
-      const data = await hostelsAPI.getAll();
-      setHostels(data);
+      const [hostelsData, studentsCount] = await Promise.all([
+        hostelsAPI.getAll(),
+        supabase.from('students').select('id', { count: 'exact' })
+      ]);
+      
+      setHostels(hostelsData);
+      setTotalStudents(studentsCount.count || 0);
     } catch (error) {
       console.error('Error loading hostels:', error);
       toast({
@@ -182,7 +189,7 @@ const HostelManagement = () => {
         }
       />
       
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-3 mb-6">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Total Hostels</CardTitle>
@@ -208,6 +215,14 @@ const HostelManagement = () => {
             <p className="text-xs text-muted-foreground mt-1">
               {occupancyPercentage}% occupied
             </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Students</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalStudents}</div>
           </CardContent>
         </Card>
       </div>
