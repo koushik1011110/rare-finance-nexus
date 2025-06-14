@@ -6,6 +6,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface EditModalProps {
   title: string;
@@ -22,11 +23,13 @@ export default function EditModal({
 }: EditModalProps) {
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-3xl">
+      <DialogContent className="max-w-3xl max-h-[80vh]">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
-        <div className="py-4">{children}</div>
+        <ScrollArea className="max-h-[60vh] pr-4">
+          <div className="py-4">{children}</div>
+        </ScrollArea>
       </DialogContent>
     </Dialog>
   );
