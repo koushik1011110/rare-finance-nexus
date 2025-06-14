@@ -33,7 +33,10 @@ export const agentsAPI = {
   getAll: async (): Promise<Agent[]> => {
     const { data, error } = await supabase
       .from('agents')
-      .select('*')
+      .select(`
+        *,
+        students_count:students(count)
+      `)
       .order('created_at', { ascending: false });
     
     if (error) {
@@ -43,6 +46,7 @@ export const agentsAPI = {
     
     return (data || []).map(agent => ({
       ...agent,
+      students_count: agent.students_count?.[0]?.count || 0,
       status: agent.status as 'Active' | 'Inactive'
     }));
   },
