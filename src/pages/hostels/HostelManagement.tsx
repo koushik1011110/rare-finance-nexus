@@ -19,6 +19,7 @@ const HostelManagement = () => {
   const [loading, setLoading] = useState(true);
   const [totalStudents, setTotalStudents] = useState(0);
   const [hostelStudentCounts, setHostelStudentCounts] = useState<Record<number, number>>({});
+  const [universityStudentCounts, setUniversityStudentCounts] = useState<Record<number, number>>({});
   
   // Modal states
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -34,13 +35,16 @@ const HostelManagement = () => {
   const loadHostels = async () => {
     try {
       setLoading(true);
-      const [hostelsData, studentsCount, hostelAssignments] = await Promise.all([
+      const [hostelsData, studentsCount, hostelAssignments, universityStudents] = await Promise.all([
         hostelsAPI.getAll(),
         supabase.from('students').select('id', { count: 'exact' }),
         supabase
           .from('student_hostel_assignments')
           .select('hostel_id')
-          .eq('status', 'Active')
+          .eq('status', 'Active'),
+        supabase
+          .from('students')
+          .select('university_id')
       ]);
       
       // Count students per hostel
@@ -49,10 +53,20 @@ const HostelManagement = () => {
         const hostelId = assignment.hostel_id;
         studentCounts[hostelId] = (studentCounts[hostelId] || 0) + 1;
       });
+
+      // Count students per university
+      const universityCounts: Record<number, number> = {};
+      universityStudents.data?.forEach(student => {
+        if (student.university_id) {
+          const universityId = student.university_id;
+          universityCounts[universityId] = (universityCounts[universityId] || 0) + 1;
+        }
+      });
       
       setHostels(hostelsData);
       setTotalStudents(studentsCount.count || 0);
       setHostelStudentCounts(studentCounts);
+      setUniversityStudentCounts(universityCounts);
     } catch (error) {
       console.error('Error loading hostels:', error);
       toast({
@@ -129,15 +143,12 @@ const HostelManagement = () => {
       header: "Occupancy", 
       accessorKey: "current_occupancy" as keyof Hostel,
       cell: (row: Hostel) => {
-        const studentCount = hostelStudentCounts[row.id] || 0;
+        const universityStudentCount = row.university_id ? (universityStudentCounts[row.university_id] || 0) : 0;
         return (
           <div className="flex items-center space-x-2">
             <Users className="h-4 w-4 text-blue-600" />
-            <span className="font-medium">{studentCount}</span>
-            <span className="text-muted-foreground">/ {row.capacity}</span>
-            <span className="text-xs text-muted-foreground">
-              ({Math.round((studentCount / row.capacity) * 100)}%)
-            </span>
+            <span className="font-medium">{universityStudentCount}</span>
+            <span className="text-muted-foreground">total students</span>
           </div>
         );
       }
