@@ -752,6 +752,41 @@ export type Database = {
           },
         ]
       }
+      student_credentials: {
+        Row: {
+          created_at: string | null
+          id: number
+          password: string
+          student_id: number
+          updated_at: string | null
+          username: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          password: string
+          student_id: number
+          updated_at?: string | null
+          username: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          password?: string
+          student_id?: number
+          updated_at?: string | null
+          username?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_credentials_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: true
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       student_fee_assignments: {
         Row: {
           assigned_at: string | null
@@ -1075,12 +1110,24 @@ export type Database = {
         Args: { structure_id: number }
         Returns: number
       }
+      create_student_credentials: {
+        Args: { student_id_param: number }
+        Returns: undefined
+      }
       generate_admission_number: {
         Args: Record<PropertyKey, never>
         Returns: string
       }
       generate_receipt_number: {
         Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      generate_student_password: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      generate_student_username: {
+        Args: { student_id_param: number }
         Returns: string
       }
       recalculate_all_hostel_occupancies: {
