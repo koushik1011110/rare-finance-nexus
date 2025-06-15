@@ -139,6 +139,20 @@ export const salaryAPI = {
 
   // Create salary record
   createSalary: async (salaryData: Omit<SalaryFormData, 'id'>): Promise<StaffSalary> => {
+    const salaryMonth = salaryData.salary_month.includes('-01') ? salaryData.salary_month : salaryData.salary_month + '-01';
+    
+    // Check if salary already exists for this staff and month
+    const { data: existing } = await supabase
+      .from('staff_salaries')
+      .select('id')
+      .eq('staff_id', parseInt(salaryData.staff_id))
+      .eq('salary_month', salaryMonth)
+      .single();
+
+    if (existing) {
+      throw new Error(`Salary record already exists for this staff member for ${new Date(salaryMonth).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`);
+    }
+
     const { data, error } = await supabase
       .from('staff_salaries')
       .insert([{
@@ -146,7 +160,7 @@ export const salaryAPI = {
         basic_salary: parseFloat(salaryData.basic_salary),
         allowances: parseFloat(salaryData.allowances),
         deductions: parseFloat(salaryData.deductions),
-        salary_month: salaryData.salary_month.includes('-01') ? salaryData.salary_month : salaryData.salary_month + '-01',
+        salary_month: salaryMonth,
         payment_status: salaryData.payment_status,
         payment_date: salaryData.payment_date || null,
         payment_method: salaryData.payment_method,
@@ -306,12 +320,26 @@ export const salaryAPI = {
 
   // Create bulk salary records
   createBulkSalaries: async (staffIds: string[], salaryData: Omit<SalaryFormData, 'id' | 'staff_id'>): Promise<StaffSalary[]> => {
+    const salaryMonth = salaryData.salary_month.includes('-01') ? salaryData.salary_month : salaryData.salary_month + '-01';
+    
+    // Check for existing salary records
+    const { data: existingRecords } = await supabase
+      .from('staff_salaries')
+      .select('staff_id')
+      .in('staff_id', staffIds.map(id => parseInt(id)))
+      .eq('salary_month', salaryMonth);
+
+    if (existingRecords && existingRecords.length > 0) {
+      const existingStaffIds = existingRecords.map(record => record.staff_id);
+      throw new Error(`Salary records already exist for some staff members for ${new Date(salaryMonth).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}. Please remove those staff members from selection.`);
+    }
+
     const bulkInserts = staffIds.map(staffId => ({
       staff_id: parseInt(staffId),
       basic_salary: parseFloat(salaryData.basic_salary),
       allowances: parseFloat(salaryData.allowances),
       deductions: parseFloat(salaryData.deductions),
-      salary_month: salaryData.salary_month.includes('-01') ? salaryData.salary_month : salaryData.salary_month + '-01',
+      salary_month: salaryMonth,
       payment_status: salaryData.payment_status,
       payment_date: salaryData.payment_date || null,
       payment_method: salaryData.payment_method,
