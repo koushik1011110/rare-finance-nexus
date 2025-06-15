@@ -146,7 +146,7 @@ export const salaryAPI = {
         basic_salary: parseFloat(salaryData.basic_salary),
         allowances: parseFloat(salaryData.allowances),
         deductions: parseFloat(salaryData.deductions),
-        salary_month: salaryData.salary_month + '-01', // Convert YYYY-MM to YYYY-MM-01
+        salary_month: salaryData.salary_month.includes('-01') ? salaryData.salary_month : salaryData.salary_month + '-01',
         payment_status: salaryData.payment_status,
         payment_date: salaryData.payment_date || null,
         payment_method: salaryData.payment_method,
@@ -311,7 +311,7 @@ export const salaryAPI = {
       basic_salary: parseFloat(salaryData.basic_salary),
       allowances: parseFloat(salaryData.allowances),
       deductions: parseFloat(salaryData.deductions),
-      salary_month: salaryData.salary_month + '-01',
+      salary_month: salaryData.salary_month.includes('-01') ? salaryData.salary_month : salaryData.salary_month + '-01',
       payment_status: salaryData.payment_status,
       payment_date: salaryData.payment_date || null,
       payment_method: salaryData.payment_method,
