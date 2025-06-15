@@ -173,7 +173,13 @@ const AgentManagement = () => {
     { 
       header: "Total Receivable", 
       accessorKey: "total_received" as keyof Agent,
-      cell: (row: Agent) => `$${row.total_received.toFixed(2)}`
+      cell: (row: Agent) => (
+        <span className={`font-medium ${
+          row.payment_status === 'Paid' ? 'text-green-600' : 'text-orange-600'
+        }`}>
+          ${row.total_received.toFixed(2)}
+        </span>
+      )
     },
     { 
       header: "Commission Due", 
@@ -199,40 +205,16 @@ const AgentManagement = () => {
       header: "Actions",
       accessorKey: "actions" as "actions",
       cell: (row: Agent) => (
-        <div className="flex flex-col space-y-2">
-          <div className="flex space-x-2">
-            <Button variant="outline" size="sm" onClick={() => handleViewAgent(row)}>
-              <Eye className="mr-2 h-4 w-4" />
-              View
+        <div className="flex space-x-2">
+          <Button variant="outline" size="sm" onClick={() => handleViewAgent(row)}>
+            <Eye className="mr-2 h-4 w-4" />
+            View
+          </Button>
+          {(isAdmin || user?.email === row.email) && (
+            <Button variant="outline" size="sm" onClick={() => handleEditAgent(row)}>
+              <Edit className="mr-2 h-4 w-4" />
+              Edit
             </Button>
-            {(isAdmin || user?.email === row.email) && (
-              <Button variant="outline" size="sm" onClick={() => handleEditAgent(row)}>
-                <Edit className="mr-2 h-4 w-4" />
-                Edit
-              </Button>
-            )}
-          </div>
-          {isAdmin && (
-            <div className="flex items-center space-x-2">
-              <span
-                className={`rounded-full px-2 py-1 text-xs font-medium ${
-                  row.payment_status === "Paid"
-                    ? "bg-green-100 text-green-800"
-                    : "bg-orange-100 text-orange-800"
-                }`}
-              >
-                {row.payment_status}
-              </span>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => handleUpdatePaymentStatus(row)}
-                className="flex items-center"
-              >
-                <DollarSign className="mr-1 h-3 w-3" />
-                Mark as {row.payment_status === 'Paid' ? 'Unpaid' : 'Paid'}
-              </Button>
-            </div>
           )}
         </div>
       ),
@@ -341,7 +323,11 @@ const AgentManagement = () => {
             </div>
             <div>
               <h3 className="font-semibold">Total Receivable</h3>
-              <p>${currentAgent.total_received.toFixed(2)}</p>
+              <p className={`font-medium ${
+                currentAgent.payment_status === 'Paid' ? 'text-green-600' : 'text-orange-600'
+              }`}>
+                ${currentAgent.total_received.toFixed(2)}
+              </p>
             </div>
             <div>
               <h3 className="font-semibold">Commission Due</h3>
@@ -351,6 +337,31 @@ const AgentManagement = () => {
               <h3 className="font-semibold">Status</h3>
               <p>{currentAgent.status}</p>
             </div>
+            {isAdmin && (
+              <div>
+                <h3 className="font-semibold">Payment Status</h3>
+                <div className="flex items-center space-x-2 mt-1">
+                  <span
+                    className={`rounded-full px-2 py-1 text-xs font-medium ${
+                      currentAgent.payment_status === "Paid"
+                        ? "bg-green-100 text-green-800"
+                        : "bg-orange-100 text-orange-800"
+                    }`}
+                  >
+                    {currentAgent.payment_status}
+                  </span>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => handleUpdatePaymentStatus(currentAgent)}
+                    className="flex items-center"
+                  >
+                    <DollarSign className="mr-1 h-3 w-3" />
+                    Mark as {currentAgent.payment_status === 'Paid' ? 'Unpaid' : 'Paid'}
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         </DetailViewModal>
       )}
