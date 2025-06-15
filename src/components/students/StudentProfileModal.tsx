@@ -17,6 +17,7 @@ import {
   Users,
   BookOpen
 } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Student {
   id: number;
@@ -69,6 +70,9 @@ export default function StudentProfileModal({
   onClose, 
   showAgentInfo = false 
 }: StudentProfileModalProps) {
+  const { user } = useAuth();
+  const isAgent = user?.role === 'agent';
+  
   if (!student) return null;
 
   const statusOptions = [

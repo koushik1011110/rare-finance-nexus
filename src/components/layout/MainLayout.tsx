@@ -41,14 +41,16 @@ import {
 import ThemeToggle from "@/components/theme/ThemeToggle";
 import { useAuth } from "@/contexts/AuthContext";
 
+
 type NavItem = {
   title: string;
   href: string;
   icon: React.ElementType;
   subItems?: { title: string; href: string }[];
+  allowedRoles?: string[];
 };
 
-const navItems: NavItem[] = [
+const allNavItems: NavItem[] = [
   { 
     title: "Dashboard", 
     href: "/", 
@@ -58,6 +60,7 @@ const navItems: NavItem[] = [
     title: "Fees Collection", 
     href: "/fees", 
     icon: DollarSign,
+    allowedRoles: ['admin', 'finance'],
     subItems: [
       { title: "Fees Type", href: "/fees/types" },
       { title: "Fees Master", href: "/fees/master" },
@@ -79,16 +82,23 @@ const navItems: NavItem[] = [
       { title: "Visa", href: "/students/visa" },
     ]
   },
-  { title: "Agents", href: "/agents", icon: Users },
+  { 
+    title: "Agents", 
+    href: "/agents", 
+    icon: Users,
+    allowedRoles: ['admin']
+  },
   { 
     title: "Universities", 
     href: "/universities", 
     icon: Building2,
+    allowedRoles: ['admin']
   },
   { 
     title: "Hostels", 
     href: "/hostels", 
     icon: Home,
+    allowedRoles: ['admin', 'hostel_team'],
     subItems: [
       { title: "Hostel Management", href: "/hostels/management" },
       { title: "Hostel Expenses", href: "/hostels/expenses" },
@@ -98,6 +108,7 @@ const navItems: NavItem[] = [
     title: "Mess", 
     href: "/mess", 
     icon: Utensils,
+    allowedRoles: ['admin', 'hostel_team'],
     subItems: [
       { title: "Mess Management", href: "/mess/management" },
     ]
@@ -106,16 +117,17 @@ const navItems: NavItem[] = [
     title: "Office Expenses", 
     href: "/office-expenses", 
     icon: FileText,
+    allowedRoles: ['admin', 'finance'],
     subItems: [
       { title: "Office Management", href: "/office-expenses/management" },
       { title: "Expenses", href: "/office-expenses" },
     ]
   },
-  { title: "Salary Management", href: "/salary", icon: Receipt },
-  { title: "Personal Expenses", href: "/personal-expenses", icon: Calculator },
-  { title: "Reports", href: "/reports", icon: BarChart3 },
+  { title: "Salary Management", href: "/salary", icon: Receipt, allowedRoles: ['admin', 'finance'] },
+  { title: "Personal Expenses", href: "/personal-expenses", icon: Calculator, allowedRoles: ['admin', 'finance'] },
+  { title: "Reports", href: "/reports", icon: BarChart3, allowedRoles: ['admin', 'finance'] },
   { title: "Settings", href: "/settings", icon: Settings },
-  { title: "Staff", href: "/staff", icon: UserPlus },
+  { title: "Staff", href: "/staff", icon: UserPlus, allowedRoles: ['admin'] },
 ];
 
 interface MainLayoutProps {
@@ -133,6 +145,13 @@ export default function MainLayout({ children }: MainLayoutProps) {
   const location = useLocation();
   
   const { user, logout } = useAuth();
+
+  // Filter navigation items based on user role
+  const navItems = allNavItems.filter(item => {
+    if (!item.allowedRoles) return true; // Show to all users if no role restriction
+    if (!user) return false;
+    return user.role === 'admin' || item.allowedRoles.includes(user.role);
+  });
   
   // Save sidebar state to localStorage whenever it changes
   useEffect(() => {
