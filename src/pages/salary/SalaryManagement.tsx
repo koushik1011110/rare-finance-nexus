@@ -13,6 +13,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import DetailViewModal from "@/components/shared/DetailViewModal";
 import EditModal from "@/components/shared/EditModal";
@@ -28,7 +38,9 @@ const SalaryManagement = () => {
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [addModalOpen, setAddModalOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedSalary, setSelectedSalary] = useState<StaffSalary | null>(null);
+  const [salaryToDelete, setSalaryToDelete] = useState<StaffSalary | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -116,6 +128,33 @@ const SalaryManagement = () => {
       });
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteSalary = (salary: StaffSalary) => {
+    setSalaryToDelete(salary);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteSalary = async () => {
+    if (!salaryToDelete) return;
+    
+    try {
+      await salaryAPI.deleteSalary(salaryToDelete.id);
+      toast({
+        title: "Salary Deleted",
+        description: "Salary record has been deleted successfully.",
+      });
+      await loadSalaries();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete salary record.",
+        variant: "destructive",
+      });
+    } finally {
+      setDeleteDialogOpen(false);
+      setSalaryToDelete(null);
     }
   };
 
@@ -239,24 +278,7 @@ const SalaryManagement = () => {
             variant="outline" 
             size="sm"
             className="text-red-600 border-red-300 hover:bg-red-50"
-            onClick={async () => {
-              if (confirm("Are you sure you want to delete this salary record?")) {
-                try {
-                  await salaryAPI.deleteSalary(row.id);
-                  toast({
-                    title: "Salary Deleted",
-                    description: "Salary record has been deleted successfully.",
-                  });
-                  await loadSalaries();
-                } catch (error) {
-                  toast({
-                    title: "Error",
-                    description: "Failed to delete salary record.",
-                    variant: "destructive",
-                  });
-                }
-              }
-            }}
+            onClick={() => handleDeleteSalary(row)}
           >
             <Trash2 className="mr-2 h-4 w-4" />
             Delete
@@ -611,6 +633,34 @@ const SalaryManagement = () => {
           />
         </EditModal>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete the salary record for{" "}
+              <strong>
+                {salaryToDelete?.users?.first_name} {salaryToDelete?.users?.last_name}
+              </strong>{" "}
+              for {salaryToDelete && formatMonth(salaryToDelete.salary_month)}?
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setDeleteDialogOpen(false)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteSalary}
+              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </MainLayout>
   );
 };
