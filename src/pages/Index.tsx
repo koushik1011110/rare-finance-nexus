@@ -42,12 +42,12 @@ interface Activity {
 const activityColumns = [
   { 
     header: "Student Name", 
-    accessorKey: "name",
+    accessorKey: "first_name" as keyof Activity,
     cell: (row: Activity) => `${row.first_name} ${row.last_name}`
   },
   { 
     header: "Date Enrolled", 
-    accessorKey: "created_at",
+    accessorKey: "created_at" as keyof Activity,
     cell: (row: Activity) => new Date(row.created_at).toLocaleDateString()
   },
 ];
