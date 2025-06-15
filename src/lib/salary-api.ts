@@ -199,7 +199,24 @@ export const salaryAPI = {
     if (salaryData.basic_salary) updateData.basic_salary = parseFloat(salaryData.basic_salary);
     if (salaryData.allowances) updateData.allowances = parseFloat(salaryData.allowances);
     if (salaryData.deductions) updateData.deductions = parseFloat(salaryData.deductions);
-    if (salaryData.salary_month) updateData.salary_month = salaryData.salary_month.includes('-01') ? salaryData.salary_month : salaryData.salary_month + '-01';
+    if (salaryData.salary_month) {
+      const salaryMonth = salaryData.salary_month.includes('-01') ? salaryData.salary_month : salaryData.salary_month + '-01';
+      
+      // Check if another salary record exists for this staff and month (excluding current record)
+      const { data: existing } = await supabase
+        .from('staff_salaries')
+        .select('id')
+        .eq('staff_id', salaryData.staff_id ? parseInt(salaryData.staff_id) : 0)
+        .eq('salary_month', salaryMonth)
+        .neq('id', id)
+        .single();
+
+      if (existing) {
+        throw new Error(`Salary record already exists for this staff member for ${new Date(salaryMonth).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`);
+      }
+      
+      updateData.salary_month = salaryMonth;
+    }
     if (salaryData.payment_status) updateData.payment_status = salaryData.payment_status;
     if (salaryData.payment_date !== undefined) updateData.payment_date = salaryData.payment_date || null;
     if (salaryData.payment_method) updateData.payment_method = salaryData.payment_method;
