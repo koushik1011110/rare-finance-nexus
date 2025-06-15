@@ -805,5 +805,292 @@ export const feePaymentsAPI = {
   }
 };
 
+// Reports API
+export const reportsAPI = {
+  // Agent-wise Student Report
+  getAgentStudentReport: async () => {
+    const { data, error } = await supabase
+      .from('agents')
+      .select(`
+        *,
+        agent_students!inner (
+          students!inner (
+            id,
+            first_name,
+            last_name,
+            admission_number,
+            status,
+            universities (name),
+            courses (name)
+          )
+        )
+      `)
+      .eq('status', 'Active');
+
+    if (error) {
+      console.error('Error fetching agent student report:', error);
+      throw error;
+    }
+
+    // Get fee data for each agent's students
+    const agentReports = await Promise.all(
+      (data || []).map(async (agent) => {
+        const studentIds = agent.agent_students.map((as: any) => as.students.id);
+        
+        if (studentIds.length === 0) {
+          return {
+            ...agent,
+            students: [],
+            totalDue: 0,
+            totalPaid: 0,
+            totalPending: 0
+          };
+        }
+
+        const { data: payments } = await supabase
+          .from('fee_payments')
+          .select('amount_due, amount_paid')
+          .in('student_id', studentIds);
+
+        const totalDue = payments?.reduce((sum, p) => sum + p.amount_due, 0) || 0;
+        const totalPaid = payments?.reduce((sum, p) => sum + (p.amount_paid || 0), 0) || 0;
+
+        return {
+          ...agent,
+          students: agent.agent_students.map((as: any) => as.students),
+          totalDue,
+          totalPaid,
+          totalPending: totalDue - totalPaid
+        };
+      })
+    );
+
+    return agentReports;
+  },
+
+  // University Fee Summary
+  getUniversityFeeReport: async () => {
+    const { data, error } = await supabase
+      .from('universities')
+      .select(`
+        *,
+        students!inner (
+          id,
+          first_name,
+          last_name,
+          admission_number
+        )
+      `);
+
+    if (error) {
+      console.error('Error fetching university fee report:', error);
+      throw error;
+    }
+
+    const universityReports = await Promise.all(
+      (data || []).map(async (university) => {
+        const studentIds = university.students.map((s: any) => s.id);
+        
+        if (studentIds.length === 0) {
+          return {
+            ...university,
+            studentCount: 0,
+            totalDue: 0,
+            totalPaid: 0,
+            totalPending: 0
+          };
+        }
+
+        const { data: payments } = await supabase
+          .from('fee_payments')
+          .select('amount_due, amount_paid, payment_status')
+          .in('student_id', studentIds);
+
+        const totalDue = payments?.reduce((sum, p) => sum + p.amount_due, 0) || 0;
+        const totalPaid = payments?.reduce((sum, p) => sum + (p.amount_paid || 0), 0) || 0;
+
+        return {
+          ...university,
+          studentCount: university.students.length,
+          totalDue,
+          totalPaid,
+          totalPending: totalDue - totalPaid
+        };
+      })
+    );
+
+    return universityReports;
+  },
+
+  // Profit & Loss Report
+  getProfitLossReport: async (year?: number) => {
+    const currentYear = year || new Date().getFullYear();
+    const startDate = `${currentYear}-01-01`;
+    const endDate = `${currentYear}-12-31`;
+
+    // Get all fee collections (income)
+    const { data: feeCollections, error: feeError } = await supabase
+      .from('fee_collections')
+      .select('amount_paid, payment_date')
+      .gte('payment_date', startDate)
+      .lte('payment_date', endDate);
+
+    if (feeError) {
+      console.error('Error fetching fee collections:', feeError);
+      throw feeError;
+    }
+
+    // Get all hostel expenses
+    const { data: hostelExpenses, error: hostelError } = await supabase
+      .from('hostel_expenses')
+      .select('amount, expense_date, category')
+      .gte('expense_date', startDate)
+      .lte('expense_date', endDate)
+      .eq('status', 'Paid');
+
+    if (hostelError) {
+      console.error('Error fetching hostel expenses:', hostelError);
+      throw hostelError;
+    }
+
+    // Get all mess expenses
+    const { data: messExpenses, error: messError } = await supabase
+      .from('mess_expenses')
+      .select('amount, expense_date, category')
+      .gte('expense_date', startDate)
+      .lte('expense_date', endDate)
+      .eq('status', 'Paid');
+
+    if (messError) {
+      console.error('Error fetching mess expenses:', messError);
+      throw messError;
+    }
+
+    const totalIncome = feeCollections?.reduce((sum, f) => sum + f.amount_paid, 0) || 0;
+    const totalHostelExpenses = hostelExpenses?.reduce((sum, h) => sum + h.amount, 0) || 0;
+    const totalMessExpenses = messExpenses?.reduce((sum, m) => sum + m.amount, 0) || 0;
+    const totalExpenses = totalHostelExpenses + totalMessExpenses;
+
+    return {
+      year: currentYear,
+      totalIncome,
+      totalExpenses,
+      netProfit: totalIncome - totalExpenses,
+      hostelExpenses: totalHostelExpenses,
+      messExpenses: totalMessExpenses,
+      monthlyData: Array.from({ length: 12 }, (_, i) => {
+        const month = i + 1;
+        const monthStart = `${currentYear}-${month.toString().padStart(2, '0')}-01`;
+        const monthEnd = `${currentYear}-${month.toString().padStart(2, '0')}-31`;
+
+        const monthIncome = feeCollections?.filter(f => 
+          f.payment_date >= monthStart && f.payment_date <= monthEnd
+        ).reduce((sum, f) => sum + f.amount_paid, 0) || 0;
+
+        const monthExpenses = (hostelExpenses?.filter(h => 
+          h.expense_date >= monthStart && h.expense_date <= monthEnd
+        ).reduce((sum, h) => sum + h.amount, 0) || 0) + 
+        (messExpenses?.filter(m => 
+          m.expense_date >= monthStart && m.expense_date <= monthEnd
+        ).reduce((sum, m) => sum + m.amount, 0) || 0);
+
+        return {
+          month,
+          income: monthIncome,
+          expenses: monthExpenses,
+          profit: monthIncome - monthExpenses
+        };
+      })
+    };
+  },
+
+  // Hostel Expense Summary
+  getHostelExpenseReport: async () => {
+    const { data, error } = await supabase
+      .from('hostels')
+      .select(`
+        *,
+        universities (name),
+        hostel_expenses (
+          amount,
+          expense_date,
+          category,
+          expense_type,
+          status
+        )
+      `);
+
+    if (error) {
+      console.error('Error fetching hostel expense report:', error);
+      throw error;
+    }
+
+    return (data || []).map(hostel => {
+      const expenses = hostel.hostel_expenses || [];
+      const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
+      const paidExpenses = expenses.filter(e => e.status === 'Paid').reduce((sum, e) => sum + e.amount, 0);
+      const pendingExpenses = expenses.filter(e => e.status === 'Pending').reduce((sum, e) => sum + e.amount, 0);
+
+      return {
+        ...hostel,
+        totalExpenses,
+        paidExpenses,
+        pendingExpenses,
+        expensesByCategory: expenses.reduce((acc, e) => {
+          acc[e.category] = (acc[e.category] || 0) + e.amount;
+          return acc;
+        }, {} as Record<string, number>)
+      };
+    });
+  },
+
+  // Due Payment Alerts
+  getDuePaymentReport: async () => {
+    const today = new Date().toISOString().split('T')[0];
+    
+    const { data, error } = await supabase
+      .from('fee_payments')
+      .select(`
+        *,
+        students (
+          first_name,
+          last_name,
+          admission_number,
+          phone_number,
+          email
+        ),
+        fee_structure_components (
+          fee_types (name),
+          fee_structures (name)
+        )
+      `)
+      .neq('payment_status', 'paid')
+      .lte('due_date', today);
+
+    if (error) {
+      console.error('Error fetching due payment report:', error);
+      throw error;
+    }
+
+    return (data || []).map(payment => ({
+      ...payment,
+      balance: payment.amount_due - (payment.amount_paid || 0),
+      daysOverdue: Math.floor((new Date().getTime() - new Date(payment.due_date || '').getTime()) / (1000 * 60 * 60 * 24))
+    }));
+  },
+
+  // Agent Commission Report
+  getAgentCommissionReport: async () => {
+    const { data, error } = await supabase.functions.invoke('calculate-agent-commissions');
+    
+    if (error) {
+      console.error('Error fetching agent commission report:', error);
+      throw error;
+    }
+
+    return data || [];
+  }
+};
+
 // For backward compatibility, keep the old API name
 export const studentFeePaymentsAPI = feePaymentsAPI;
