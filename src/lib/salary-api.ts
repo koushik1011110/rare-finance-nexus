@@ -193,7 +193,15 @@ export const salaryAPI = {
 
   // Update salary record
   updateSalary: async (id: number, salaryData: Partial<Omit<SalaryFormData, 'id'>>): Promise<StaffSalary> => {
+    // Get current record to have fallback staff_id
+    const { data: currentRecord } = await supabase
+      .from('staff_salaries')
+      .select('staff_id')
+      .eq('id', id)
+      .single();
+
     const updateData: any = {};
+    const staffId = salaryData.staff_id ? parseInt(salaryData.staff_id) : currentRecord?.staff_id;
 
     if (salaryData.staff_id) updateData.staff_id = parseInt(salaryData.staff_id);
     if (salaryData.basic_salary) updateData.basic_salary = parseFloat(salaryData.basic_salary);
@@ -206,10 +214,10 @@ export const salaryAPI = {
       const { data: existing } = await supabase
         .from('staff_salaries')
         .select('id')
-        .eq('staff_id', salaryData.staff_id ? parseInt(salaryData.staff_id) : 0)
+        .eq('staff_id', staffId)
         .eq('salary_month', salaryMonth)
         .neq('id', id)
-        .single();
+        .maybeSingle();
 
       if (existing) {
         throw new Error(`Salary record already exists for this staff member for ${new Date(salaryMonth).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`);
