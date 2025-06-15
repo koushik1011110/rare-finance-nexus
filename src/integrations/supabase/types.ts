@@ -902,6 +902,112 @@ export type Database = {
         }
         Relationships: []
       }
+      staff_salaries: {
+        Row: {
+          allowances: number
+          basic_salary: number
+          created_at: string
+          deductions: number
+          gross_salary: number | null
+          id: number
+          net_salary: number | null
+          notes: string | null
+          payment_date: string | null
+          payment_method: string | null
+          payment_status: string
+          salary_month: string
+          staff_id: number
+          updated_at: string
+        }
+        Insert: {
+          allowances?: number
+          basic_salary?: number
+          created_at?: string
+          deductions?: number
+          gross_salary?: number | null
+          id?: number
+          net_salary?: number | null
+          notes?: string | null
+          payment_date?: string | null
+          payment_method?: string | null
+          payment_status?: string
+          salary_month: string
+          staff_id: number
+          updated_at?: string
+        }
+        Update: {
+          allowances?: number
+          basic_salary?: number
+          created_at?: string
+          deductions?: number
+          gross_salary?: number | null
+          id?: number
+          net_salary?: number | null
+          notes?: string | null
+          payment_date?: string | null
+          payment_method?: string | null
+          payment_status?: string
+          salary_month?: string
+          staff_id?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_salaries_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      staff_salary_structures: {
+        Row: {
+          allowances: number
+          basic_salary: number
+          created_at: string
+          effective_from: string
+          effective_to: string | null
+          id: number
+          is_active: boolean
+          position: string
+          staff_id: number
+          updated_at: string
+        }
+        Insert: {
+          allowances?: number
+          basic_salary?: number
+          created_at?: string
+          effective_from?: string
+          effective_to?: string | null
+          id?: number
+          is_active?: boolean
+          position: string
+          staff_id: number
+          updated_at?: string
+        }
+        Update: {
+          allowances?: number
+          basic_salary?: number
+          created_at?: string
+          effective_from?: string
+          effective_to?: string | null
+          id?: number
+          is_active?: boolean
+          position?: string
+          staff_id?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_salary_structures_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       student_credentials: {
         Row: {
           created_at: string | null
