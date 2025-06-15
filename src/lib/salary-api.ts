@@ -193,15 +193,23 @@ export const salaryAPI = {
 
   // Update salary record
   updateSalary: async (id: number, salaryData: Partial<Omit<SalaryFormData, 'id'>>): Promise<StaffSalary> => {
+    console.log('UpdateSalary called with:', { id, salaryData });
+    
     // Get current record to have fallback staff_id
-    const { data: currentRecord } = await supabase
+    const { data: currentRecord, error: fetchError } = await supabase
       .from('staff_salaries')
       .select('staff_id')
       .eq('id', id)
       .single();
 
+    if (fetchError) {
+      console.error('Error fetching current record:', fetchError);
+      throw fetchError;
+    }
+
     const updateData: any = {};
     const staffId = salaryData.staff_id ? parseInt(salaryData.staff_id) : currentRecord?.staff_id;
+    console.log('Current record:', currentRecord, 'Staff ID:', staffId);
 
     if (salaryData.staff_id) updateData.staff_id = parseInt(salaryData.staff_id);
     if (salaryData.basic_salary) updateData.basic_salary = parseFloat(salaryData.basic_salary);
