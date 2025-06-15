@@ -464,7 +464,69 @@ const SalaryManagement = () => {
 
             {/* Payment Information */}
             <div className="bg-muted/30 rounded-lg p-4 border">
-              <h4 className="font-semibold text-foreground mb-3">Payment Information</h4>
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="font-semibold text-foreground">Payment Information</h4>
+                <div className="flex gap-2">
+                  {selectedSalary.payment_status !== 'paid' && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-green-600 border-green-300 hover:bg-green-50"
+                      onClick={async () => {
+                        try {
+                          await salaryAPI.updateSalary(selectedSalary.id, {
+                            payment_status: 'paid',
+                            payment_date: new Date().toISOString().split('T')[0]
+                          });
+                          toast({
+                            title: "Status Updated",
+                            description: "Payment status changed to Paid",
+                          });
+                          await loadSalaries();
+                          setViewModalOpen(false);
+                        } catch (error) {
+                          toast({
+                            title: "Error",
+                            description: "Failed to update status",
+                            variant: "destructive",
+                          });
+                        }
+                      }}
+                    >
+                      Mark as Paid
+                    </Button>
+                  )}
+                  {selectedSalary.payment_status !== 'pending' && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-yellow-600 border-yellow-300 hover:bg-yellow-50"
+                      onClick={async () => {
+                        try {
+                          await salaryAPI.updateSalary(selectedSalary.id, {
+                            payment_status: 'pending',
+                            payment_date: ''
+                          });
+                          toast({
+                            title: "Status Updated",
+                            description: "Payment status changed to Pending",
+                          });
+                          await loadSalaries();
+                          setViewModalOpen(false);
+                        } catch (error) {
+                          toast({
+                            title: "Error",
+                            description: "Failed to update status",
+                            variant: "destructive",
+                          });
+                        }
+                      }}
+                    >
+                      Mark as Pending
+                    </Button>
+                  )}
+                </div>
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Status</p>
