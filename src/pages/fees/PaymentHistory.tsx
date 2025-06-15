@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import DataTable, { Column } from "@/components/ui/DataTable";
 import { Badge } from "@/components/ui/badge";
 import { Download, RefreshCw, Receipt, Search } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   feePaymentsAPI
 } from "@/lib/supabase-database";
@@ -34,13 +35,14 @@ interface PaymentHistoryData {
 }
 
 const PaymentHistory = () => {
+  const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [dateRange, setDateRange] = useState({ from: "", to: "" });
   const [paymentMethodFilter, setPaymentMethodFilter] = useState<string>("all");
 
   const { data: paymentHistory = [], refetch, isLoading } = useQuery({
-    queryKey: ['paymentHistory', dateRange, paymentMethodFilter],
-    queryFn: () => feePaymentsAPI.getPaymentHistory(dateRange, paymentMethodFilter),
+    queryKey: ['paymentHistory', dateRange, paymentMethodFilter, user?.role, user?.email],
+    queryFn: () => feePaymentsAPI.getPaymentHistory(dateRange, paymentMethodFilter, user?.role, user?.email),
   });
 
   const filteredHistory = paymentHistory.filter((payment: PaymentHistoryData) => {

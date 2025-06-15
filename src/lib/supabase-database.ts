@@ -680,11 +680,10 @@ export const feePaymentsAPI = {
     };
   },
 
-  getStudentsWithFeeStructures: async (): Promise<any[]> => {
+  getStudentsWithFeeStructures: async (userRole?: string, userEmail?: string): Promise<any[]> => {
     console.log('Fetching students with fee structures...');
     
-    // First get all active students
-    const { data: students, error: studentsError } = await supabase
+    let studentsQuery = supabase
       .from('students')
       .select(`
         *,
@@ -694,6 +693,30 @@ export const feePaymentsAPI = {
       `)
       .eq('status', 'active')
       .order('created_at', { ascending: false });
+
+    // If user is an agent, filter by their agent_id
+    if (userRole === 'agent' && userEmail) {
+      // First get the agent's ID from their email
+      const { data: agent, error: agentError } = await supabase
+        .from('agents')
+        .select('id')
+        .eq('email', userEmail)
+        .single();
+
+      if (agentError) {
+        console.error('Error fetching agent:', agentError);
+        throw agentError;
+      }
+
+      if (agent) {
+        studentsQuery = studentsQuery.eq('agent_id', agent.id);
+      } else {
+        // If no agent found for this email, return empty array
+        return [];
+      }
+    }
+    
+    const { data: students, error: studentsError } = await studentsQuery;
     
     if (studentsError) {
       console.error('Error fetching students:', studentsError);
@@ -740,7 +763,7 @@ export const feePaymentsAPI = {
     return studentsWithPayments;
   },
 
-  async getFeeReports(dateRange?: { from: string; to: string }, statusFilter?: string) {
+  async getFeeReports(dateRange?: { from: string; to: string }, statusFilter?: string, userRole?: string, userEmail?: string) {
     let query = supabase
       .from('fee_payments')
       .select(`
@@ -749,7 +772,8 @@ export const feePaymentsAPI = {
           first_name,
           last_name,
           admission_number,
-          phone_number
+          phone_number,
+          agent_id
         ),
         fee_structure_components (
           fee_types (name),
@@ -777,10 +801,36 @@ export const feePaymentsAPI = {
       throw error;
     }
 
-    return data || [];
+    let filteredData = data || [];
+
+    // If user is an agent, filter by their agent_id
+    if (userRole === 'agent' && userEmail) {
+      // First get the agent's ID from their email
+      const { data: agent, error: agentError } = await supabase
+        .from('agents')
+        .select('id')
+        .eq('email', userEmail)
+        .single();
+
+      if (agentError) {
+        console.error('Error fetching agent:', agentError);
+        throw agentError;
+      }
+
+      if (agent) {
+        filteredData = filteredData.filter(payment => 
+          payment.students?.agent_id === agent.id
+        );
+      } else {
+        // If no agent found for this email, return empty array
+        return [];
+      }
+    }
+
+    return filteredData;
   },
 
-  async getPaymentHistory(dateRange?: { from: string; to: string }, paymentMethodFilter?: string) {
+  async getPaymentHistory(dateRange?: { from: string; to: string }, paymentMethodFilter?: string, userRole?: string, userEmail?: string) {
     let query = supabase
       .from('fee_payments')
       .select(`
@@ -789,7 +839,8 @@ export const feePaymentsAPI = {
           first_name,
           last_name,
           admission_number,
-          phone_number
+          phone_number,
+          agent_id
         ),
         fee_structure_components (
           fee_types (name),
@@ -812,7 +863,33 @@ export const feePaymentsAPI = {
       throw error;
     }
 
-    return data || [];
+    let filteredData = data || [];
+
+    // If user is an agent, filter by their agent_id
+    if (userRole === 'agent' && userEmail) {
+      // First get the agent's ID from their email
+      const { data: agent, error: agentError } = await supabase
+        .from('agents')
+        .select('id')
+        .eq('email', userEmail)
+        .single();
+
+      if (agentError) {
+        console.error('Error fetching agent:', agentError);
+        throw agentError;
+      }
+
+      if (agent) {
+        filteredData = filteredData.filter(payment => 
+          payment.students?.agent_id === agent.id
+        );
+      } else {
+        // If no agent found for this email, return empty array
+        return [];
+      }
+    }
+
+    return filteredData;
   }
 };
 

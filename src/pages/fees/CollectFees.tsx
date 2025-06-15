@@ -64,8 +64,8 @@ const CollectFees = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { data: studentsWithFees = [], refetch, isLoading } = useQuery({
-    queryKey: ['studentsWithFeeStructures'],
-    queryFn: () => feePaymentsAPI.getStudentsWithFeeStructures(),
+    queryKey: ['studentsWithFeeStructures', user?.role, user?.email],
+    queryFn: () => feePaymentsAPI.getStudentsWithFeeStructures(user?.role, user?.email),
   });
 
   const { data: universities = [] } = useQuery({

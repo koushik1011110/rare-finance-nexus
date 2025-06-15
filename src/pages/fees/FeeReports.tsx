@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import DataTable, { Column } from "@/components/ui/DataTable";
 import { CalendarIcon, Download, Filter, RefreshCw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   feePaymentsAPI,
   type FeePayment
@@ -41,13 +42,14 @@ interface FeeReportData {
 }
 
 const FeeReports = () => {
+  const { user } = useAuth();
   const [dateRange, setDateRange] = useState({ from: "", to: "" });
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
 
   const { data: feeReports = [], refetch, isLoading } = useQuery({
-    queryKey: ['feeReports', dateRange, statusFilter],
-    queryFn: () => feePaymentsAPI.getFeeReports(dateRange, statusFilter),
+    queryKey: ['feeReports', dateRange, statusFilter, user?.role, user?.email],
+    queryFn: () => feePaymentsAPI.getFeeReports(dateRange, statusFilter, user?.role, user?.email),
   });
 
   const getStatusBadge = (status: string | null) => {
