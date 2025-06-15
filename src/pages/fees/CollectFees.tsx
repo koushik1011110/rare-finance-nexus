@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
 import { CreditCard, DollarSign, Search, Users } from "lucide-react";
 import InvoiceGenerator from "@/components/fees/InvoiceGenerator";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   feePaymentsAPI,
   universitiesAPI,
@@ -54,6 +55,7 @@ interface PaymentData {
 }
 
 const CollectFees = () => {
+  const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStudent, setSelectedStudent] = useState<StudentWithFees | null>(null);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
@@ -81,6 +83,7 @@ const CollectFees = () => {
     queryFn: () => academicSessionsAPI.getAll(),
   });
 
+  // Filter students and hide one-time fees from agents
   const filteredStudents = studentsWithFees.filter((student: StudentWithFees) => {
     if (!searchTerm) return true;
     const searchLower = searchTerm.toLowerCase();
@@ -88,6 +91,17 @@ const CollectFees = () => {
     const admissionNumber = student.admission_number?.toLowerCase() || '';
     
     return studentName.includes(searchLower) || admissionNumber.includes(searchLower);
+  }).map(student => {
+    // If user is an agent, filter out one-time fees
+    if (user?.role === 'agent') {
+      return {
+        ...student,
+        fee_payments: student.fee_payments.filter(payment => 
+          !payment.fee_structure_components.fee_types.name.toLowerCase().includes('one-time')
+        )
+      };
+    }
+    return student;
   });
 
   const getStatusBadge = (status: string) => {
