@@ -76,7 +76,6 @@ const allNavItems: NavItem[] = [
     subItems: [
       { title: "Direct Students", href: "/students/direct" },
       { title: "Agent Students", href: "/students/agent" },
-      { title: "Student Admission", href: "/students/admission" },
       { title: "Application", href: "/students/application" },
       { title: "Character", href: "/students/character" },
       { title: "Visa", href: "/students/visa" },
@@ -85,8 +84,7 @@ const allNavItems: NavItem[] = [
   { 
     title: "Agents", 
     href: "/agents", 
-    icon: Users,
-    allowedRoles: ['admin']
+    icon: Users
   },
   { 
     title: "Universities", 
