@@ -146,8 +146,15 @@ export default function MainLayout({ children }: MainLayoutProps) {
 
   // Filter navigation items based on user role
   const navItems = allNavItems.filter(item => {
-    if (!item.allowedRoles) return true; // Show to all users if no role restriction
     if (!user) return false;
+    
+    // For hostel_team role, only show Dashboard, Hostel and Mess menus
+    if (user.role === 'hostel_team') {
+      return item.title === 'Dashboard' || item.title === 'Hostels' || item.title === 'Mess';
+    }
+    
+    // For other roles, check allowedRoles or show to all if no restriction
+    if (!item.allowedRoles) return true;
     return user.role === 'admin' || item.allowedRoles.includes(user.role);
   });
   
