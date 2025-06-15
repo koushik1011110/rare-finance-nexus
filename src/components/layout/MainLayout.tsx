@@ -60,7 +60,7 @@ const allNavItems: NavItem[] = [
     title: "Fees Collection", 
     href: "/fees", 
     icon: DollarSign,
-    allowedRoles: ['admin', 'finance'],
+    allowedRoles: ['admin', 'finance', 'agent'],
     subItems: [
       { title: "Fees Type", href: "/fees/types" },
       { title: "Fees Master", href: "/fees/master" },

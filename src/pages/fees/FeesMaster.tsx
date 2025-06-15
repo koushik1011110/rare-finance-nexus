@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import DataTable, { Column } from "@/components/ui/DataTable";
 import { toast } from "@/hooks/use-toast";
 import { Plus, Edit, Trash, Save, X, Settings } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   universitiesAPI,
   coursesAPI,
@@ -31,6 +32,7 @@ interface FeeComponent {
 }
 
 const FeesMaster = () => {
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [selectedUniversity, setSelectedUniversity] = useState<string>("");
@@ -233,16 +235,18 @@ const FeesMaster = () => {
     <MainLayout>
       <PageHeader
         title="Fees Master"
-        description="Create and manage fee structures for universities and courses"
+        description="View fee structures for universities and courses"
         actions={
-          <Button 
-            variant="outline" 
-            onClick={() => navigate('/fees/one-time-charges')}
-            className="flex items-center gap-2"
-          >
-            <Settings className="h-4 w-4" />
-            Customize One-Time Charges
-          </Button>
+          (user?.role === 'admin' || user?.role === 'finance') && (
+            <Button 
+              variant="outline" 
+              onClick={() => navigate('/fees/one-time-charges')}
+              className="flex items-center gap-2"
+            >
+              <Settings className="h-4 w-4" />
+              Customize One-Time Charges
+            </Button>
+          )
         }
       />
       
