@@ -72,7 +72,7 @@ const TodoTaskForm: React.FC<TodoTaskFormProps> = ({
           description: task.description || "",
           due_date: task.due_date,
           priority: task.priority,
-          assigned_to: task.assigned_to?.toString() || "",
+          assigned_to: task.assigned_to?.toString() || "unassigned",
         });
       } else {
         resetForm();
@@ -105,7 +105,7 @@ const TodoTaskForm: React.FC<TodoTaskFormProps> = ({
       description: "",
       due_date: new Date().toISOString().split('T')[0],
       priority: "medium",
-      assigned_to: "",
+      assigned_to: "unassigned",
     });
   };
 
@@ -128,7 +128,7 @@ const TodoTaskForm: React.FC<TodoTaskFormProps> = ({
         description: formData.description || undefined,
         due_date: formData.due_date,
         priority: formData.priority,
-        assigned_to: formData.assigned_to ? parseInt(formData.assigned_to) : undefined,
+        assigned_to: formData.assigned_to && formData.assigned_to !== "unassigned" ? parseInt(formData.assigned_to) : undefined,
       };
 
       if (task) {
@@ -242,7 +242,7 @@ const TodoTaskForm: React.FC<TodoTaskFormProps> = ({
                 <SelectValue placeholder="Select user (optional)" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Unassigned</SelectItem>
+                <SelectItem value="unassigned">Unassigned</SelectItem>
                 {users.map((user) => (
                   <SelectItem key={user.id} value={user.id.toString()}>
                     {user.first_name} {user.last_name}
