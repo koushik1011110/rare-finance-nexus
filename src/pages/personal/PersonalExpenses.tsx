@@ -1,11 +1,10 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import PageHeader from "@/components/shared/PageHeader";
 import DataTable from "@/components/ui/DataTable";
 import { Button } from "@/components/ui/button";
-import { Plus, Download, Upload, FileText } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { Plus, Download, Edit, Trash2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import {
   Select,
@@ -14,118 +13,209 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-// Sample data for personal expenses
-const personalExpensesData = [
-  {
-    id: "1",
-    date: "2025-04-15",
-    category: "Travel",
-    amount: "$350",
-    description: "Flight to London for university meeting",
-    paymentMode: "Credit Card",
-    hasReceipt: true,
-  },
-  {
-    id: "2",
-    date: "2025-04-12",
-    category: "Shopping",
-    amount: "$120",
-    description: "Office supplies for personal use",
-    paymentMode: "Debit Card",
-    hasReceipt: true,
-  },
-  {
-    id: "3",
-    date: "2025-04-10",
-    category: "Bills",
-    amount: "$200",
-    description: "Monthly internet and phone bill",
-    paymentMode: "Bank Transfer",
-    hasReceipt: true,
-  },
-  {
-    id: "4",
-    date: "2025-04-05",
-    category: "Investment",
-    amount: "$1,000",
-    description: "Monthly investment in mutual funds",
-    paymentMode: "Bank Transfer",
-    hasReceipt: false,
-  },
-  {
-    id: "5",
-    date: "2025-04-02",
-    category: "Travel",
-    amount: "$75",
-    description: "Taxi fares for client meetings",
-    paymentMode: "Cash",
-    hasReceipt: true,
-  },
-];
-
-const columns = [
-  { header: "Date", accessorKey: "date" },
-  { header: "Category", accessorKey: "category" },
-  { header: "Amount", accessorKey: "amount" },
-  { header: "Description", accessorKey: "description" },
-  { header: "Payment Mode", accessorKey: "paymentMode" },
-  {
-    header: "Receipt",
-    accessorKey: "hasReceipt",
-    cell: (row: any) => (
-      <span
-        className={`rounded-full px-2 py-1 text-xs font-medium ${
-          row.hasReceipt
-            ? "bg-green-100 text-green-800"
-            : "bg-gray-100 text-gray-800"
-        }`}
-      >
-        {row.hasReceipt ? "Available" : "Not Available"}
-      </span>
-    ),
-  },
-  {
-    header: "Actions",
-    accessorKey: "actions",
-    cell: () => (
-      <div className="flex space-x-2">
-        <Button variant="outline" size="sm">
-          View
-        </Button>
-        <Button variant="outline" size="sm">
-          Edit
-        </Button>
-      </div>
-    ),
-  },
-];
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import PersonalExpenseForm from "@/components/forms/PersonalExpenseForm";
+import { useAuth } from "@/contexts/AuthContext";
+import {
+  getPersonalExpenses,
+  getExpenseCategories,
+  deletePersonalExpense,
+  type PersonalExpense,
+  type PersonalExpenseCategory,
+} from "@/lib/personal-expenses-api";
 
 const PersonalExpenses = () => {
+  const { user } = useAuth();
+  const [expenses, setExpenses] = useState<PersonalExpense[]>([]);
+  const [categories, setCategories] = useState<PersonalExpenseCategory[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [loading, setLoading] = useState(true);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingExpense, setEditingExpense] = useState<PersonalExpense | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [expenseToDelete, setExpenseToDelete] = useState<PersonalExpense | null>(null);
+
+  useEffect(() => {
+    if (user) {
+      loadData();
+    }
+  }, [user]);
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const [expensesData, categoriesData] = await Promise.all([
+        getPersonalExpenses(Number(user!.id)),
+        getExpenseCategories(),
+      ]);
+      setExpenses(expensesData);
+      setCategories(categoriesData);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to load personal expenses",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredData =
     selectedCategory === "all"
-      ? personalExpensesData
-      : personalExpensesData.filter(
-          (expense) => expense.category === selectedCategory
+      ? expenses
+      : expenses.filter(
+          (expense) => expense.category_id.toString() === selectedCategory
         );
 
   const handleAddExpense = () => {
-    toast({
-      title: "Feature Coming Soon",
-      description: "Add personal expense functionality will be available shortly.",
-    });
+    setEditingExpense(null);
+    setIsFormOpen(true);
+  };
+
+  const handleEditExpense = (expense: PersonalExpense) => {
+    setEditingExpense(expense);
+    setIsFormOpen(true);
+  };
+
+  const handleDeleteExpense = (expense: PersonalExpense) => {
+    setExpenseToDelete(expense);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!expenseToDelete) return;
+
+    try {
+      await deletePersonalExpense(expenseToDelete.id);
+      toast({
+        title: "Success",
+        description: "Expense deleted successfully",
+      });
+      loadData();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete expense",
+        variant: "destructive",
+      });
+    } finally {
+      setDeleteDialogOpen(false);
+      setExpenseToDelete(null);
+    }
+  };
+
+  const handleFormSubmit = () => {
+    loadData();
   };
 
   const handleExport = () => {
+    const csvContent = [
+      ["Date", "Category", "Amount", "Description", "Payment Mode", "Receipt", "Notes"],
+      ...filteredData.map((expense) => [
+        expense.expense_date,
+        expense.category?.name || "",
+        expense.amount.toString(),
+        expense.description,
+        expense.payment_mode,
+        expense.has_receipt ? "Yes" : "No",
+        expense.notes || "",
+      ]),
+    ]
+      .map((row) => row.map((field) => `"${field}"`).join(","))
+      .join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv" });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `personal-expenses-${new Date().toISOString().split("T")[0]}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+
     toast({
-      title: "Feature Coming Soon",
-      description: "Export functionality will be available shortly.",
+      title: "Success",
+      description: "Expenses exported successfully",
     });
   };
 
-  const categories = [...new Set(personalExpensesData.map((item) => item.category))];
+  const columns = [
+    { 
+      header: "Date", 
+      accessorKey: "expense_date" as keyof PersonalExpense,
+      cell: (row: PersonalExpense) => new Date(row.expense_date).toLocaleDateString()
+    },
+    { 
+      header: "Category", 
+      accessorKey: "category_id" as keyof PersonalExpense,
+      cell: (row: PersonalExpense) => row.category?.name || "Unknown"
+    },
+    { 
+      header: "Amount", 
+      accessorKey: "amount" as keyof PersonalExpense,
+      cell: (row: PersonalExpense) => `$${row.amount.toFixed(2)}`
+    },
+    { header: "Description", accessorKey: "description" as keyof PersonalExpense },
+    { header: "Payment Mode", accessorKey: "payment_mode" as keyof PersonalExpense },
+    {
+      header: "Receipt",
+      accessorKey: "has_receipt" as keyof PersonalExpense,
+      cell: (row: PersonalExpense) => (
+        <span
+          className={`rounded-full px-2 py-1 text-xs font-medium ${
+            row.has_receipt
+              ? "bg-success/10 text-success"
+              : "bg-muted text-muted-foreground"
+          }`}
+        >
+          {row.has_receipt ? "Available" : "Not Available"}
+        </span>
+      ),
+    },
+    {
+      header: "Actions",
+      accessorKey: "actions" as "actions",
+      cell: (row: PersonalExpense) => (
+        <div className="flex space-x-2">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => handleEditExpense(row)}
+          >
+            <Edit className="h-4 w-4 mr-1" />
+            Edit
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => handleDeleteExpense(row)}
+          >
+            <Trash2 className="h-4 w-4 mr-1" />
+            Delete
+          </Button>
+        </div>
+      ),
+    },
+  ];
+
+  if (!user) {
+    return (
+      <MainLayout>
+        <div className="flex items-center justify-center min-h-[400px]">
+          <p className="text-muted-foreground">Please log in to view personal expenses.</p>
+        </div>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>
@@ -158,8 +248,8 @@ const PersonalExpenses = () => {
             <SelectContent>
               <SelectItem value="all">All Categories</SelectItem>
               {categories.map((category) => (
-                <SelectItem key={category} value={category}>
-                  {category}
+                <SelectItem key={category.id} value={category.id.toString()}>
+                  {category.name}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -170,6 +260,31 @@ const PersonalExpenses = () => {
       <div className="rounded-lg border bg-card shadow-sm">
         <DataTable columns={columns} data={filteredData} />
       </div>
+
+      {/* Form Modal */}
+      <PersonalExpenseForm
+        isOpen={isFormOpen}
+        onClose={() => setIsFormOpen(false)}
+        onSubmit={handleFormSubmit}
+        expense={editingExpense}
+        userId={Number(user.id)}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete this expense. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </MainLayout>
   );
 };

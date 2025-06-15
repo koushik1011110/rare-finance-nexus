@@ -902,6 +902,93 @@ export type Database = {
         }
         Relationships: []
       }
+      personal_expense_categories: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: number
+          is_active: boolean
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: number
+          is_active?: boolean
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: number
+          is_active?: boolean
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      personal_expenses: {
+        Row: {
+          amount: number
+          category_id: number
+          created_at: string
+          description: string
+          expense_date: string
+          has_receipt: boolean
+          id: number
+          notes: string | null
+          payment_mode: string
+          receipt_url: string | null
+          updated_at: string
+          user_id: number
+        }
+        Insert: {
+          amount: number
+          category_id: number
+          created_at?: string
+          description: string
+          expense_date?: string
+          has_receipt?: boolean
+          id?: number
+          notes?: string | null
+          payment_mode?: string
+          receipt_url?: string | null
+          updated_at?: string
+          user_id: number
+        }
+        Update: {
+          amount?: number
+          category_id?: number
+          created_at?: string
+          description?: string
+          expense_date?: string
+          has_receipt?: boolean
+          id?: number
+          notes?: string | null
+          payment_mode?: string
+          receipt_url?: string | null
+          updated_at?: string
+          user_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "personal_expenses_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "personal_expense_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "personal_expenses_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       staff_salaries: {
         Row: {
           allowances: number
