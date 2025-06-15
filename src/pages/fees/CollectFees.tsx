@@ -31,6 +31,7 @@ interface StudentWithFees {
   last_name: string;
   admission_number: string;
   phone_number?: string;
+  agent_id?: number;
   universities: { name: string };
   courses: { name: string };
   academic_sessions: { session_name: string };
@@ -83,26 +84,30 @@ const CollectFees = () => {
     queryFn: () => academicSessionsAPI.getAll(),
   });
 
-  // Filter students and hide one-time fees from agents
+  // Filter students based on search and agent relationship
   const filteredStudents = studentsWithFees.filter((student: StudentWithFees) => {
+    // If user is an agent, only show students they added
+    if (user?.role === 'agent' && student.agent_id !== Number(user.id)) {
+      return false;
+    }
+    
     if (!searchTerm) return true;
     const searchLower = searchTerm.toLowerCase();
     const studentName = `${student.first_name} ${student.last_name}`.toLowerCase();
     const admissionNumber = student.admission_number?.toLowerCase() || '';
     
     return studentName.includes(searchLower) || admissionNumber.includes(searchLower);
-  }).map(student => {
-    // If user is an agent, filter out one-time fees
-    if (user?.role === 'agent') {
-      return {
-        ...student,
-        fee_payments: student.fee_payments.filter(payment => 
-          !payment.fee_structure_components.fee_types.name.toLowerCase().includes('one-time')
-        )
-      };
-    }
-    return student;
   });
+
+  // Helper function to check if fee is one-time for agents
+  const isOneTimeFee = (feeTypeName: string) => {
+    return feeTypeName.toLowerCase().includes('one-time');
+  };
+
+  // Helper function to hide amounts for one-time fees if user is agent
+  const shouldHideAmount = (feeTypeName: string) => {
+    return user?.role === 'agent' && isOneTimeFee(feeTypeName);
+  };
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
@@ -214,25 +219,50 @@ const CollectFees = () => {
       header: "Total Due",
       accessorKey: "fee_payments",
       cell: (student: StudentWithFees) => {
-        const totalDue = student.fee_payments.reduce((sum, payment) => sum + payment.amount_due, 0);
-        return `$${totalDue.toLocaleString()}`;
+        const totalDue = student.fee_payments.reduce((sum, payment) => {
+          if (shouldHideAmount(payment.fee_structure_components?.fee_types?.name)) {
+            return sum;
+          }
+          return sum + payment.amount_due;
+        }, 0);
+        return user?.role === 'agent' ? "Hidden" : `$${totalDue.toLocaleString()}`;
       }
     },
     {
       header: "Total Paid",
       accessorKey: "fee_payments",
       cell: (student: StudentWithFees) => {
-        const totalPaid = student.fee_payments.reduce((sum, payment) => sum + payment.amount_paid, 0);
-        return `$${totalPaid.toLocaleString()}`;
+        const totalPaid = student.fee_payments.reduce((sum, payment) => {
+          if (shouldHideAmount(payment.fee_structure_components?.fee_types?.name)) {
+            return sum;
+          }
+          return sum + payment.amount_paid;
+        }, 0);
+        return user?.role === 'agent' ? "Hidden" : `$${totalPaid.toLocaleString()}`;
       }
     },
     {
       header: "Balance",
       accessorKey: "fee_payments",
       cell: (student: StudentWithFees) => {
-        const totalDue = student.fee_payments.reduce((sum, payment) => sum + payment.amount_due, 0);
-        const totalPaid = student.fee_payments.reduce((sum, payment) => sum + payment.amount_paid, 0);
+        const totalDue = student.fee_payments.reduce((sum, payment) => {
+          if (shouldHideAmount(payment.fee_structure_components?.fee_types?.name)) {
+            return sum;
+          }
+          return sum + payment.amount_due;
+        }, 0);
+        const totalPaid = student.fee_payments.reduce((sum, payment) => {
+          if (shouldHideAmount(payment.fee_structure_components?.fee_types?.name)) {
+            return sum;
+          }
+          return sum + payment.amount_paid;
+        }, 0);
         const balance = totalDue - totalPaid;
+        
+        if (user?.role === 'agent') {
+          return "Hidden";
+        }
+        
         return (
           <span className={balance > 0 ? "text-red-600 font-medium" : "text-green-600 font-medium"}>
             ${balance.toLocaleString()}
@@ -387,61 +417,73 @@ const CollectFees = () => {
                     
                     return (
                       <Card key={feePayment.id} className="p-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-center">
-                          <div>
-                            <p className="text-sm text-muted-foreground">Fee Type</p>
-                            <p className="font-medium">{feePayment.fee_structure_components?.fee_types?.name}</p>
-                          </div>
-                          <div>
-                            <p className="text-sm text-muted-foreground">Total Due</p>
-                            <p className="font-medium">${feePayment.amount_due.toLocaleString()}</p>
-                          </div>
-                          <div>
-                            <p className="text-sm text-muted-foreground">Balance</p>
-                            <p className="font-medium text-red-600">${balance.toLocaleString()}</p>
-                          </div>
-                          <div>
-                            <p className="text-sm text-muted-foreground">Collect Amount</p>
-                            <Input
-                              type="number"
-                              min="0"
-                              max={balance}
-                              value={paymentItem?.amount || ''}
-                              onChange={(e) => updatePaymentAmount(feePayment.id, parseFloat(e.target.value) || 0)}
-                              className="w-full"
-                              placeholder="0"
-                            />
-                          </div>
-                          <div>
-                            {paymentItem && paymentItem.amount > 0 && (
-                              <InvoiceGenerator
-                                invoiceData={{
-                                  student: {
-                                    id: selectedStudent!.id,
-                                    first_name: selectedStudent!.first_name,
-                                    last_name: selectedStudent!.last_name,
-                                    phone_number: selectedStudent!.phone_number,
-                                    universities: selectedStudent!.universities,
-                                    courses: selectedStudent!.courses,
-                                    academic_sessions: selectedStudent!.academic_sessions
-                                  },
-                                  payment: {
-                                    id: feePayment.id,
-                                    amount_paid: paymentItem.amount,
-                                    fee_structure_components: feePayment.fee_structure_components
-                                  },
-                                  receiptNumber: `REC-${Date.now()}-${feePayment.id}`
-                                }}
-                                onGenerateInvoice={() => {
-                                  toast({
-                                    title: "Invoice Generated",
-                                    description: "Invoice has been generated successfully.",
-                                  });
-                                }}
-                              />
-                            )}
-                          </div>
-                        </div>
+                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-center">
+                           <div>
+                             <p className="text-sm text-muted-foreground">Fee Type</p>
+                             <div className="flex items-center gap-2">
+                               <p className="font-medium">{feePayment.fee_structure_components?.fee_types?.name}</p>
+                               {getStatusBadge(feePayment.payment_status)}
+                             </div>
+                           </div>
+                           
+                           {!shouldHideAmount(feePayment.fee_structure_components?.fee_types?.name) ? (
+                             <>
+                               <div>
+                                 <p className="text-sm text-muted-foreground">Total Due</p>
+                                 <p className="font-medium">${feePayment.amount_due.toLocaleString()}</p>
+                               </div>
+                               <div>
+                                 <p className="text-sm text-muted-foreground">Balance</p>
+                                 <p className="font-medium text-red-600">${balance.toLocaleString()}</p>
+                               </div>
+                               <div>
+                                 <p className="text-sm text-muted-foreground">Collect Amount</p>
+                                 <Input
+                                   type="number"
+                                   min="0"
+                                   max={balance}
+                                   value={paymentItem?.amount || ''}
+                                   onChange={(e) => updatePaymentAmount(feePayment.id, parseFloat(e.target.value) || 0)}
+                                   className="w-full"
+                                   placeholder="0"
+                                 />
+                               </div>
+                               <div>
+                                 {paymentItem && paymentItem.amount > 0 && (
+                                   <InvoiceGenerator
+                                     invoiceData={{
+                                       student: {
+                                         id: selectedStudent!.id,
+                                         first_name: selectedStudent!.first_name,
+                                         last_name: selectedStudent!.last_name,
+                                         phone_number: selectedStudent!.phone_number,
+                                         universities: selectedStudent!.universities,
+                                         courses: selectedStudent!.courses,
+                                         academic_sessions: selectedStudent!.academic_sessions
+                                       },
+                                       payment: {
+                                         id: feePayment.id,
+                                         amount_paid: paymentItem.amount,
+                                         fee_structure_components: feePayment.fee_structure_components
+                                       },
+                                       receiptNumber: `REC-${Date.now()}-${feePayment.id}`
+                                     }}
+                                     onGenerateInvoice={() => {
+                                       toast({
+                                         title: "Invoice Generated",
+                                         description: "Invoice has been generated successfully.",
+                                       });
+                                     }}
+                                   />
+                                 )}
+                               </div>
+                             </>
+                           ) : (
+                             <div className="col-span-4 text-center p-4 bg-gray-100 rounded">
+                               <p className="text-muted-foreground">Amount information hidden for agents</p>
+                             </div>
+                           )}
+                         </div>
                       </Card>
                     );
                   })}
