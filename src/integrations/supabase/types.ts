@@ -820,6 +820,7 @@ export type Database = {
           miscellaneous: number
           month: string
           monthly_total: number
+          office_id: number | null
           rent: number
           travel: number
           updated_at: string
@@ -834,6 +835,7 @@ export type Database = {
           miscellaneous?: number
           month: string
           monthly_total?: number
+          office_id?: number | null
           rent?: number
           travel?: number
           updated_at?: string
@@ -848,10 +850,55 @@ export type Database = {
           miscellaneous?: number
           month?: string
           monthly_total?: number
+          office_id?: number | null
           rent?: number
           travel?: number
           updated_at?: string
           utilities?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "office_expenses_office_id_fkey"
+            columns: ["office_id"]
+            isOneToOne: false
+            referencedRelation: "offices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      offices: {
+        Row: {
+          address: string | null
+          contact_person: string | null
+          created_at: string
+          email: string | null
+          id: number
+          name: string
+          phone: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          contact_person?: string | null
+          created_at?: string
+          email?: string | null
+          id?: number
+          name: string
+          phone?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          contact_person?: string | null
+          created_at?: string
+          email?: string | null
+          id?: number
+          name?: string
+          phone?: string | null
+          status?: string
+          updated_at?: string
         }
         Relationships: []
       }

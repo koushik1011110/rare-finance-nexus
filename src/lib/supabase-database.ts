@@ -1095,6 +1095,7 @@ export const reportsAPI = {
 export interface OfficeExpense {
   id: number;
   location: string;
+  office_id?: number;
   month: string;
   rent: number;
   utilities: number;
@@ -1164,6 +1165,75 @@ export const officeExpensesAPI = {
       console.error('Error deleting office expense:', error);
       throw error;
     }
+  },
+};
+
+// Office Interface
+export interface Office {
+  id: number;
+  name: string;
+  address: string | null;
+  contact_person: string | null;
+  phone: string | null;
+  email: string | null;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// Offices API
+export const officesAPI = {
+  getAll: async (): Promise<Office[]> => {
+    const { data, error } = await supabase
+      .from('offices')
+      .select('*')
+      .order('name', { ascending: true });
+
+    if (error) throw error;
+    return data || [];
+  },
+
+  getById: async (id: number): Promise<Office | null> => {
+    const { data, error } = await supabase
+      .from('offices')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error) throw error;
+    return data;
+  },
+
+  create: async (office: Omit<Office, 'id' | 'created_at' | 'updated_at'>): Promise<Office> => {
+    const { data, error } = await supabase
+      .from('offices')
+      .insert(office)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  },
+
+  update: async (id: number, office: Partial<Office>): Promise<Office> => {
+    const { data, error } = await supabase
+      .from('offices')
+      .update(office)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  },
+
+  delete: async (id: number): Promise<void> => {
+    const { error } = await supabase
+      .from('offices')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
   },
 };
 

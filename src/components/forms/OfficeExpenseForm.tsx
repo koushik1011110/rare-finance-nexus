@@ -1,12 +1,13 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { officeExpensesAPI, type OfficeExpense } from "@/lib/supabase-database";
+import { officeExpensesAPI, officesAPI, type OfficeExpense, type Office } from "@/lib/supabase-database";
 
 interface OfficeExpenseFormProps {
   isOpen: boolean;
@@ -15,7 +16,7 @@ interface OfficeExpenseFormProps {
 }
 
 interface FormData {
-  location: string;
+  office_id: number;
   month: string;
   rent: number;
   utilities: number;
@@ -30,15 +31,18 @@ const OfficeExpenseForm: React.FC<OfficeExpenseFormProps> = ({
   onClose,
   onSuccess,
 }) => {
+  const [offices, setOffices] = useState<Office[]>([]);
+  const [loadingOffices, setLoadingOffices] = useState(true);
   const {
     register,
     handleSubmit,
+    setValue,
     watch,
     reset,
     formState: { errors, isSubmitting },
   } = useForm<FormData>({
     defaultValues: {
-      location: "",
+      office_id: 0,
       month: "",
       rent: 0,
       utilities: 0,
@@ -50,6 +54,27 @@ const OfficeExpenseForm: React.FC<OfficeExpenseFormProps> = ({
   });
 
   const watchedValues = watch();
+  const selectedOfficeId = watch("office_id");
+
+  // Load offices on component mount
+  useEffect(() => {
+    const loadOffices = async () => {
+      try {
+        const data = await officesAPI.getAll();
+        setOffices(data.filter(office => office.status === 'Active'));
+      } catch (error) {
+        console.error('Error loading offices:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load offices.",
+          variant: "destructive",
+        });
+      } finally {
+        setLoadingOffices(false);
+      }
+    };
+    loadOffices();
+  }, []);
 
   // Calculate monthly total automatically
   const monthlyTotal = 
@@ -62,8 +87,19 @@ const OfficeExpenseForm: React.FC<OfficeExpenseFormProps> = ({
 
   const onSubmit = async (data: FormData) => {
     try {
+      const selectedOffice = offices.find(office => office.id === data.office_id);
+      if (!selectedOffice) {
+        toast({
+          title: "Error",
+          description: "Please select a valid office.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const expenseData: Omit<OfficeExpense, 'id' | 'created_at' | 'updated_at'> = {
-        location: data.location,
+        location: selectedOffice.name,
+        office_id: data.office_id,
         month: data.month,
         rent: data.rent,
         utilities: data.utilities,
@@ -78,7 +114,7 @@ const OfficeExpenseForm: React.FC<OfficeExpenseFormProps> = ({
       
       toast({
         title: "Success",
-        description: `Office expense for ${data.location} has been created.`,
+        description: `Office expense for ${selectedOffice.name} has been created.`,
       });
       
       reset();
@@ -111,14 +147,25 @@ const OfficeExpenseForm: React.FC<OfficeExpenseFormProps> = ({
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="location">Office Location *</Label>
-              <Input
-                id="location"
-                {...register("location", { required: "Office location is required" })}
-                placeholder="e.g., London Office"
-              />
-              {errors.location && (
-                <p className="text-sm text-destructive">{errors.location.message}</p>
+              <Label htmlFor="office_id">Office *</Label>
+              <Select
+                value={selectedOfficeId ? selectedOfficeId.toString() : ""}
+                onValueChange={(value) => setValue("office_id", parseInt(value))}
+                disabled={loadingOffices}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={loadingOffices ? "Loading offices..." : "Select office"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {offices.map((office) => (
+                    <SelectItem key={office.id} value={office.id.toString()}>
+                      {office.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {!selectedOfficeId && (
+                <p className="text-sm text-destructive">Office selection is required</p>
               )}
             </div>
             
@@ -260,7 +307,7 @@ const OfficeExpenseForm: React.FC<OfficeExpenseFormProps> = ({
             <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button type="submit" disabled={isSubmitting || !selectedOfficeId}>
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
