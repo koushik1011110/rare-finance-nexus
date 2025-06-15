@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -10,11 +11,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2 } from "lucide-react";
+import { Loader2, Users } from "lucide-react";
 import { salaryAPI, type SalaryFormData, type StaffMember } from "@/lib/salary-api";
 
 interface SalaryFormProps {
-  onSubmit: (data: SalaryFormData) => Promise<void>;
+  onSubmit: (data: SalaryFormData, selectedStaffIds?: string[]) => Promise<void>;
   isSubmitting: boolean;
   defaultValues?: Partial<SalaryFormData>;
 }
@@ -26,6 +27,8 @@ const SalaryForm: React.FC<SalaryFormProps> = ({
 }) => {
   const [staffMembers, setStaffMembers] = useState<StaffMember[]>([]);
   const [loadingStaff, setLoadingStaff] = useState(true);
+  const [selectedStaffIds, setSelectedStaffIds] = useState<string[]>([]);
+  const [isMultiSelect, setIsMultiSelect] = useState(!defaultValues?.staff_id);
   const [formData, setFormData] = useState<SalaryFormData>({
     staff_id: defaultValues?.staff_id || "",
     basic_salary: defaultValues?.basic_salary || "",
@@ -55,7 +58,27 @@ const SalaryForm: React.FC<SalaryFormProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await onSubmit(formData);
+    if (isMultiSelect && selectedStaffIds.length > 0) {
+      await onSubmit(formData, selectedStaffIds);
+    } else {
+      await onSubmit(formData);
+    }
+  };
+
+  const handleStaffSelection = (staffId: string, checked: boolean) => {
+    if (checked) {
+      setSelectedStaffIds([...selectedStaffIds, staffId]);
+    } else {
+      setSelectedStaffIds(selectedStaffIds.filter(id => id !== staffId));
+    }
+  };
+
+  const handleSelectAll = (checked: boolean | "indeterminate") => {
+    if (checked === true) {
+      setSelectedStaffIds(staffMembers.map(staff => staff.id.toString()));
+    } else {
+      setSelectedStaffIds([]);
+    }
   };
 
   const calculateTotals = () => {
@@ -72,13 +95,65 @@ const SalaryForm: React.FC<SalaryFormProps> = ({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      {/* Multi-select toggle */}
+      {!defaultValues?.staff_id && (
+        <div className="flex items-center space-x-2 p-4 bg-muted/50 rounded-lg border">
+          <Checkbox
+            id="multi-select"
+            checked={isMultiSelect}
+            onCheckedChange={(checked) => setIsMultiSelect(checked === true)}
+          />
+          <Label htmlFor="multi-select" className="flex items-center space-x-2 cursor-pointer">
+            <Users className="h-4 w-4" />
+            <span>Select multiple staff members</span>
+          </Label>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="staff_id">Staff Member</Label>
+        <div className="space-y-2 md:col-span-2">
+          <Label>Staff Selection</Label>
           {loadingStaff ? (
             <div className="flex items-center space-x-2">
               <Loader2 className="h-4 w-4 animate-spin" />
               <span className="text-sm text-muted-foreground">Loading staff...</span>
+            </div>
+          ) : isMultiSelect ? (
+            <div className="space-y-3">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="select-all"
+                  checked={selectedStaffIds.length === staffMembers.length}
+                  onCheckedChange={handleSelectAll}
+                />
+                <Label htmlFor="select-all" className="text-sm font-medium cursor-pointer">
+                  Select All ({staffMembers.length} staff members)
+                </Label>
+              </div>
+              <div className="max-h-48 overflow-y-auto border rounded-lg p-3 space-y-2">
+                {staffMembers.map((staff) => (
+                  <div key={staff.id} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`staff-${staff.id}`}
+                      checked={selectedStaffIds.includes(staff.id.toString())}
+                      onCheckedChange={(checked) => 
+                        handleStaffSelection(staff.id.toString(), checked as boolean)
+                      }
+                    />
+                    <Label 
+                      htmlFor={`staff-${staff.id}`} 
+                      className="text-sm cursor-pointer flex-1"
+                    >
+                      {staff.first_name} {staff.last_name} - {staff.role}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+              {selectedStaffIds.length > 0 && (
+                <p className="text-sm text-muted-foreground">
+                  Selected: {selectedStaffIds.length} staff member(s)
+                </p>
+              )}
             </div>
           ) : (
             <Select
@@ -244,12 +319,17 @@ const SalaryForm: React.FC<SalaryFormProps> = ({
       </div>
 
       <div className="flex justify-end space-x-2">
-        <Button type="submit" disabled={isSubmitting}>
+        <Button 
+          type="submit" 
+          disabled={isSubmitting || (isMultiSelect && selectedStaffIds.length === 0) || (!isMultiSelect && !formData.staff_id)}
+        >
           {isSubmitting ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               Saving...
             </>
+          ) : isMultiSelect ? (
+            `Save Salary for ${selectedStaffIds.length} Staff`
           ) : (
             "Save Salary"
           )}

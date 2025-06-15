@@ -80,7 +80,7 @@ const SalaryManagement = () => {
     setAddModalOpen(true);
   };
 
-  const handleSaveSalary = async (formData: SalaryFormData) => {
+  const handleSaveSalary = async (formData: SalaryFormData, selectedStaffIds?: string[]) => {
     setIsSubmitting(true);
     
     try {
@@ -90,8 +90,24 @@ const SalaryManagement = () => {
           title: "Salary Updated",
           description: "Salary record has been updated successfully.",
         });
+      } else if (selectedStaffIds && selectedStaffIds.length > 0) {
+        // Format the month correctly for bulk creation
+        const formattedData = {
+          ...formData,
+          salary_month: formData.salary_month.includes('-01') ? formData.salary_month : formData.salary_month + '-01'
+        };
+        await salaryAPI.createBulkSalaries(selectedStaffIds, formattedData);
+        toast({
+          title: "Salaries Added",
+          description: `Salary records have been added successfully for ${selectedStaffIds.length} staff members.`,
+        });
       } else {
-        await salaryAPI.createSalary(formData);
+        // Format the month correctly for single creation
+        const formattedData = {
+          ...formData,
+          salary_month: formData.salary_month.includes('-01') ? formData.salary_month : formData.salary_month + '-01'
+        };
+        await salaryAPI.createSalary(formattedData);
         toast({
           title: "Salary Added",
           description: "Salary record has been added successfully.",
