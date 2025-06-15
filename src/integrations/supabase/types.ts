@@ -1308,6 +1308,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      reset_staff_password: {
+        Args: { staff_id_param: number }
+        Returns: string
+      }
       resolve_character_issue: {
         Args: { issue_id: number }
         Returns: undefined

@@ -7,12 +7,13 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import DataTable from '@/components/ui/DataTable';
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth, UserRole } from '@/contexts/AuthContext';
-import { Plus, Users, Eye, EyeOff } from 'lucide-react';
+import { Plus, Users, Eye, EyeOff, RotateCcw } from 'lucide-react';
 
 interface Staff {
   id: string;
@@ -39,6 +40,7 @@ const StaffManagement = () => {
     agentLocation: '',
   });
   const [showPassword, setShowPassword] = useState(false);
+  const [resetPasswordDialog, setResetPasswordDialog] = useState({ open: false, newPassword: '', staffName: '' });
   const { isAdmin } = useAuth();
 
   useEffect(() => {
@@ -139,6 +141,34 @@ const StaffManagement = () => {
     }
   };
 
+  const handleResetPassword = async (staffMember: Staff) => {
+    try {
+      const { data: newPassword, error } = await supabase.rpc('reset_staff_password', {
+        staff_id_param: parseInt(staffMember.id)
+      });
+
+      if (error) throw error;
+
+      setResetPasswordDialog({
+        open: true,
+        newPassword: newPassword,
+        staffName: `${staffMember.firstName} ${staffMember.lastName}`
+      });
+
+      toast({
+        title: "Password Reset",
+        description: `Password has been reset for ${staffMember.firstName} ${staffMember.lastName}`,
+      });
+    } catch (error) {
+      console.error('Error resetting password:', error);
+      toast({
+        title: "Error",
+        description: "Failed to reset password",
+        variant: "destructive",
+      });
+    }
+  };
+
   const getRoleBadgeVariant = (role: UserRole) => {
     switch (role) {
       case 'admin': return 'default';
@@ -186,6 +216,20 @@ const StaffManagement = () => {
         <span className="text-sm">
           {new Date(row.createdAt).toLocaleDateString()}
         </span>
+      ),
+    },
+    {
+      accessorKey: 'actions' as 'actions',
+      header: 'Actions',
+      cell: (row: Staff) => (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => handleResetPassword(row)}
+        >
+          <RotateCcw className="mr-2 h-4 w-4" />
+          Reset Password
+        </Button>
       ),
     },
   ];
@@ -369,6 +413,35 @@ const StaffManagement = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Password Reset Dialog */}
+      <AlertDialog 
+        open={resetPasswordDialog.open} 
+        onOpenChange={(open) => setResetPasswordDialog(prev => ({ ...prev, open }))}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Password Reset Successful</AlertDialogTitle>
+            <AlertDialogDescription>
+              A new password has been generated for {resetPasswordDialog.staffName}. 
+              Please share this password securely with the staff member.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="my-4 p-4 bg-muted rounded-lg">
+            <p className="text-sm font-medium mb-2">New Password:</p>
+            <code className="text-lg font-mono bg-background px-3 py-2 rounded border">
+              {resetPasswordDialog.newPassword}
+            </code>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogAction 
+              onClick={() => setResetPasswordDialog({ open: false, newPassword: '', staffName: '' })}
+            >
+              Got it
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </MainLayout>
   );
 };
