@@ -1092,5 +1092,80 @@ export const reportsAPI = {
   }
 };
 
+export interface OfficeExpense {
+  id: number;
+  location: string;
+  month: string;
+  rent: number;
+  utilities: number;
+  internet: number;
+  marketing: number;
+  travel: number;
+  miscellaneous: number;
+  monthly_total: number;
+  created_at: string;
+  updated_at: string;
+}
+
+// Office Expenses API
+export const officeExpensesAPI = {
+  getAll: async (): Promise<OfficeExpense[]> => {
+    const { data, error } = await supabase
+      .from('office_expenses')
+      .select('*')
+      .order('month', { ascending: false });
+    
+    if (error) {
+      console.error('Error fetching office expenses:', error);
+      throw error;
+    }
+    
+    return data || [];
+  },
+
+  create: async (expenseData: Omit<OfficeExpense, 'id' | 'created_at' | 'updated_at'>): Promise<OfficeExpense> => {
+    const { data, error } = await supabase
+      .from('office_expenses')
+      .insert([expenseData])
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Error creating office expense:', error);
+      throw error;
+    }
+    
+    return data;
+  },
+
+  update: async (id: number, expenseData: Partial<Omit<OfficeExpense, 'id' | 'created_at' | 'updated_at'>>): Promise<OfficeExpense> => {
+    const { data, error } = await supabase
+      .from('office_expenses')
+      .update({ ...expenseData, updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Error updating office expense:', error);
+      throw error;
+    }
+    
+    return data;
+  },
+
+  delete: async (id: number): Promise<void> => {
+    const { error } = await supabase
+      .from('office_expenses')
+      .delete()
+      .eq('id', id);
+    
+    if (error) {
+      console.error('Error deleting office expense:', error);
+      throw error;
+    }
+  },
+};
+
 // For backward compatibility, keep the old API name
 export const studentFeePaymentsAPI = feePaymentsAPI;

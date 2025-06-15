@@ -810,6 +810,51 @@ export type Database = {
           },
         ]
       }
+      office_expenses: {
+        Row: {
+          created_at: string
+          id: number
+          internet: number
+          location: string
+          marketing: number
+          miscellaneous: number
+          month: string
+          monthly_total: number
+          rent: number
+          travel: number
+          updated_at: string
+          utilities: number
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          internet?: number
+          location: string
+          marketing?: number
+          miscellaneous?: number
+          month: string
+          monthly_total?: number
+          rent?: number
+          travel?: number
+          updated_at?: string
+          utilities?: number
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          internet?: number
+          location?: string
+          marketing?: number
+          miscellaneous?: number
+          month?: string
+          monthly_total?: number
+          rent?: number
+          travel?: number
+          updated_at?: string
+          utilities?: number
+        }
+        Relationships: []
+      }
       student_credentials: {
         Row: {
           created_at: string | null

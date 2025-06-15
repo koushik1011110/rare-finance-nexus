@@ -1,9 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import PageHeader from "@/components/shared/PageHeader";
 import DataTable from "@/components/ui/DataTable";
 import { Button } from "@/components/ui/button";
-import { Plus, Download } from "lucide-react";
+import { Plus, Download, Loader2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import {
   Select,
@@ -16,86 +16,43 @@ import DetailViewModal from "@/components/shared/DetailViewModal";
 import EditModal from "@/components/shared/EditModal";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-
-// Define the type for office expenses data
-interface OfficeExpense {
-  id: string;
-  location: string;
-  month: string;
-  rent: string;
-  utilities: string;
-  internet: string;
-  marketing: string;
-  travel: string;
-  miscellaneous: string;
-  monthlyTotal: string;
-}
-
-// Sample data for office expenses
-const officeExpensesData: OfficeExpense[] = [
-  {
-    id: "1",
-    location: "London Office",
-    month: "April 2025",
-    rent: "$3,500",
-    utilities: "$800",
-    internet: "$250",
-    marketing: "$1,800",
-    travel: "$600",
-    miscellaneous: "$400",
-    monthlyTotal: "$7,350",
-  },
-  {
-    id: "2",
-    location: "Manchester Office",
-    month: "April 2025",
-    rent: "$2,800",
-    utilities: "$650",
-    internet: "$200",
-    marketing: "$1,200",
-    travel: "$500",
-    miscellaneous: "$350",
-    monthlyTotal: "$5,700",
-  },
-  {
-    id: "3",
-    location: "Birmingham Office",
-    month: "April 2025",
-    rent: "$2,200",
-    utilities: "$550",
-    internet: "$180",
-    marketing: "$1,000",
-    travel: "$400",
-    miscellaneous: "$300",
-    monthlyTotal: "$4,630",
-  },
-  {
-    id: "4",
-    location: "London Office",
-    month: "March 2025",
-    rent: "$3,500",
-    utilities: "$750",
-    internet: "$250",
-    marketing: "$2,000",
-    travel: "$700",
-    miscellaneous: "$350",
-    monthlyTotal: "$7,550",
-  },
-];
+import { officeExpensesAPI, type OfficeExpense } from "@/lib/supabase-database";
 
 const OfficeExpenses = () => {
+  const [expenses, setExpenses] = useState<OfficeExpense[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedLocation, setSelectedLocation] = useState<string>("all");
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [selectedExpense, setSelectedExpense] = useState<OfficeExpense | null>(null);
   const [editedExpense, setEditedExpense] = useState<OfficeExpense | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    loadExpenses();
+  }, []);
+
+  const loadExpenses = async () => {
+    try {
+      setLoading(true);
+      const data = await officeExpensesAPI.getAll();
+      setExpenses(data);
+    } catch (error) {
+      console.error('Error loading expenses:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load office expenses.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredData =
     selectedLocation === "all"
-      ? officeExpensesData
-      : officeExpensesData.filter(
-          (expense) => expense.location === selectedLocation
-        );
+      ? expenses
+      : expenses.filter((expense) => expense.location === selectedLocation);
 
   const handleViewExpense = (expense: OfficeExpense) => {
     setSelectedExpense(expense);
@@ -108,14 +65,39 @@ const OfficeExpenses = () => {
     setEditModalOpen(true);
   };
 
-  const handleSaveEdit = () => {
-    if (editedExpense) {
-      // In a real application, you would update the data in your database here
+  const handleSaveEdit = async () => {
+    if (!editedExpense) return;
+
+    try {
+      setSaving(true);
+      await officeExpensesAPI.update(editedExpense.id, {
+        location: editedExpense.location,
+        month: editedExpense.month,
+        rent: editedExpense.rent,
+        utilities: editedExpense.utilities,
+        internet: editedExpense.internet,
+        marketing: editedExpense.marketing,
+        travel: editedExpense.travel,
+        miscellaneous: editedExpense.miscellaneous,
+        monthly_total: editedExpense.monthly_total,
+      });
+      
       toast({
-        title: "Changes Saved",
+        title: "Success",
         description: `Office expense for ${editedExpense.location} has been updated.`,
       });
+      
       setEditModalOpen(false);
+      loadExpenses(); // Reload data
+    } catch (error) {
+      console.error('Error updating expense:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update office expense.",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -127,25 +109,81 @@ const OfficeExpenses = () => {
   };
 
   const handleExport = () => {
-    toast({
-      title: "Feature Coming Soon",
-      description: "Export functionality will be available shortly.",
-    });
+    const csvContent = [
+      ["Location", "Month", "Rent", "Utilities", "Internet", "Marketing", "Travel", "Miscellaneous", "Monthly Total"],
+      ...filteredData.map(expense => [
+        expense.location,
+        new Date(expense.month).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+        `$${expense.rent.toFixed(2)}`,
+        `$${expense.utilities.toFixed(2)}`,
+        `$${expense.internet.toFixed(2)}`,
+        `$${expense.marketing.toFixed(2)}`,
+        `$${expense.travel.toFixed(2)}`,
+        `$${expense.miscellaneous.toFixed(2)}`,
+        `$${expense.monthly_total.toFixed(2)}`
+      ])
+    ].map(row => row.join(",")).join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv" });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "office_expenses.csv";
+    a.click();
+    window.URL.revokeObjectURL(url);
   };
 
-  const locations = [...new Set(officeExpensesData.map((item) => item.location))];
+  const locations = [...new Set(expenses.map((item) => item.location))];
+
+  const formatCurrency = (amount: number) => `$${amount.toFixed(2)}`;
+  const formatMonth = (monthString: string) => {
+    const date = new Date(monthString);
+    return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  };
 
   // Correctly typed columns with the actions column
   const columns = [
     { header: "Office Location", accessorKey: "location" as const },
-    { header: "Month", accessorKey: "month" as const },
-    { header: "Rent", accessorKey: "rent" as const },
-    { header: "Utilities", accessorKey: "utilities" as const },
-    { header: "Internet", accessorKey: "internet" as const },
-    { header: "Marketing", accessorKey: "marketing" as const },
-    { header: "Travel", accessorKey: "travel" as const },
-    { header: "Miscellaneous", accessorKey: "miscellaneous" as const },
-    { header: "Monthly Total", accessorKey: "monthlyTotal" as const },
+    { 
+      header: "Month", 
+      accessorKey: "month" as const,
+      cell: (row: OfficeExpense) => formatMonth(row.month)
+    },
+    { 
+      header: "Rent", 
+      accessorKey: "rent" as const,
+      cell: (row: OfficeExpense) => formatCurrency(row.rent)
+    },
+    { 
+      header: "Utilities", 
+      accessorKey: "utilities" as const,
+      cell: (row: OfficeExpense) => formatCurrency(row.utilities)
+    },
+    { 
+      header: "Internet", 
+      accessorKey: "internet" as const,
+      cell: (row: OfficeExpense) => formatCurrency(row.internet)
+    },
+    { 
+      header: "Marketing", 
+      accessorKey: "marketing" as const,
+      cell: (row: OfficeExpense) => formatCurrency(row.marketing)
+    },
+    { 
+      header: "Travel", 
+      accessorKey: "travel" as const,
+      cell: (row: OfficeExpense) => formatCurrency(row.travel)
+    },
+    { 
+      header: "Miscellaneous", 
+      accessorKey: "miscellaneous" as const,
+      cell: (row: OfficeExpense) => formatCurrency(row.miscellaneous)
+    },
+    { 
+      header: "Monthly Total", 
+      accessorKey: "monthly_total" as const,
+      cell: (row: OfficeExpense) => formatCurrency(row.monthly_total)
+    },
     {
       header: "Actions",
       accessorKey: "actions" as const,
@@ -211,7 +249,14 @@ const OfficeExpenses = () => {
       </div>
 
       <div className="rounded-lg border bg-card shadow-sm">
-        <DataTable columns={columns} data={filteredData} />
+        {loading ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-8 w-8 animate-spin" />
+            <span className="ml-2">Loading expenses...</span>
+          </div>
+        ) : (
+          <DataTable columns={columns} data={filteredData} />
+        )}
       </div>
 
       {/* View Modal */}
@@ -228,35 +273,35 @@ const OfficeExpenses = () => {
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">Month</p>
-              <p className="text-lg">{selectedExpense.month}</p>
+              <p className="text-lg">{formatMonth(selectedExpense.month)}</p>
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">Rent</p>
-              <p className="text-lg">{selectedExpense.rent}</p>
+              <p className="text-lg">{formatCurrency(selectedExpense.rent)}</p>
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">Utilities</p>
-              <p className="text-lg">{selectedExpense.utilities}</p>
+              <p className="text-lg">{formatCurrency(selectedExpense.utilities)}</p>
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">Internet</p>
-              <p className="text-lg">{selectedExpense.internet}</p>
+              <p className="text-lg">{formatCurrency(selectedExpense.internet)}</p>
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">Marketing</p>
-              <p className="text-lg">{selectedExpense.marketing}</p>
+              <p className="text-lg">{formatCurrency(selectedExpense.marketing)}</p>
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">Travel</p>
-              <p className="text-lg">{selectedExpense.travel}</p>
+              <p className="text-lg">{formatCurrency(selectedExpense.travel)}</p>
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">Miscellaneous</p>
-              <p className="text-lg">{selectedExpense.miscellaneous}</p>
+              <p className="text-lg">{formatCurrency(selectedExpense.miscellaneous)}</p>
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">Monthly Total</p>
-              <p className="text-lg font-bold">{selectedExpense.monthlyTotal}</p>
+              <p className="text-lg font-bold">{formatCurrency(selectedExpense.monthly_total)}</p>
             </div>
           </div>
         </DetailViewModal>
@@ -279,9 +324,10 @@ const OfficeExpenses = () => {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="month">Month</Label>
+              <Label htmlFor="month">Month (YYYY-MM-DD)</Label>
               <Input 
                 id="month" 
+                type="date"
                 value={editedExpense.month} 
                 onChange={(e) => setEditedExpense({...editedExpense, month: e.target.value})}
               />
@@ -290,65 +336,86 @@ const OfficeExpenses = () => {
               <Label htmlFor="rent">Rent</Label>
               <Input 
                 id="rent" 
+                type="number"
+                step="0.01"
                 value={editedExpense.rent} 
-                onChange={(e) => setEditedExpense({...editedExpense, rent: e.target.value})}
+                onChange={(e) => setEditedExpense({...editedExpense, rent: parseFloat(e.target.value) || 0})}
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="utilities">Utilities</Label>
               <Input 
                 id="utilities" 
+                type="number"
+                step="0.01"
                 value={editedExpense.utilities} 
-                onChange={(e) => setEditedExpense({...editedExpense, utilities: e.target.value})}
+                onChange={(e) => setEditedExpense({...editedExpense, utilities: parseFloat(e.target.value) || 0})}
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="internet">Internet</Label>
               <Input 
                 id="internet" 
+                type="number"
+                step="0.01"
                 value={editedExpense.internet} 
-                onChange={(e) => setEditedExpense({...editedExpense, internet: e.target.value})}
+                onChange={(e) => setEditedExpense({...editedExpense, internet: parseFloat(e.target.value) || 0})}
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="marketing">Marketing</Label>
               <Input 
                 id="marketing" 
+                type="number"
+                step="0.01"
                 value={editedExpense.marketing} 
-                onChange={(e) => setEditedExpense({...editedExpense, marketing: e.target.value})}
+                onChange={(e) => setEditedExpense({...editedExpense, marketing: parseFloat(e.target.value) || 0})}
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="travel">Travel</Label>
               <Input 
                 id="travel" 
+                type="number"
+                step="0.01"
                 value={editedExpense.travel} 
-                onChange={(e) => setEditedExpense({...editedExpense, travel: e.target.value})}
+                onChange={(e) => setEditedExpense({...editedExpense, travel: parseFloat(e.target.value) || 0})}
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="miscellaneous">Miscellaneous</Label>
               <Input 
                 id="miscellaneous" 
+                type="number"
+                step="0.01"
                 value={editedExpense.miscellaneous} 
-                onChange={(e) => setEditedExpense({...editedExpense, miscellaneous: e.target.value})}
+                onChange={(e) => setEditedExpense({...editedExpense, miscellaneous: parseFloat(e.target.value) || 0})}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="monthlyTotal">Monthly Total</Label>
+              <Label htmlFor="monthly_total">Monthly Total</Label>
               <Input 
-                id="monthlyTotal" 
-                value={editedExpense.monthlyTotal} 
-                onChange={(e) => setEditedExpense({...editedExpense, monthlyTotal: e.target.value})}
+                id="monthly_total" 
+                type="number"
+                step="0.01"
+                value={editedExpense.monthly_total} 
+                onChange={(e) => setEditedExpense({...editedExpense, monthly_total: parseFloat(e.target.value) || 0})}
               />
             </div>
           </div>
           <div className="flex justify-end space-x-2 pt-4">
-            <Button variant="outline" onClick={() => setEditModalOpen(false)}>
+            <Button variant="outline" onClick={() => setEditModalOpen(false)} disabled={saving}>
               Cancel
             </Button>
-            <Button onClick={handleSaveEdit}>
-              Save Changes
+            <Button onClick={handleSaveEdit} disabled={saving}>
+              {saving ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                'Save Changes'
+              )}
             </Button>
           </div>
         </EditModal>
