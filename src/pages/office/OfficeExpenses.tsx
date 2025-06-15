@@ -261,46 +261,98 @@ const OfficeExpenses = () => {
       {/* View Modal */}
       {selectedExpense && (
         <DetailViewModal
-          title={`Office Expense Details - ${selectedExpense.location}`}
+          title={`Office Expense Details`}
           isOpen={viewModalOpen}
           onClose={() => setViewModalOpen(false)}
         >
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Office Location</p>
-              <p className="text-lg">{selectedExpense.location}</p>
+          <div className="space-y-6">
+            {/* Header Section */}
+            <div className="bg-gradient-to-r from-primary/10 to-primary/5 p-4 rounded-lg border">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-xl font-semibold text-foreground">{selectedExpense.location}</h3>
+                  <p className="text-muted-foreground">{formatMonth(selectedExpense.month)}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm text-muted-foreground">Total Expenses</p>
+                  <p className="text-2xl font-bold text-primary">{formatCurrency(selectedExpense.monthly_total)}</p>
+                </div>
+              </div>
             </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Month</p>
-              <p className="text-lg">{formatMonth(selectedExpense.month)}</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Rent</p>
-              <p className="text-lg">{formatCurrency(selectedExpense.rent)}</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Utilities</p>
-              <p className="text-lg">{formatCurrency(selectedExpense.utilities)}</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Internet</p>
-              <p className="text-lg">{formatCurrency(selectedExpense.internet)}</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Marketing</p>
-              <p className="text-lg">{formatCurrency(selectedExpense.marketing)}</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Travel</p>
-              <p className="text-lg">{formatCurrency(selectedExpense.travel)}</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Miscellaneous</p>
-              <p className="text-lg">{formatCurrency(selectedExpense.miscellaneous)}</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Monthly Total</p>
-              <p className="text-lg font-bold">{formatCurrency(selectedExpense.monthly_total)}</p>
+
+            {/* Expense Categories Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-card border rounded-lg p-4 hover:shadow-md transition-shadow">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Rent</p>
+                    <p className="text-xl font-semibold text-foreground">{formatCurrency(selectedExpense.rent)}</p>
+                  </div>
+                  <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/20 rounded-full flex items-center justify-center">
+                    <div className="w-5 h-5 bg-blue-500 rounded"></div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-card border rounded-lg p-4 hover:shadow-md transition-shadow">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Utilities</p>
+                    <p className="text-xl font-semibold text-foreground">{formatCurrency(selectedExpense.utilities)}</p>
+                  </div>
+                  <div className="w-10 h-10 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center">
+                    <div className="w-5 h-5 bg-green-500 rounded"></div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-card border rounded-lg p-4 hover:shadow-md transition-shadow">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Internet</p>
+                    <p className="text-xl font-semibold text-foreground">{formatCurrency(selectedExpense.internet)}</p>
+                  </div>
+                  <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/20 rounded-full flex items-center justify-center">
+                    <div className="w-5 h-5 bg-purple-500 rounded"></div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-card border rounded-lg p-4 hover:shadow-md transition-shadow">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Marketing</p>
+                    <p className="text-xl font-semibold text-foreground">{formatCurrency(selectedExpense.marketing)}</p>
+                  </div>
+                  <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/20 rounded-full flex items-center justify-center">
+                    <div className="w-5 h-5 bg-orange-500 rounded"></div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-card border rounded-lg p-4 hover:shadow-md transition-shadow">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Travel</p>
+                    <p className="text-xl font-semibold text-foreground">{formatCurrency(selectedExpense.travel)}</p>
+                  </div>
+                  <div className="w-10 h-10 bg-teal-100 dark:bg-teal-900/20 rounded-full flex items-center justify-center">
+                    <div className="w-5 h-5 bg-teal-500 rounded"></div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-card border rounded-lg p-4 hover:shadow-md transition-shadow">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Miscellaneous</p>
+                    <p className="text-xl font-semibold text-foreground">{formatCurrency(selectedExpense.miscellaneous)}</p>
+                  </div>
+                  <div className="w-10 h-10 bg-pink-100 dark:bg-pink-900/20 rounded-full flex items-center justify-center">
+                    <div className="w-5 h-5 bg-pink-500 rounded"></div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </DetailViewModal>
