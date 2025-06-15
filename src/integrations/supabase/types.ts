@@ -1428,6 +1428,60 @@ export type Database = {
           },
         ]
       }
+      todo_tasks: {
+        Row: {
+          assigned_to: number | null
+          created_at: string
+          created_by: number
+          description: string | null
+          due_date: string
+          id: number
+          priority: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: number | null
+          created_at?: string
+          created_by: number
+          description?: string | null
+          due_date: string
+          id?: number
+          priority?: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: number | null
+          created_at?: string
+          created_by?: number
+          description?: string | null
+          due_date?: string
+          id?: number
+          priority?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "todo_tasks_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "todo_tasks_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       universities: {
         Row: {
           created_at: string | null

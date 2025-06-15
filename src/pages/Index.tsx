@@ -7,17 +7,25 @@ import AlertCard, { Alert } from "@/components/dashboard/AlertCard";
 import PageHeader from "@/components/shared/PageHeader";
 import DataTable from "@/components/ui/DataTable";
 import { Button } from "@/components/ui/button";
+import TodoCalendar from "@/components/dashboard/TodoCalendar";
 import SearchFilter from "@/components/dashboard/SearchFilter";
-import { DollarSign, CreditCard, TrendingUp, AlertCircle, Download, FileText } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { 
+  DollarSign, 
+  CreditCard, 
+  TrendingUp, 
+  AlertCircle, 
+  Download, 
+  FileText, 
+  Users, 
+  GraduationCap, 
+  Building2, 
+  Home,
+  ClipboardList
+} from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-
-interface DashboardStats {
-  totalIncome: number;
-  totalExpenses: number;
-  amountReceivable: number;
-  universityFeesDue: number;
-}
+import { getDashboardStatistics, getRecentActivities } from "@/lib/dashboard-api";
+import { getTodoTaskStatistics } from "@/lib/todo-api";
+import { cn } from "@/lib/utils";
 
 interface ChartData {
   name: string;
@@ -25,52 +33,48 @@ interface ChartData {
   expense: number;
 }
 
-interface Transaction {
-  id: string;
-  date: string;
-  description: string;
-  amount: string;
-  status: string;
-  category: string;
+interface Activity {
+  first_name: string;
+  last_name: string;
+  created_at: string;
 }
 
-const transactionColumns = [
-  { header: "Date", accessorKey: "date" },
-  { header: "Description", accessorKey: "description" },
-  { header: "Amount", accessorKey: "amount" },
-  {
-    header: "Status",
-    accessorKey: "status",
-    cell: (row: any) => (
-      <span
-        className={cn(
-          "rounded-full px-2 py-1 text-xs font-medium",
-          row.status === "Completed"
-            ? "bg-green-100 text-green-800"
-            : "bg-yellow-100 text-yellow-800"
-        )}
-      >
-        {row.status}
-      </span>
-    ),
+const activityColumns = [
+  { 
+    header: "Student Name", 
+    accessorKey: "name",
+    cell: (row: Activity) => `${row.first_name} ${row.last_name}`
   },
-  { header: "Category", accessorKey: "category" },
+  { 
+    header: "Date Enrolled", 
+    accessorKey: "created_at",
+    cell: (row: Activity) => new Date(row.created_at).toLocaleDateString()
+  },
 ];
-
-import { cn } from "@/lib/utils";
 
 const Index = () => {
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState<DashboardStats>({
-    totalIncome: 0,
-    totalExpenses: 0,
-    amountReceivable: 0,
-    universityFeesDue: 0,
+  const [dashboardStats, setDashboardStats] = useState({
+    totalStudents: 0,
+    totalAgents: 0,
+    totalUniversities: 0,
+    totalHostels: 0,
+    activeApplications: 0,
+    totalRevenue: 0,
+    pendingTasks: 0,
+    totalOffices: 0,
+  });
+  const [todoStats, setTodoStats] = useState({
+    total: 0,
+    pending: 0,
+    inProgress: 0,
+    completed: 0,
+    highPriority: 0,
   });
   const [cashFlowData, setCashFlowData] = useState<ChartData[]>([]);
   const [sourceData, setSourceData] = useState<any[]>([]);
   const [alerts, setAlerts] = useState<Alert[]>([]);
-  const [recentTransactions, setRecentTransactions] = useState<Transaction[]>([]);
+  const [recentActivities, setRecentActivities] = useState<Activity[]>([]);
 
   useEffect(() => {
     loadDashboardData();
@@ -80,37 +84,16 @@ const Index = () => {
     try {
       setLoading(true);
       
-      // Load financial stats
-      const [
-        feeCollectionsData,
-        hostelExpensesData,
-        messExpensesData,
-        feePaymentsData,
-        studentsCount,
-      ] = await Promise.all([
-        supabase.from('fee_collections').select('amount_paid'),
-        supabase.from('hostel_expenses').select('amount'),
-        supabase.from('mess_expenses').select('amount'),
-        supabase.from('fee_payments').select('amount_due, amount_paid, payment_status'),
-        supabase.from('students').select('id', { count: 'exact' }),
+      // Load all dashboard data in parallel
+      const [stats, todoStatistics, activities] = await Promise.all([
+        getDashboardStatistics(),
+        getTodoTaskStatistics(),
+        getRecentActivities(),
       ]);
 
-      // Calculate stats
-      const totalIncome = feeCollectionsData.data?.reduce((sum, item) => sum + Number(item.amount_paid), 0) || 0;
-      const hostelExpenses = hostelExpensesData.data?.reduce((sum, item) => sum + Number(item.amount), 0) || 0;
-      const messExpenses = messExpensesData.data?.reduce((sum, item) => sum + Number(item.amount), 0) || 0;
-      const totalExpenses = hostelExpenses + messExpenses;
-      
-      const pendingPayments = feePaymentsData.data?.filter(p => p.payment_status === 'pending') || [];
-      const amountReceivable = pendingPayments.reduce((sum, item) => sum + (Number(item.amount_due) - Number(item.amount_paid)), 0);
-      const universityFeesDue = pendingPayments.reduce((sum, item) => sum + Number(item.amount_due), 0);
-
-      setStats({
-        totalIncome,
-        totalExpenses,
-        amountReceivable,
-        universityFeesDue,
-      });
+      setDashboardStats(stats);
+      setTodoStats(todoStatistics);
+      setRecentActivities(activities);
 
       // Generate chart data (last 6 months)
       const chartData: ChartData[] = [];
@@ -118,17 +101,17 @@ const Index = () => {
       months.forEach(month => {
         chartData.push({
           name: month,
-          income: Math.floor(totalIncome / 6 + Math.random() * 2000),
-          expense: Math.floor(totalExpenses / 6 + Math.random() * 1000),
+          income: Math.floor(stats.totalRevenue / 6 + Math.random() * 2000),
+          expense: Math.floor((stats.totalRevenue * 0.7) / 6 + Math.random() * 1000),
         });
       });
       setCashFlowData(chartData);
 
       // Generate source data
       const sources = [
-        { name: "Fee Collections", income: totalIncome * 0.6 },
-        { name: "Hostel Fees", income: totalIncome * 0.25 },
-        { name: "Other Services", income: totalIncome * 0.15 },
+        { name: "Fee Collections", income: stats.totalRevenue * 0.6 },
+        { name: "Hostel Fees", income: stats.totalRevenue * 0.25 },
+        { name: "Other Services", income: stats.totalRevenue * 0.15 },
       ];
       setSourceData(sources);
 
@@ -136,43 +119,24 @@ const Index = () => {
       const dashboardAlerts: Alert[] = [
         {
           id: "1",
-          title: "Pending Payments",
-          description: `${pendingPayments.length} payments are pending`,
+          title: "Pending Applications",
+          description: `${stats.activeApplications} applications awaiting review`,
           type: "warning",
         },
         {
           id: "2",
-          title: "Active Students",
-          description: `${studentsCount.count || 0} students are currently enrolled`,
+          title: "Pending Tasks",
+          description: `${stats.pendingTasks} tasks need attention`,
           type: "reminder",
+        },
+        {
+          id: "3",
+          title: "High Priority Tasks",
+          description: `${todoStatistics.highPriority} high priority tasks`,
+          type: "warning",
         },
       ];
       setAlerts(dashboardAlerts);
-
-      // Load recent transactions
-      const { data: recentFeeCollections } = await supabase
-        .from('fee_collections')
-        .select(`
-          id,
-          amount_paid,
-          payment_date,
-          payment_method,
-          receipt_number,
-          students(first_name, last_name)
-        `)
-        .order('created_at', { ascending: false })
-        .limit(5);
-
-      const transactions: Transaction[] = recentFeeCollections?.map(collection => ({
-        id: collection.id.toString(),
-        date: new Date(collection.payment_date).toLocaleDateString(),
-        description: `Fee payment from ${collection.students?.first_name} ${collection.students?.last_name}`,
-        amount: `$${Number(collection.amount_paid).toLocaleString()}`,
-        status: "Completed",
-        category: "Fee Collection",
-      })) || [];
-
-      setRecentTransactions(transactions);
 
     } catch (error) {
       console.error('Error loading dashboard data:', error);
@@ -214,8 +178,8 @@ const Index = () => {
   return (
     <MainLayout>
       <PageHeader 
-        title="Financial Dashboard" 
-        description="Overview of your financial data and activities"
+        title="Dashboard Overview" 
+        description="Complete overview of your educational institution management system"
         actions={
           <>
             <Button variant="outline" size="sm">
@@ -237,59 +201,97 @@ const Index = () => {
         onDateRangeChange={handleDateRangeChange}
       />
       
-      {/* Stats Overview */}
+      {/* Primary Stats Overview */}
       <div className="dashboard-grid mb-6">
         <StatCard
-          title="Total Income"
-          value={`$${stats.totalIncome.toLocaleString()}`}
+          title="Total Students"
+          value={dashboardStats.totalStudents.toLocaleString()}
+          icon={<GraduationCap className="h-5 w-5" />}
+          variant="default"
+        />
+        <StatCard
+          title="Active Agents"
+          value={dashboardStats.totalAgents.toLocaleString()}
+          icon={<Users className="h-5 w-5" />}
+          variant="default"
+        />
+        <StatCard
+          title="Universities"
+          value={dashboardStats.totalUniversities.toLocaleString()}
+          icon={<Building2 className="h-5 w-5" />}
+          variant="default"
+        />
+        <StatCard
+          title="Hostels"
+          value={dashboardStats.totalHostels.toLocaleString()}
+          icon={<Home className="h-5 w-5" />}
+          variant="default"
+        />
+      </div>
+
+      {/* Financial & Task Stats */}
+      <div className="dashboard-grid mb-6">
+        <StatCard
+          title="Total Revenue"
+          value={`$${dashboardStats.totalRevenue.toLocaleString()}`}
           icon={<DollarSign className="h-5 w-5" />}
           variant="income"
         />
         <StatCard
-          title="Total Expenses"
-          value={`$${stats.totalExpenses.toLocaleString()}`}
-          icon={<CreditCard className="h-5 w-5" />}
-          variant="expense"
-        />
-        <StatCard
-          title="Amount Receivable"
-          value={`$${stats.amountReceivable.toLocaleString()}`}
-          icon={<TrendingUp className="h-5 w-5" />}
-          variant="receivable"
-        />
-        <StatCard
-          title="University Fees Due"
-          value={`$${stats.universityFeesDue.toLocaleString()}`}
+          title="Pending Applications"
+          value={dashboardStats.activeApplications.toLocaleString()}
           icon={<AlertCircle className="h-5 w-5" />}
           variant="due"
+        />
+        <StatCard
+          title="Pending Tasks"
+          value={dashboardStats.pendingTasks.toLocaleString()}
+          icon={<ClipboardList className="h-5 w-5" />}
+          variant="due"
+        />
+        <StatCard
+          title="Offices"
+          value={dashboardStats.totalOffices.toLocaleString()}
+          icon={<Building2 className="h-5 w-5" />}
+          variant="default"
         />
       </div>
       
       {/* Charts */}
       <div className="grid grid-cols-1 gap-6 mb-6 lg:grid-cols-2">
         <ChartCard
-          title="Monthly Cash Flow"
-          description="Income vs Expenses"
+          title="Monthly Revenue Trend"
+          description="Revenue vs Expenses"
           type="line"
           data={cashFlowData}
         />
         <ChartCard
-          title="Income by Source"
+          title="Revenue by Source"
           description="Breakdown by category"
           type="bar"
           data={sourceData}
         />
       </div>
+
+      {/* Calendar-based Todo List */}
+      <div className="mb-6">
+        <h2 className="text-xl font-semibold mb-4">Task Management Calendar</h2>
+        <TodoCalendar />
+      </div>
       
-      {/* Alerts and Recent Transactions */}
+      {/* Alerts and Recent Activities */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="lg:col-span-1">
           <AlertCard title="Important Alerts" alerts={alerts} />
         </div>
         <div className="lg:col-span-2">
           <div className="rounded-lg border bg-card p-4 shadow-sm">
-            <h3 className="mb-4 text-lg font-medium">Recent Transactions</h3>
-            <DataTable columns={transactionColumns} data={recentTransactions} />
+            <h3 className="mb-4 text-lg font-medium">Recent Student Enrollments</h3>
+            {recentActivities.length > 0 ? (
+              <DataTable columns={activityColumns} data={recentActivities} />
+            ) : (
+              <p className="text-muted-foreground">No recent activities</p>
+            )}
           </div>
         </div>
       </div>
