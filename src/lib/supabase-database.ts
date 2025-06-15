@@ -105,6 +105,17 @@ export interface FeePayment {
   updated_at: string;
 }
 
+export interface StudentFeeCustomization {
+  id: number;
+  student_id: number;
+  fee_structure_component_id: number;
+  custom_amount: number;
+  reason?: string;
+  created_by?: string;
+  created_at: string;
+  updated_at: string;
+}
+
 // Students API
 export const studentsAPI = {
   getAll: async (): Promise<Student[]> => {
@@ -1235,6 +1246,93 @@ export const officesAPI = {
 
     if (error) throw error;
   },
+};
+
+// Student Fee Customizations API
+export const studentFeeCustomizationsAPI = {
+  getByStudent: async (studentId: number): Promise<StudentFeeCustomization[]> => {
+    const { data, error } = await supabase
+      .from('student_fee_customizations')
+      .select('*')
+      .eq('student_id', studentId);
+    
+    if (error) {
+      console.error('Error fetching student fee customizations:', error);
+      throw error;
+    }
+    
+    return data || [];
+  },
+
+  applyCustomAmount: async (studentId: number, feeStructureComponentId: number, customAmount: number, reason?: string): Promise<void> => {
+    const { error } = await supabase.rpc('apply_student_fee_customizations', {
+      p_student_id: studentId,
+      p_fee_structure_component_id: feeStructureComponentId,
+      p_custom_amount: customAmount
+    });
+
+    if (error) {
+      console.error('Error applying custom fee amount:', error);
+      throw error;
+    }
+
+    // Also record the reason if provided
+    if (reason) {
+      await supabase
+        .from('student_fee_customizations')
+        .update({ reason })
+        .eq('student_id', studentId)
+        .eq('fee_structure_component_id', feeStructureComponentId);
+    }
+  },
+
+  getStudentsWithOneTimeCharges: async (): Promise<any[]> => {
+    // Get students with one-time charges fee type
+    const { data: students, error } = await supabase
+      .from('students')
+      .select(`
+        *,
+        universities(name),
+        courses(name),
+        fee_payments!inner(
+          id,
+          amount_due,
+          amount_paid,
+          payment_status,
+          fee_structure_components!inner(
+            id,
+            amount,
+            fee_types!inner(
+              id,
+              name
+            )
+          )
+        )
+      `)
+      .eq('fee_payments.fee_structure_components.fee_types.name', 'One-Time Charges (Medical Checkup, Transport, etc.)')
+      .eq('status', 'active');
+
+    if (error) {
+      console.error('Error fetching students with one-time charges:', error);
+      throw error;
+    }
+
+    // Get customizations for these students
+    const result = [];
+    for (const student of students || []) {
+      const { data: customizations } = await supabase
+        .from('student_fee_customizations')
+        .select('*')
+        .eq('student_id', student.id);
+
+      result.push({
+        ...student,
+        customizations: customizations || []
+      });
+    }
+
+    return result;
+  }
 };
 
 // For backward compatibility, keep the old API name

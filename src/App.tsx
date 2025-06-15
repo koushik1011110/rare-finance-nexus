@@ -47,6 +47,7 @@ import FeesMaster from "./pages/fees/FeesMaster";
 import CollectFees from "./pages/fees/CollectFees";
 import FeeReports from "./pages/fees/FeeReports";
 import PaymentHistory from "./pages/fees/PaymentHistory";
+import OneTimeChargesCustomization from "./pages/fees/OneTimeChargesCustomization";
 
 // Reports Section
 import Reports from "./pages/reports/Reports";
@@ -111,6 +112,7 @@ const App = () => (
             {/* Fees Collection Module */}
             <Route path="/fees/types" element={<ProtectedRoute allowedRoles={['admin', 'finance']}><FeesType /></ProtectedRoute>} />
             <Route path="/fees/master" element={<ProtectedRoute allowedRoles={['admin', 'finance']}><FeesMaster /></ProtectedRoute>} />
+            <Route path="/fees/one-time-charges" element={<ProtectedRoute allowedRoles={['admin', 'finance']}><OneTimeChargesCustomization /></ProtectedRoute>} />
             <Route path="/fees/collect" element={<ProtectedRoute allowedRoles={['admin', 'finance']}><CollectFees /></ProtectedRoute>} />
             <Route path="/fees/reports" element={<ProtectedRoute allowedRoles={['admin', 'finance']}><FeeReports /></ProtectedRoute>} />
             <Route path="/fees/payment-history" element={<ProtectedRoute allowedRoles={['admin', 'finance']}><PaymentHistory /></ProtectedRoute>} />

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
 import PageHeader from "@/components/shared/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -9,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import DataTable, { Column } from "@/components/ui/DataTable";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Edit, Trash, Save, X } from "lucide-react";
+import { Plus, Edit, Trash, Save, X, Settings } from "lucide-react";
 import {
   universitiesAPI,
   coursesAPI,
@@ -31,6 +32,7 @@ interface FeeComponent {
 
 const FeesMaster = () => {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [selectedUniversity, setSelectedUniversity] = useState<string>("");
   const [selectedCourse, setSelectedCourse] = useState<string>("");
   const [structureName, setStructureName] = useState("");
@@ -232,6 +234,16 @@ const FeesMaster = () => {
       <PageHeader
         title="Fees Master"
         description="Create and manage fee structures for universities and courses"
+        actions={
+          <Button 
+            variant="outline" 
+            onClick={() => navigate('/fees/one-time-charges')}
+            className="flex items-center gap-2"
+          >
+            <Settings className="h-4 w-4" />
+            Customize One-Time Charges
+          </Button>
+        }
       />
       
       <div className="space-y-6">

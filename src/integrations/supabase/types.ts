@@ -1079,6 +1079,39 @@ export type Database = {
           },
         ]
       }
+      student_fee_customizations: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          custom_amount: number
+          fee_structure_component_id: number
+          id: number
+          reason: string | null
+          student_id: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          custom_amount: number
+          fee_structure_component_id: number
+          id?: number
+          reason?: string | null
+          student_id: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          custom_amount?: number
+          fee_structure_component_id?: number
+          id?: number
+          reason?: string | null
+          student_id?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       student_hostel_assignments: {
         Row: {
           assigned_date: string
@@ -1430,6 +1463,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      apply_student_fee_customizations: {
+        Args: {
+          p_student_id: number
+          p_fee_structure_component_id: number
+          p_custom_amount: number
+        }
+        Returns: undefined
+      }
       approve_student_application: {
         Args: { application_id: number }
         Returns: undefined
