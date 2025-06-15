@@ -33,6 +33,7 @@ import MessManagement from "./pages/mess/MessManagement";
 
 // Office Expenses
 import OfficeExpenses from "./pages/office/OfficeExpenses";
+import OfficeManagement from "./pages/office/OfficeManagement";
 
 // Salary Management
 import SalaryManagement from "./pages/salary/SalaryManagement";
@@ -98,6 +99,7 @@ const App = () => (
             <Route path="/mess/management" element={<ProtectedRoute allowedRoles={['admin', 'hostel_team']}><MessManagement /></ProtectedRoute>} />
             
             {/* Office Expenses */}
+            <Route path="/office-expenses/management" element={<ProtectedRoute allowedRoles={['admin', 'finance']}><OfficeManagement /></ProtectedRoute>} />
             <Route path="/office-expenses" element={<ProtectedRoute allowedRoles={['admin', 'finance']}><OfficeExpenses /></ProtectedRoute>} />
             
             {/* Salary Management */}

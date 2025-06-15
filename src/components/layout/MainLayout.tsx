@@ -102,7 +102,15 @@ const navItems: NavItem[] = [
       { title: "Mess Management", href: "/mess/management" },
     ]
   },
-  { title: "Office Expenses", href: "/office-expenses", icon: FileText },
+  { 
+    title: "Office Expenses", 
+    href: "/office-expenses", 
+    icon: FileText,
+    subItems: [
+      { title: "Office Management", href: "/office-expenses/management" },
+      { title: "Expenses", href: "/office-expenses" },
+    ]
+  },
   { title: "Salary Management", href: "/salary", icon: Receipt },
   { title: "Personal Expenses", href: "/personal-expenses", icon: Calculator },
   { title: "Reports", href: "/reports", icon: BarChart3 },
