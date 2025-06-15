@@ -4,13 +4,13 @@ import MainLayout from "@/components/layout/MainLayout";
 import PageHeader from "@/components/shared/PageHeader";
 import DataTable from "@/components/ui/DataTable";
 import { Button } from "@/components/ui/button";
-import { Plus, Download, Upload, Eye, Edit, Users } from "lucide-react";
+import { Plus, Download, Upload, Eye, Edit } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
 import DetailViewModal from "@/components/shared/DetailViewModal";
 import EditModal from "@/components/shared/EditModal";
 import AgentForm, { AgentFormData } from "@/components/forms/AgentForm";
-import AgentStudentForm from "@/components/forms/AgentStudentForm";
+
 import { agentsAPI, Agent } from "@/lib/agents-api";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -24,7 +24,7 @@ const AgentManagement = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isAddStudentModalOpen, setIsAddStudentModalOpen] = useState(false);
+  
   const [currentAgent, setCurrentAgent] = useState<Agent | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -81,10 +81,6 @@ const AgentManagement = () => {
     setIsAddModalOpen(true);
   };
 
-  const handleAddStudentForAgent = (agent: Agent) => {
-    setCurrentAgent(agent);
-    setIsAddStudentModalOpen(true);
-  };
 
   const handleSaveAgent = async (formData: AgentFormData) => {
     setIsSubmitting(true);
@@ -125,20 +121,6 @@ const AgentManagement = () => {
     }
   };
 
-  const handleSaveStudent = (studentData: any) => {
-    setIsSubmitting(true);
-    
-    // Simulating API call - logic will be added later
-    setTimeout(() => {
-      toast({
-        title: "Student Added",
-        description: `${studentData.studentName} has been added to ${currentAgent?.name}.`,
-      });
-      
-      setIsSubmitting(false);
-      setIsAddStudentModalOpen(false);
-    }, 1000);
-  };
 
   const handleImport = () => {
     toast({
@@ -203,12 +185,6 @@ const AgentManagement = () => {
             <Button variant="outline" size="sm" onClick={() => handleEditAgent(row)}>
               <Edit className="mr-2 h-4 w-4" />
               Edit
-            </Button>
-          )}
-          {(isAdmin || user?.email === row.email) && (
-            <Button variant="outline" size="sm" onClick={() => handleAddStudentForAgent(row)}>
-              <Users className="mr-2 h-4 w-4" />
-              Add Student
             </Button>
           )}
         </div>
@@ -356,20 +332,6 @@ const AgentManagement = () => {
         </EditModal>
       )}
 
-      {/* Add Student Modal */}
-      {currentAgent && (
-        <EditModal
-          title={`Add Student to ${currentAgent.name}`}
-          isOpen={isAddStudentModalOpen}
-          onClose={() => setIsAddStudentModalOpen(false)}
-        >
-          <AgentStudentForm
-            agentName={currentAgent.name}
-            onSubmit={handleSaveStudent}
-            isSubmitting={isSubmitting}
-          />
-        </EditModal>
-      )}
     </MainLayout>
   );
 };
