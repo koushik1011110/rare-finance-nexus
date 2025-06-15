@@ -13,6 +13,7 @@ import SupabaseDirectStudentForm, { SupabaseDirectStudentFormData } from "@/comp
 import { toast } from "@/hooks/use-toast";
 import { Plus, Edit, Trash, Eye } from "lucide-react";
 import { studentsAPI, universitiesAPI, coursesAPI, academicSessionsAPI, Student, University, Course, AcademicSession } from "@/lib/supabase-database";
+import { supabase } from "@/integrations/supabase/client";
 
 const DirectStudents = () => {
   const [students, setStudents] = useState<Student[]>([]);
@@ -39,7 +40,29 @@ const DirectStudents = () => {
         academicSessionsAPI.getAll(),
       ]);
 
-      setStudents(studentsData);
+      // Fetch credentials for each student
+      const studentsWithCredentials = await Promise.all(
+        studentsData.map(async (student) => {
+          try {
+            const { data: credentials } = await supabase
+              .from('student_credentials')
+              .select('username, password')
+              .eq('student_id', student.id)
+              .single();
+            
+            return { 
+              ...student, 
+              username: credentials?.username, 
+              password: credentials?.password 
+            };
+          } catch (error) {
+            console.error(`Error fetching credentials for student ${student.id}:`, error);
+            return student;
+          }
+        })
+      );
+
+      setStudents(studentsWithCredentials);
       setUniversities(universitiesData);
       setCourses(coursesData);
       setAcademicSessions(sessionsData);

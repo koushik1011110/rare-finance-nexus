@@ -52,6 +52,8 @@ interface Student {
   session_name?: string;
   agent_name?: string;
   agent_id?: number;
+  username?: string;
+  password?: string;
 }
 
 interface StudentProfileModalProps {
@@ -292,6 +294,30 @@ export default function StudentProfileModal({
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">Agent Name</label>
                     <p className="text-sm font-medium">{student.agent_name}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Login Credentials */}
+            {(student.username || student.password) && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <User className="h-5 w-5" />
+                    Login Credentials
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">Username</label>
+                      <p className="text-sm font-medium font-mono">{student.username || "Not generated"}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">Password</label>
+                      <p className="text-sm font-medium font-mono">{student.password || "Not generated"}</p>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
