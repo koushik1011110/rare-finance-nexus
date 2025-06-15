@@ -4,11 +4,9 @@ export interface DashboardStats {
   totalStudents: number;
   totalAgents: number;
   totalUniversities: number;
-  totalHostels: number;
   activeApplications: number;
   totalRevenue: number;
   pendingTasks: number;
-  totalOffices: number;
 }
 
 export const getDashboardStatistics = async (): Promise<DashboardStats> => {
@@ -18,20 +16,16 @@ export const getDashboardStatistics = async (): Promise<DashboardStats> => {
       studentsResult,
       agentsResult,
       universitiesResult,
-      hostelsResult,
       applicationsResult,
       revenueResult,
-      tasksResult,
-      officesResult
+      tasksResult
     ] = await Promise.all([
       supabase.from('students').select('id', { count: 'exact' }),
       supabase.from('agents').select('id', { count: 'exact' }),
       supabase.from('universities').select('id', { count: 'exact' }),
-      supabase.from('hostels').select('id', { count: 'exact' }),
       supabase.from('apply_students').select('id', { count: 'exact' }).eq('status', 'pending'),
       supabase.from('fee_collections').select('amount_paid'),
-      supabase.from('todo_tasks').select('id', { count: 'exact' }).eq('status', 'pending'),
-      supabase.from('offices').select('id', { count: 'exact' })
+      supabase.from('todo_tasks').select('id', { count: 'exact' }).eq('status', 'pending')
     ]);
 
     // Calculate total revenue
@@ -41,11 +35,9 @@ export const getDashboardStatistics = async (): Promise<DashboardStats> => {
       totalStudents: studentsResult.count || 0,
       totalAgents: agentsResult.count || 0,
       totalUniversities: universitiesResult.count || 0,
-      totalHostels: hostelsResult.count || 0,
       activeApplications: applicationsResult.count || 0,
       totalRevenue,
       pendingTasks: tasksResult.count || 0,
-      totalOffices: officesResult.count || 0,
     };
   } catch (error) {
     console.error('Error fetching dashboard statistics:', error);

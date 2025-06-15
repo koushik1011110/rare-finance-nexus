@@ -58,11 +58,9 @@ const Index = () => {
     totalStudents: 0,
     totalAgents: 0,
     totalUniversities: 0,
-    totalHostels: 0,
     activeApplications: 0,
     totalRevenue: 0,
     pendingTasks: 0,
-    totalOffices: 0,
   });
   const [todoStats, setTodoStats] = useState({
     total: 0,
@@ -221,12 +219,6 @@ const Index = () => {
           icon={<Building2 className="h-5 w-5" />}
           variant="default"
         />
-        <StatCard
-          title="Hostels"
-          value={dashboardStats.totalHostels.toLocaleString()}
-          icon={<Home className="h-5 w-5" />}
-          variant="default"
-        />
       </div>
 
       {/* Financial & Task Stats */}
@@ -248,12 +240,6 @@ const Index = () => {
           value={dashboardStats.pendingTasks.toLocaleString()}
           icon={<ClipboardList className="h-5 w-5" />}
           variant="due"
-        />
-        <StatCard
-          title="Offices"
-          value={dashboardStats.totalOffices.toLocaleString()}
-          icon={<Building2 className="h-5 w-5" />}
-          variant="default"
         />
       </div>
       
