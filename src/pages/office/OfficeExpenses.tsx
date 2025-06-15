@@ -17,6 +17,7 @@ import EditModal from "@/components/shared/EditModal";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { officeExpensesAPI, type OfficeExpense } from "@/lib/supabase-database";
+import OfficeExpenseForm from "@/components/forms/OfficeExpenseForm";
 
 const OfficeExpenses = () => {
   const [expenses, setExpenses] = useState<OfficeExpense[]>([]);
@@ -24,6 +25,7 @@ const OfficeExpenses = () => {
   const [selectedLocation, setSelectedLocation] = useState<string>("all");
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
+  const [addModalOpen, setAddModalOpen] = useState(false);
   const [selectedExpense, setSelectedExpense] = useState<OfficeExpense | null>(null);
   const [editedExpense, setEditedExpense] = useState<OfficeExpense | null>(null);
   const [saving, setSaving] = useState(false);
@@ -102,10 +104,7 @@ const OfficeExpenses = () => {
   };
 
   const handleAddExpense = () => {
-    toast({
-      title: "Feature Coming Soon",
-      description: "Add office expense functionality will be available shortly.",
-    });
+    setAddModalOpen(true);
   };
 
   const handleExport = () => {
@@ -306,6 +305,13 @@ const OfficeExpenses = () => {
           </div>
         </DetailViewModal>
       )}
+
+      {/* Add Expense Form */}
+      <OfficeExpenseForm
+        isOpen={addModalOpen}
+        onClose={() => setAddModalOpen(false)}
+        onSuccess={loadExpenses}
+      />
 
       {/* Edit Modal */}
       {editedExpense && (
