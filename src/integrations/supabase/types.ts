@@ -82,6 +82,7 @@ export type Database = {
           id: number
           location: string | null
           name: string
+          payment_status: string | null
           phone: string | null
           status: string | null
           students_count: number | null
@@ -97,6 +98,7 @@ export type Database = {
           id?: number
           location?: string | null
           name: string
+          payment_status?: string | null
           phone?: string | null
           status?: string | null
           students_count?: number | null
@@ -112,6 +114,7 @@ export type Database = {
           id?: number
           location?: string | null
           name?: string
+          payment_status?: string | null
           phone?: string | null
           status?: string | null
           students_count?: number | null

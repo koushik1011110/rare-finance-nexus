@@ -4,7 +4,7 @@ import MainLayout from "@/components/layout/MainLayout";
 import PageHeader from "@/components/shared/PageHeader";
 import DataTable from "@/components/ui/DataTable";
 import { Button } from "@/components/ui/button";
-import { Plus, Download, Upload, Eye, Edit } from "lucide-react";
+import { Plus, Download, Upload, Eye, Edit, DollarSign } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
 import DetailViewModal from "@/components/shared/DetailViewModal";
@@ -79,6 +79,29 @@ const AgentManagement = () => {
 
   const handleAddAgent = () => {
     setIsAddModalOpen(true);
+  };
+
+  const handleUpdatePaymentStatus = async (agent: Agent) => {
+    const newStatus = agent.payment_status === 'Paid' ? 'Unpaid' : 'Paid';
+    
+    try {
+      await agentsAPI.updatePaymentStatus(agent.id, newStatus);
+      
+      toast({
+        title: "Payment Status Updated",
+        description: `${agent.name}'s payment status changed to ${newStatus}.`,
+      });
+      
+      // Reload agents data
+      await loadAgents();
+    } catch (error) {
+      console.error('Error updating payment status:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update payment status.",
+        variant: "destructive",
+      });
+    }
   };
 
 
@@ -176,16 +199,40 @@ const AgentManagement = () => {
       header: "Actions",
       accessorKey: "actions" as "actions",
       cell: (row: Agent) => (
-        <div className="flex space-x-2">
-          <Button variant="outline" size="sm" onClick={() => handleViewAgent(row)}>
-            <Eye className="mr-2 h-4 w-4" />
-            View
-          </Button>
-          {(isAdmin || user?.email === row.email) && (
-            <Button variant="outline" size="sm" onClick={() => handleEditAgent(row)}>
-              <Edit className="mr-2 h-4 w-4" />
-              Edit
+        <div className="flex flex-col space-y-2">
+          <div className="flex space-x-2">
+            <Button variant="outline" size="sm" onClick={() => handleViewAgent(row)}>
+              <Eye className="mr-2 h-4 w-4" />
+              View
             </Button>
+            {(isAdmin || user?.email === row.email) && (
+              <Button variant="outline" size="sm" onClick={() => handleEditAgent(row)}>
+                <Edit className="mr-2 h-4 w-4" />
+                Edit
+              </Button>
+            )}
+          </div>
+          {isAdmin && (
+            <div className="flex items-center space-x-2">
+              <span
+                className={`rounded-full px-2 py-1 text-xs font-medium ${
+                  row.payment_status === "Paid"
+                    ? "bg-green-100 text-green-800"
+                    : "bg-orange-100 text-orange-800"
+                }`}
+              >
+                {row.payment_status}
+              </span>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => handleUpdatePaymentStatus(row)}
+                className="flex items-center"
+              >
+                <DollarSign className="mr-1 h-3 w-3" />
+                Mark as {row.payment_status === 'Paid' ? 'Unpaid' : 'Paid'}
+              </Button>
+            </div>
           )}
         </div>
       ),
@@ -293,7 +340,7 @@ const AgentManagement = () => {
               <p>{currentAgent.commission_rate}%</p>
             </div>
             <div>
-              <h3 className="font-semibold">Total Received</h3>
+              <h3 className="font-semibold">Total Receivable</h3>
               <p>${currentAgent.total_received.toFixed(2)}</p>
             </div>
             <div>

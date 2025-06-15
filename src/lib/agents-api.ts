@@ -49,7 +49,7 @@ export const agentsAPI = {
       return data.map((agent: any) => ({
         ...agent,
         status: agent.status as 'Active' | 'Inactive',
-        payment_status: agent.payment_status as 'Paid' | 'Unpaid' || 'Unpaid'
+        payment_status: (agent.payment_status as 'Paid' | 'Unpaid') || 'Unpaid'
       }));
     } catch (error) {
       console.error('Error fetching agents with commissions:', error);
@@ -71,7 +71,7 @@ export const agentsAPI = {
         total_received: 0,
         commission_due: 0,
         status: agent.status as 'Active' | 'Inactive',
-        payment_status: agent.payment_status as 'Paid' | 'Unpaid' || 'Unpaid'
+        payment_status: (agent.payment_status as 'Paid' | 'Unpaid') || 'Unpaid'
       }));
     }
   },
@@ -99,7 +99,7 @@ export const agentsAPI = {
     return {
       ...data,
       status: data.status as 'Active' | 'Inactive',
-      payment_status: data.payment_status as 'Paid' | 'Unpaid' || 'Unpaid'
+      payment_status: (data.payment_status as 'Paid' | 'Unpaid') || 'Unpaid'
     };
   },
 
@@ -131,7 +131,7 @@ export const agentsAPI = {
     return {
       ...data,
       status: data.status as 'Active' | 'Inactive',
-      payment_status: data.payment_status as 'Paid' | 'Unpaid' || 'Unpaid'
+      payment_status: (data.payment_status as 'Paid' | 'Unpaid') || 'Unpaid'
     };
   },
 
