@@ -17,8 +17,6 @@ interface DashboardStats {
   totalExpenses: number;
   amountReceivable: number;
   universityFeesDue: number;
-  totalStudents: number;
-  totalAgents: number;
 }
 
 interface ChartData {
@@ -68,8 +66,6 @@ const Index = () => {
     totalExpenses: 0,
     amountReceivable: 0,
     universityFeesDue: 0,
-    totalStudents: 0,
-    totalAgents: 0,
   });
   const [cashFlowData, setCashFlowData] = useState<ChartData[]>([]);
   const [sourceData, setSourceData] = useState<any[]>([]);
@@ -91,14 +87,12 @@ const Index = () => {
         messExpensesData,
         feePaymentsData,
         studentsCount,
-        agentsCount,
       ] = await Promise.all([
         supabase.from('fee_collections').select('amount_paid'),
         supabase.from('hostel_expenses').select('amount'),
         supabase.from('mess_expenses').select('amount'),
         supabase.from('fee_payments').select('amount_due, amount_paid, payment_status'),
         supabase.from('students').select('id', { count: 'exact' }),
-        supabase.from('agents').select('id', { count: 'exact' }),
       ]);
 
       // Calculate stats
@@ -116,8 +110,6 @@ const Index = () => {
         totalExpenses,
         amountReceivable,
         universityFeesDue,
-        totalStudents: studentsCount.count || 0,
-        totalAgents: agentsCount.count || 0,
       });
 
       // Generate chart data (last 6 months)
@@ -152,12 +144,6 @@ const Index = () => {
           id: "2",
           title: "Active Students",
           description: `${studentsCount.count || 0} students are currently enrolled`,
-          type: "reminder",
-        },
-        {
-          id: "3",
-          title: "Active Agents",
-          description: `${agentsCount.count || 0} agents are registered`,
           type: "reminder",
         },
       ];
