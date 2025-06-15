@@ -520,7 +520,7 @@ const SalaryManagement = () => {
               basic_salary: selectedSalary.basic_salary.toString(),
               allowances: selectedSalary.allowances.toString(),
               deductions: selectedSalary.deductions.toString(),
-              salary_month: selectedSalary.salary_month,
+              salary_month: selectedSalary.salary_month.substring(0, 7), // Convert YYYY-MM-DD to YYYY-MM
               payment_status: selectedSalary.payment_status,
               payment_date: selectedSalary.payment_date || '',
               payment_method: selectedSalary.payment_method,
