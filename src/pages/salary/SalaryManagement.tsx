@@ -3,7 +3,7 @@ import MainLayout from "@/components/layout/MainLayout";
 import PageHeader from "@/components/shared/PageHeader";
 import DataTable from "@/components/ui/DataTable";
 import { Button } from "@/components/ui/button";
-import { Plus, Download, Eye, Edit, Loader2, DollarSign, Users, TrendingUp, Calendar } from "lucide-react";
+import { Plus, Download, Eye, Trash2, Loader2, DollarSign, Users, TrendingUp, Calendar } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
 import {
@@ -238,10 +238,28 @@ const SalaryManagement = () => {
           <Button 
             variant="outline" 
             size="sm"
-            onClick={() => handleEditSalary(row)}
+            className="text-red-600 border-red-300 hover:bg-red-50"
+            onClick={async () => {
+              if (confirm("Are you sure you want to delete this salary record?")) {
+                try {
+                  await salaryAPI.deleteSalary(row.id);
+                  toast({
+                    title: "Salary Deleted",
+                    description: "Salary record has been deleted successfully.",
+                  });
+                  await loadSalaries();
+                } catch (error) {
+                  toast({
+                    title: "Error",
+                    description: "Failed to delete salary record.",
+                    variant: "destructive",
+                  });
+                }
+              }
+            }}
           >
-            <Edit className="mr-2 h-4 w-4" />
-            Edit
+            <Trash2 className="mr-2 h-4 w-4" />
+            Delete
           </Button>
         </div>
       ),
