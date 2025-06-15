@@ -110,12 +110,12 @@ const App = () => (
             <Route path="/personal-expenses" element={<ProtectedRoute allowedRoles={['admin', 'finance']}><PersonalExpenses /></ProtectedRoute>} />
             
             {/* Fees Collection Module */}
-            <Route path="/fees/types" element={<ProtectedRoute allowedRoles={['admin', 'finance']}><FeesType /></ProtectedRoute>} />
-            <Route path="/fees/master" element={<ProtectedRoute allowedRoles={['admin', 'finance']}><FeesMaster /></ProtectedRoute>} />
+            <Route path="/fees/types" element={<ProtectedRoute allowedRoles={['admin', 'finance', 'agent']}><FeesType /></ProtectedRoute>} />
+            <Route path="/fees/master" element={<ProtectedRoute allowedRoles={['admin', 'finance', 'agent']}><FeesMaster /></ProtectedRoute>} />
             <Route path="/fees/one-time-charges" element={<ProtectedRoute allowedRoles={['admin', 'finance']}><OneTimeChargesCustomization /></ProtectedRoute>} />
-            <Route path="/fees/collect" element={<ProtectedRoute allowedRoles={['admin', 'finance']}><CollectFees /></ProtectedRoute>} />
-            <Route path="/fees/reports" element={<ProtectedRoute allowedRoles={['admin', 'finance']}><FeeReports /></ProtectedRoute>} />
-            <Route path="/fees/payment-history" element={<ProtectedRoute allowedRoles={['admin', 'finance']}><PaymentHistory /></ProtectedRoute>} />
+            <Route path="/fees/collect" element={<ProtectedRoute allowedRoles={['admin', 'finance', 'agent']}><CollectFees /></ProtectedRoute>} />
+            <Route path="/fees/reports" element={<ProtectedRoute allowedRoles={['admin', 'finance', 'agent']}><FeeReports /></ProtectedRoute>} />
+            <Route path="/fees/payment-history" element={<ProtectedRoute allowedRoles={['admin', 'finance', 'agent']}><PaymentHistory /></ProtectedRoute>} />
             
             {/* Reports Section */}
             <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
