@@ -83,7 +83,7 @@ const CollectFees = () => {
     queryFn: () => academicSessionsAPI.getAll(),
   });
 
-  // Filter students and hide one-time fees from agents
+  // Filter students based on search term
   const filteredStudents = studentsWithFees.filter((student: StudentWithFees) => {
     if (!searchTerm) return true;
     const searchLower = searchTerm.toLowerCase();
@@ -91,17 +91,6 @@ const CollectFees = () => {
     const admissionNumber = student.admission_number?.toLowerCase() || '';
     
     return studentName.includes(searchLower) || admissionNumber.includes(searchLower);
-  }).map(student => {
-    // If user is an agent, filter out one-time fees
-    if (user?.role === 'agent') {
-      return {
-        ...student,
-        fee_payments: student.fee_payments.filter(payment => 
-          !payment.fee_structure_components.fee_types.name.toLowerCase().includes('one-time')
-        )
-      };
-    }
-    return student;
   });
 
   const getStatusBadge = (status: string) => {
@@ -214,6 +203,14 @@ const CollectFees = () => {
       header: "Total Due",
       accessorKey: "fee_payments",
       cell: (student: StudentWithFees) => {
+        if (user?.role === 'agent') {
+          // For agents, exclude one-time fees from calculations
+          const filteredPayments = student.fee_payments.filter(payment => 
+            !payment.fee_structure_components.fee_types.name.toLowerCase().includes('one-time')
+          );
+          const totalDue = filteredPayments.reduce((sum, payment) => sum + payment.amount_due, 0);
+          return `$${totalDue.toLocaleString()}`;
+        }
         const totalDue = student.fee_payments.reduce((sum, payment) => sum + payment.amount_due, 0);
         return `$${totalDue.toLocaleString()}`;
       }
@@ -222,6 +219,14 @@ const CollectFees = () => {
       header: "Total Paid",
       accessorKey: "fee_payments",
       cell: (student: StudentWithFees) => {
+        if (user?.role === 'agent') {
+          // For agents, exclude one-time fees from calculations
+          const filteredPayments = student.fee_payments.filter(payment => 
+            !payment.fee_structure_components.fee_types.name.toLowerCase().includes('one-time')
+          );
+          const totalPaid = filteredPayments.reduce((sum, payment) => sum + payment.amount_paid, 0);
+          return `$${totalPaid.toLocaleString()}`;
+        }
         const totalPaid = student.fee_payments.reduce((sum, payment) => sum + payment.amount_paid, 0);
         return `$${totalPaid.toLocaleString()}`;
       }
@@ -230,6 +235,20 @@ const CollectFees = () => {
       header: "Balance",
       accessorKey: "fee_payments",
       cell: (student: StudentWithFees) => {
+        if (user?.role === 'agent') {
+          // For agents, exclude one-time fees from calculations
+          const filteredPayments = student.fee_payments.filter(payment => 
+            !payment.fee_structure_components.fee_types.name.toLowerCase().includes('one-time')
+          );
+          const totalDue = filteredPayments.reduce((sum, payment) => sum + payment.amount_due, 0);
+          const totalPaid = filteredPayments.reduce((sum, payment) => sum + payment.amount_paid, 0);
+          const balance = totalDue - totalPaid;
+          return (
+            <span className={balance > 0 ? "text-red-600 font-medium" : "text-green-600 font-medium"}>
+              ${balance.toLocaleString()}
+            </span>
+          );
+        }
         const totalDue = student.fee_payments.reduce((sum, payment) => sum + payment.amount_due, 0);
         const totalPaid = student.fee_payments.reduce((sum, payment) => sum + payment.amount_paid, 0);
         const balance = totalDue - totalPaid;
@@ -304,6 +323,16 @@ const CollectFees = () => {
           <CardContent>
             <div className="text-2xl font-bold text-red-600">
               ${filteredStudents.reduce((total, student) => {
+                if (user?.role === 'agent') {
+                  // For agents, exclude one-time fees from calculations
+                  const filteredPayments = student.fee_payments.filter(payment => 
+                    !payment.fee_structure_components.fee_types.name.toLowerCase().includes('one-time')
+                  );
+                  const studentBalance = filteredPayments.reduce((sum, payment) => 
+                    sum + (payment.amount_due - payment.amount_paid), 0
+                  );
+                  return total + studentBalance;
+                }
                 const studentBalance = student.fee_payments.reduce((sum, payment) => 
                   sum + (payment.amount_due - payment.amount_paid), 0
                 );
@@ -384,6 +413,8 @@ const CollectFees = () => {
                   .map((feePayment) => {
                     const paymentItem = paymentData.find(p => p.feePaymentId === feePayment.id);
                     const balance = feePayment.amount_due - feePayment.amount_paid;
+                    const isOneTimeFee = feePayment.fee_structure_components?.fee_types?.name.toLowerCase().includes('one-time');
+                    const isAgent = user?.role === 'agent';
                     
                     return (
                       <Card key={feePayment.id} className="p-4">
@@ -393,27 +424,51 @@ const CollectFees = () => {
                             <p className="font-medium">{feePayment.fee_structure_components?.fee_types?.name}</p>
                           </div>
                           <div>
-                            <p className="text-sm text-muted-foreground">Total Due</p>
-                            <p className="font-medium">${feePayment.amount_due.toLocaleString()}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {isAgent && isOneTimeFee ? "Status" : "Total Due"}
+                            </p>
+                            {isAgent && isOneTimeFee ? (
+                              getStatusBadge(feePayment.payment_status)
+                            ) : (
+                              <p className="font-medium">${feePayment.amount_due.toLocaleString()}</p>
+                            )}
                           </div>
                           <div>
-                            <p className="text-sm text-muted-foreground">Balance</p>
-                            <p className="font-medium text-red-600">${balance.toLocaleString()}</p>
+                            {isAgent && isOneTimeFee ? (
+                              <div>
+                                <p className="text-sm text-muted-foreground">View Only</p>
+                                <p className="text-sm text-muted-foreground">No Amount Access</p>
+                              </div>
+                            ) : (
+                              <div>
+                                <p className="text-sm text-muted-foreground">Balance</p>
+                                <p className="font-medium text-red-600">${balance.toLocaleString()}</p>
+                              </div>
+                            )}
                           </div>
                           <div>
-                            <p className="text-sm text-muted-foreground">Collect Amount</p>
-                            <Input
-                              type="number"
-                              min="0"
-                              max={balance}
-                              value={paymentItem?.amount || ''}
-                              onChange={(e) => updatePaymentAmount(feePayment.id, parseFloat(e.target.value) || 0)}
-                              className="w-full"
-                              placeholder="0"
-                            />
+                            {isAgent && isOneTimeFee ? (
+                              <div>
+                                <p className="text-sm text-muted-foreground">Not Available</p>
+                                <p className="text-sm text-muted-foreground">Contact Admin</p>
+                              </div>
+                            ) : (
+                              <div>
+                                <p className="text-sm text-muted-foreground">Collect Amount</p>
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  max={balance}
+                                  value={paymentItem?.amount || ''}
+                                  onChange={(e) => updatePaymentAmount(feePayment.id, parseFloat(e.target.value) || 0)}
+                                  className="w-full"
+                                  placeholder="0"
+                                />
+                              </div>
+                            )}
                           </div>
                           <div>
-                            {paymentItem && paymentItem.amount > 0 && (
+                            {paymentItem && paymentItem.amount > 0 && !(isAgent && isOneTimeFee) && (
                               <InvoiceGenerator
                                 invoiceData={{
                                   student: {
