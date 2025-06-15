@@ -149,7 +149,10 @@ const TodoCalendar = () => {
 
   // Get dates that have tasks for calendar highlighting
   const getTaskDates = () => {
-    return tasks.map(task => new Date(task.due_date));
+    return tasks.map(task => {
+      const [year, month, day] = task.due_date.split('-').map(Number);
+      return new Date(year, month - 1, day);
+    });
   };
 
   if (!user) {
