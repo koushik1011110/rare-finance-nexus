@@ -148,7 +148,7 @@ const AgentManagement = () => {
       cell: (row: Agent) => `${row.commission_rate}%`
     },
     { 
-      header: "Total Received", 
+      header: "Total Receivable", 
       accessorKey: "total_received" as keyof Agent,
       cell: (row: Agent) => `$${row.total_received.toFixed(2)}`
     },

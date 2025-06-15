@@ -13,6 +13,7 @@ export interface Agent {
   total_received: number;
   commission_due: number;
   status: 'Active' | 'Inactive';
+  payment_status: 'Paid' | 'Unpaid';
   created_at: string;
   updated_at: string;
 }
@@ -47,7 +48,8 @@ export const agentsAPI = {
       
       return data.map((agent: any) => ({
         ...agent,
-        status: agent.status as 'Active' | 'Inactive'
+        status: agent.status as 'Active' | 'Inactive',
+        payment_status: agent.payment_status as 'Paid' | 'Unpaid' || 'Unpaid'
       }));
     } catch (error) {
       console.error('Error fetching agents with commissions:', error);
@@ -68,7 +70,8 @@ export const agentsAPI = {
         students_count: 0,
         total_received: 0,
         commission_due: 0,
-        status: agent.status as 'Active' | 'Inactive'
+        status: agent.status as 'Active' | 'Inactive',
+        payment_status: agent.payment_status as 'Paid' | 'Unpaid' || 'Unpaid'
       }));
     }
   },
@@ -95,7 +98,8 @@ export const agentsAPI = {
     
     return {
       ...data,
-      status: data.status as 'Active' | 'Inactive'
+      status: data.status as 'Active' | 'Inactive',
+      payment_status: data.payment_status as 'Paid' | 'Unpaid' || 'Unpaid'
     };
   },
 
@@ -126,7 +130,8 @@ export const agentsAPI = {
     
     return {
       ...data,
-      status: data.status as 'Active' | 'Inactive'
+      status: data.status as 'Active' | 'Inactive',
+      payment_status: data.payment_status as 'Paid' | 'Unpaid' || 'Unpaid'
     };
   },
 
@@ -140,5 +145,28 @@ export const agentsAPI = {
       console.error('Error deleting agent:', error);
       throw error;
     }
+  },
+
+  updatePaymentStatus: async (id: number, paymentStatus: 'Paid' | 'Unpaid'): Promise<Agent> => {
+    const { data, error } = await supabase
+      .from('agents')
+      .update({ 
+        payment_status: paymentStatus,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Error updating payment status:', error);
+      throw error;
+    }
+    
+    return {
+      ...data,
+      status: data.status as 'Active' | 'Inactive',
+      payment_status: data.payment_status as 'Paid' | 'Unpaid'
+    };
   },
 };
