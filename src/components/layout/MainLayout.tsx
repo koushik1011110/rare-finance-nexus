@@ -46,7 +46,7 @@ type NavItem = {
   title: string;
   href: string;
   icon: React.ElementType;
-  subItems?: { title: string; href: string }[];
+  subItems?: { title: string; href: string; allowedRoles?: string[] }[];
   allowedRoles?: string[];
 };
 
@@ -62,11 +62,11 @@ const allNavItems: NavItem[] = [
     icon: DollarSign,
     allowedRoles: ['admin', 'finance', 'agent'],
     subItems: [
-      { title: "Fees Type", href: "/fees/types" },
-      { title: "Fees Master", href: "/fees/master" },
-      { title: "Collect Fees", href: "/fees/collect" },
-      { title: "Fees Report", href: "/fees/reports" },
-      { title: "Payment History", href: "/fees/payment-history" },
+      { title: "Fees Type", href: "/fees/types", allowedRoles: ['admin', 'finance'] },
+      { title: "Fees Master", href: "/fees/master", allowedRoles: ['admin', 'finance'] },
+      { title: "Collect Fees", href: "/fees/collect", allowedRoles: ['admin', 'finance', 'agent'] },
+      { title: "Fees Report", href: "/fees/reports", allowedRoles: ['admin', 'finance', 'agent'] },
+      { title: "Payment History", href: "/fees/payment-history", allowedRoles: ['admin', 'finance', 'agent'] },
     ]
   },
   { 
@@ -238,7 +238,13 @@ export default function MainLayout({ children }: MainLayoutProps) {
                     </button>
                     {(sidebarOpen && (expandedItems.includes(item.title) || location.pathname.startsWith(item.href))) && (
                       <ul className="ml-6 mt-1 space-y-1">
-                        {item.subItems.map((subItem) => (
+                        {item.subItems
+                          .filter(subItem => {
+                            if (!subItem.allowedRoles) return true; // Show to all users if no role restriction
+                            if (!user) return false;
+                            return user.role === 'admin' || subItem.allowedRoles.includes(user.role);
+                          })
+                          .map((subItem) => (
                           <li key={subItem.title}>
                             <Link
                               to={subItem.href}
