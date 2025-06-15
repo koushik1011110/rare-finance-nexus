@@ -3,7 +3,7 @@ import MainLayout from "@/components/layout/MainLayout";
 import PageHeader from "@/components/shared/PageHeader";
 import DataTable from "@/components/ui/DataTable";
 import { Button } from "@/components/ui/button";
-import { Plus, Download, Eye, Edit, Loader2, DollarSign, Users, TrendingUp, Calendar } from "lucide-react";
+import { Plus, Download, Eye, Edit, Loader2, DollarSign, Users, TrendingUp, Calendar, UserPlus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
 import {
@@ -17,6 +17,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import DetailViewModal from "@/components/shared/DetailViewModal";
 import EditModal from "@/components/shared/EditModal";
 import SalaryForm from "@/components/forms/SalaryForm";
+import BulkSalaryForm from "@/components/forms/BulkSalaryForm";
 import { salaryAPI, type StaffSalary, type SalaryFormData } from "@/lib/salary-api";
 
 const SalaryManagement = () => {
@@ -28,6 +29,7 @@ const SalaryManagement = () => {
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [addModalOpen, setAddModalOpen] = useState(false);
+  const [bulkAddModalOpen, setBulkAddModalOpen] = useState(false);
   const [selectedSalary, setSelectedSalary] = useState<StaffSalary | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -78,6 +80,34 @@ const SalaryManagement = () => {
 
   const handleAddSalary = () => {
     setAddModalOpen(true);
+  };
+
+  const handleBulkAddSalary = () => {
+    setBulkAddModalOpen(true);
+  };
+
+  const handleBulkSaveSalary = async (staffIds: string[], formData: Omit<SalaryFormData, 'id' | 'staff_id'>) => {
+    setIsSubmitting(true);
+    
+    try {
+      const results = await salaryAPI.createBulkSalaries(staffIds, formData);
+      toast({
+        title: "Bulk Salaries Added",
+        description: `Successfully created ${results.length} salary records.`,
+      });
+      
+      await loadSalaries();
+      setBulkAddModalOpen(false);
+    } catch (error) {
+      console.error('Error saving bulk salaries:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save salary data.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleSaveSalary = async (formData: SalaryFormData) => {
@@ -263,6 +293,10 @@ const SalaryManagement = () => {
             <Button variant="outline" size="sm" onClick={handleExport}>
               <Download className="mr-2 h-4 w-4" />
               Export
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleBulkAddSalary}>
+              <UserPlus className="mr-2 h-4 w-4" />
+              Bulk Add
             </Button>
             <Button variant="default" size="sm" onClick={handleAddSalary}>
               <Plus className="mr-2 h-4 w-4" />
@@ -525,6 +559,18 @@ const SalaryManagement = () => {
           />
         </EditModal>
       )}
+
+      {/* Bulk Add Salary Modal */}
+      <EditModal
+        title="Add Bulk Salaries"
+        isOpen={bulkAddModalOpen}
+        onClose={() => setBulkAddModalOpen(false)}
+      >
+        <BulkSalaryForm 
+          onSubmit={handleBulkSaveSalary}
+          isSubmitting={isSubmitting}
+        />
+      </EditModal>
     </MainLayout>
   );
 };
