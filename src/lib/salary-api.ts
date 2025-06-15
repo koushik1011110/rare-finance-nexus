@@ -146,7 +146,7 @@ export const salaryAPI = {
         basic_salary: parseFloat(salaryData.basic_salary),
         allowances: parseFloat(salaryData.allowances),
         deductions: parseFloat(salaryData.deductions),
-        salary_month: salaryData.salary_month,
+        salary_month: salaryData.salary_month + '-01', // Convert YYYY-MM to YYYY-MM-01
         payment_status: salaryData.payment_status,
         payment_date: salaryData.payment_date || null,
         payment_method: salaryData.payment_method,
@@ -185,7 +185,7 @@ export const salaryAPI = {
     if (salaryData.basic_salary) updateData.basic_salary = parseFloat(salaryData.basic_salary);
     if (salaryData.allowances) updateData.allowances = parseFloat(salaryData.allowances);
     if (salaryData.deductions) updateData.deductions = parseFloat(salaryData.deductions);
-    if (salaryData.salary_month) updateData.salary_month = salaryData.salary_month;
+    if (salaryData.salary_month) updateData.salary_month = salaryData.salary_month.includes('-01') ? salaryData.salary_month : salaryData.salary_month + '-01';
     if (salaryData.payment_status) updateData.payment_status = salaryData.payment_status;
     if (salaryData.payment_date !== undefined) updateData.payment_date = salaryData.payment_date || null;
     if (salaryData.payment_method) updateData.payment_method = salaryData.payment_method;
@@ -302,5 +302,46 @@ export const salaryAPI = {
     }
 
     return data;
+  },
+
+  // Create bulk salary records
+  createBulkSalaries: async (staffIds: string[], salaryData: Omit<SalaryFormData, 'id' | 'staff_id'>): Promise<StaffSalary[]> => {
+    const bulkInserts = staffIds.map(staffId => ({
+      staff_id: parseInt(staffId),
+      basic_salary: parseFloat(salaryData.basic_salary),
+      allowances: parseFloat(salaryData.allowances),
+      deductions: parseFloat(salaryData.deductions),
+      salary_month: salaryData.salary_month + '-01',
+      payment_status: salaryData.payment_status,
+      payment_date: salaryData.payment_date || null,
+      payment_method: salaryData.payment_method,
+      notes: salaryData.notes || null,
+    }));
+
+    const { data, error } = await supabase
+      .from('staff_salaries')
+      .insert(bulkInserts)
+      .select(`
+        *,
+        users (
+          id,
+          first_name,
+          last_name,
+          email,
+          role,
+          is_active
+        )
+      `);
+
+    if (error) {
+      console.error('Error creating bulk salaries:', error);
+      throw error;
+    }
+
+    return (data || []).map(salary => ({
+      ...salary,
+      payment_status: salary.payment_status as StaffSalary['payment_status'],
+      payment_method: salary.payment_method as StaffSalary['payment_method']
+    }));
   },
 };
