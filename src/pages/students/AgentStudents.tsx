@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import PageHeader from "@/components/shared/PageHeader";
@@ -215,7 +216,7 @@ const AgentStudents = () => {
         agentId = agentData?.id;
       }
 
-      // Prepare student data, removing id for new students
+      // Prepare student data for apply_students table
       const studentData = {
         first_name: formData.first_name,
         last_name: formData.last_name,
@@ -227,26 +228,36 @@ const AgentStudents = () => {
         university_id: formData.university_id,
         course_id: formData.course_id,
         academic_session_id: formData.academic_session_id,
-        status: formData.status,
+        status: 'pending',
         city: formData.city || null,
         country: formData.country || null,
         address: formData.address || null,
         aadhaar_number: formData.aadhaar_number || null,
         passport_number: formData.passport_number || null,
-        seat_number: formData.seat_number || null,
         scores: formData.scores || null,
         twelfth_marks: formData.twelfth_marks || null,
         photo_url: formData.photo_url || null,
         passport_copy_url: formData.passport_copy_url || null,
         aadhaar_copy_url: formData.aadhaar_copy_url || null,
         twelfth_certificate_url: formData.twelfth_certificate_url || null,
+        parents_phone_number: formData.parents_phone_number || null,
+        tenth_passing_year: formData.tenth_passing_year || null,
+        twelfth_passing_year: formData.twelfth_passing_year || null,
+        neet_passing_year: formData.neet_passing_year || null,
+        tenth_marksheet_number: formData.tenth_marksheet_number || null,
+        pcb_average: formData.pcb_average || null,
+        neet_roll_number: formData.neet_roll_number || null,
+        qualification_status: formData.qualification_status || null,
+        neet_score_card_url: formData.neet_score_card_url || null,
+        tenth_marksheet_url: formData.tenth_marksheet_url || null,
+        affidavit_paper_url: formData.affidavit_paper_url || null,
         agent_id: agentId,
       };
 
       if (formData.id) {
         // Update existing student
         const { error } = await supabase
-          .from('students')
+          .from('apply_students')
           .update({
             ...studentData,
             updated_at: new Date().toISOString()
@@ -257,20 +268,20 @@ const AgentStudents = () => {
           console.error('Error updating student:', error);
           toast({
             title: "Error",
-            description: `Failed to update student: ${error.message}`,
+            description: `Failed to update applicant: ${error.message}`,
             variant: "destructive",
           });
           return;
         }
         
         toast({
-          title: "Student Updated",
+          title: "Applicant Updated",
           description: `${formData.first_name} ${formData.last_name} has been updated successfully.`,
         });
       } else {
-        // Add new student
+        // Add new student to apply_students table
         const { data, error } = await supabase
-          .from('students')
+          .from('apply_students')
           .insert([studentData])
           .select();
 
@@ -278,43 +289,14 @@ const AgentStudents = () => {
           console.error('Error creating student:', error);
           toast({
             title: "Error",
-            description: `Failed to add student: ${error.message}`,
+            description: `Failed to add applicant: ${error.message}`,
             variant: "destructive",
           });
           return;
         }
-
-        // Create credentials for the new student
-        if (data && data[0]) {
-          try {
-            // Check if credentials already exist
-            const { data: existingCredentials } = await supabase
-              .from('student_credentials')
-              .select('id')
-              .eq('student_id', data[0].id)
-              .single();
-
-            if (!existingCredentials) {
-              // Generate username and password
-              const username = `${formData.first_name.slice(0,3).toLowerCase()}${formData.last_name.slice(0,3).toLowerCase()}${data[0].id}`;
-              const password = Math.random().toString(36).slice(-10);
-
-              await supabase
-                .from('student_credentials')
-                .insert([{
-                  student_id: data[0].id,
-                  username: username,
-                  password: password
-                }]);
-            }
-          } catch (credError) {
-            console.warn('Credentials creation failed:', credError);
-            // Don't fail the whole operation if credentials creation fails
-          }
-        }
         
         toast({
-          title: "Student Added",
+          title: "Applicant Added",
           description: `${formData.first_name} ${formData.last_name} has been added successfully.`,
         });
       }
@@ -328,7 +310,7 @@ const AgentStudents = () => {
       console.error('Error saving student:', error);
       toast({
         title: "Error",
-        description: "Failed to save student. Please try again.",
+        description: "Failed to save applicant. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -488,13 +470,11 @@ const AgentStudents = () => {
               university_id: currentStudent.university_id,
               course_id: currentStudent.course_id,
               academic_session_id: currentStudent.academic_session_id,
-              status: currentStudent.status as "active" | "inactive" | "completed",
               city: currentStudent.city,
               country: currentStudent.country,
               address: currentStudent.address,
               aadhaar_number: currentStudent.aadhaar_number,
               passport_number: currentStudent.passport_number,
-              seat_number: currentStudent.seat_number,
               scores: currentStudent.scores,
               twelfth_marks: currentStudent.twelfth_marks,
               photo_url: currentStudent.photo_url,
