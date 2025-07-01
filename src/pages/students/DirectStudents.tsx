@@ -6,21 +6,62 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import DataTable, { Column } from "@/components/ui/DataTable";
 import { Badge } from "@/components/ui/badge";
-import DetailViewModal from "@/components/shared/DetailViewModal";
 import StudentProfileModal from "@/components/students/StudentProfileModal";
 import EditModal from "@/components/shared/EditModal";
-import SupabaseDirectStudentForm, { SupabaseDirectStudentFormData } from "@/components/forms/SupabaseDirectStudentForm";
+import ComprehensiveStudentForm, { ComprehensiveStudentFormData } from "@/components/forms/ComprehensiveStudentForm";
 import { toast } from "@/hooks/use-toast";
 import { Plus, Edit, Trash, Eye } from "lucide-react";
-import { studentsAPI, universitiesAPI, coursesAPI, academicSessionsAPI, Student, University, Course, AcademicSession } from "@/lib/supabase-database";
+import { universitiesAPI, coursesAPI, academicSessionsAPI, University, Course, AcademicSession } from "@/lib/supabase-database";
 import { supabase } from "@/integrations/supabase/client";
 
+interface ApplyStudent {
+  id: number;
+  first_name: string;
+  last_name: string;
+  father_name: string;
+  mother_name: string;
+  date_of_birth: string;
+  phone_number?: string;
+  email?: string;
+  university_id: number;
+  course_id: number;
+  academic_session_id: number;
+  status: string;
+  admission_number?: string;
+  city?: string;
+  country?: string;
+  address?: string;
+  aadhaar_number?: string;
+  passport_number?: string;
+  seat_number?: string;
+  scores?: string;
+  twelfth_marks?: number;
+  agent_id?: number;
+  photo_url?: string;
+  passport_copy_url?: string;
+  aadhaar_copy_url?: string;
+  twelfth_certificate_url?: string;
+  parents_phone_number?: string;
+  tenth_passing_year?: string;
+  twelfth_passing_year?: string;
+  neet_passing_year?: string;
+  tenth_marksheet_number?: string;
+  pcb_average?: number;
+  neet_roll_number?: string;
+  qualification_status?: string;
+  neet_score_card_url?: string;
+  tenth_marksheet_url?: string;
+  affidavit_paper_url?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
 const DirectStudents = () => {
-  const [students, setStudents] = useState<Student[]>([]);
+  const [students, setStudents] = useState<ApplyStudent[]>([]);
   const [universities, setUniversities] = useState<University[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
   const [academicSessions, setAcademicSessions] = useState<AcademicSession[]>([]);
-  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  const [selectedStudent, setSelectedStudent] = useState<ApplyStudent | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -34,35 +75,15 @@ const DirectStudents = () => {
     try {
       setLoading(true);
       const [studentsData, universitiesData, coursesData, sessionsData] = await Promise.all([
-        studentsAPI.getAll(),
+        supabase.from('apply_students').select('*'),
         universitiesAPI.getAll(),
         coursesAPI.getAll(),
         academicSessionsAPI.getAll(),
       ]);
 
-      // Fetch credentials for each student
-      const studentsWithCredentials = await Promise.all(
-        studentsData.map(async (student) => {
-          try {
-            const { data: credentials } = await supabase
-              .from('student_credentials')
-              .select('username, password')
-              .eq('student_id', student.id)
-              .single();
-            
-            return { 
-              ...student, 
-              username: credentials?.username, 
-              password: credentials?.password 
-            };
-          } catch (error) {
-            console.error(`Error fetching credentials for student ${student.id}:`, error);
-            return student;
-          }
-        })
-      );
+      if (studentsData.error) throw studentsData.error;
 
-      setStudents(studentsWithCredentials);
+      setStudents(studentsData.data || []);
       setUniversities(universitiesData);
       setCourses(coursesData);
       setAcademicSessions(sessionsData);
@@ -78,21 +99,41 @@ const DirectStudents = () => {
     }
   };
 
-  const handleAddStudent = async (studentData: SupabaseDirectStudentFormData) => {
+  const handleAddStudent = async (studentData: ComprehensiveStudentFormData) => {
     try {
       setIsSubmitting(true);
-      const newStudent = await studentsAPI.create(studentData);
+      
+      // Get default course and session IDs
+      const defaultCourse = courses.find(c => c.name === 'MBBS');
+      const defaultSession = academicSessions.find(s => s.session_name === '2025-26');
+      
+      const dataToInsert = {
+        ...studentData,
+        university_id: studentData.university_id || undefined,
+        course_id: studentData.course_id || defaultCourse?.id || undefined,
+        academic_session_id: studentData.academic_session_id || defaultSession?.id || undefined,
+        status: 'pending'
+      };
+
+      const { data: newStudent, error } = await supabase
+        .from('apply_students')
+        .insert(dataToInsert)
+        .select()
+        .single();
+
+      if (error) throw error;
+
       setStudents(prev => [newStudent, ...prev]);
       toast({
-        title: "Student Added",
-        description: `${newStudent.first_name} ${newStudent.last_name} has been added successfully with admission number ${newStudent.admission_number}.`,
+        title: "Applicant Added",
+        description: `${newStudent.first_name} ${newStudent.last_name} has been added successfully.`,
       });
       setIsEditModalOpen(false);
     } catch (error) {
       console.error('Error adding student:', error);
       toast({
         title: "Error",
-        description: "Failed to add student.",
+        description: "Failed to add applicant.",
         variant: "destructive",
       });
     } finally {
@@ -100,17 +141,26 @@ const DirectStudents = () => {
     }
   };
 
-  const handleEditStudent = async (studentData: SupabaseDirectStudentFormData) => {
+  const handleEditStudent = async (studentData: ComprehensiveStudentFormData) => {
     if (!selectedStudent) return;
     
     try {
       setIsSubmitting(true);
-      const updatedStudent = await studentsAPI.update(selectedStudent.id, studentData);
+      
+      const { data: updatedStudent, error } = await supabase
+        .from('apply_students')
+        .update(studentData)
+        .eq('id', selectedStudent.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
       setStudents(prev => prev.map(student => 
         student.id === selectedStudent.id ? updatedStudent : student
       ));
       toast({
-        title: "Student Updated",
+        title: "Applicant Updated",
         description: `${updatedStudent.first_name} ${updatedStudent.last_name} has been updated successfully.`,
       });
       setIsEditModalOpen(false);
@@ -119,7 +169,7 @@ const DirectStudents = () => {
       console.error('Error updating student:', error);
       toast({
         title: "Error",
-        description: "Failed to update student.",
+        description: "Failed to update applicant.",
         variant: "destructive",
       });
     } finally {
@@ -129,28 +179,34 @@ const DirectStudents = () => {
 
   const handleDeleteStudent = async (id: number) => {
     try {
-      await studentsAPI.delete(id);
+      const { error } = await supabase
+        .from('apply_students')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
       setStudents(prev => prev.filter(student => student.id !== id));
       toast({
-        title: "Student Deleted",
-        description: "Student has been deleted successfully.",
+        title: "Applicant Deleted",
+        description: "Applicant has been deleted successfully.",
       });
     } catch (error) {
       console.error('Error deleting student:', error);
       toast({
         title: "Error",
-        description: "Failed to delete student.",
+        description: "Failed to delete applicant.",
         variant: "destructive",
       });
     }
   };
 
-  const handleViewDetails = (student: Student) => {
+  const handleViewDetails = (student: ApplyStudent) => {
     setSelectedStudent(student);
     setIsDetailModalOpen(true);
   };
 
-  const handleEditClick = (student: Student) => {
+  const handleEditClick = (student: ApplyStudent) => {
     setSelectedStudent(student);
     setIsEditModalOpen(true);
   };
@@ -169,12 +225,12 @@ const DirectStudents = () => {
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
-      active: { variant: "default" as const, color: "text-green-600" },
-      inactive: { variant: "secondary" as const, color: "text-gray-600" },
-      completed: { variant: "outline" as const, color: "text-blue-600" }
+      pending: { variant: "secondary" as const, color: "text-yellow-600" },
+      approved: { variant: "default" as const, color: "text-green-600" },
+      rejected: { variant: "destructive" as const, color: "text-red-600" }
     };
     
-    const config = statusConfig[status as keyof typeof statusConfig];
+    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.pending;
     return (
       <Badge variant={config.variant} className={config.color}>
         {status.charAt(0).toUpperCase() + status.slice(1)}
@@ -182,18 +238,18 @@ const DirectStudents = () => {
     );
   };
 
-  const columns: Column<Student>[] = [
+  const columns: Column<ApplyStudent>[] = [
     { 
-      header: "Admission No.", 
-      accessorKey: "admission_number",
-      cell: (student: Student) => (
-        <span className="font-mono text-sm">{student.admission_number || 'N/A'}</span>
+      header: "Application ID", 
+      accessorKey: "id",
+      cell: (student: ApplyStudent) => (
+        <span className="font-mono text-sm">#{student.id}</span>
       )
     },
     { 
       header: "Name", 
       accessorKey: "first_name",
-      cell: (student: Student) => `${student.first_name} ${student.last_name}`
+      cell: (student: ApplyStudent) => `${student.first_name} ${student.last_name}`
     },
     { 
       header: "Father's Name", 
@@ -202,22 +258,22 @@ const DirectStudents = () => {
     { 
       header: "University", 
       accessorKey: "university_id",
-      cell: (student: Student) => getUniversityName(student.university_id)
+      cell: (student: ApplyStudent) => getUniversityName(student.university_id)
     },
     { 
       header: "Course", 
       accessorKey: "course_id",
-      cell: (student: Student) => getCourseName(student.course_id)
+      cell: (student: ApplyStudent) => getCourseName(student.course_id)
     },
     {
       header: "Status",
       accessorKey: "status",
-      cell: (student: Student) => getStatusBadge(student.status)
+      cell: (student: ApplyStudent) => getStatusBadge(student.status)
     },
     {
       header: "Actions",
       accessorKey: "actions",
-      cell: (student: Student) => (
+      cell: (student: ApplyStudent) => (
         <div className="flex space-x-2">
           <Button
             size="sm"
@@ -249,8 +305,8 @@ const DirectStudents = () => {
     return (
       <MainLayout>
         <PageHeader
-          title="Direct Students"
-          description="Manage students admitted directly to universities"
+          title="All Applicants"
+          description="Manage student applications and admissions"
         />
         <div>Loading...</div>
       </MainLayout>
@@ -306,7 +362,7 @@ const DirectStudents = () => {
           setSelectedStudent(null);
         }}
       >
-        <SupabaseDirectStudentForm
+        <ComprehensiveStudentForm
           initialData={selectedStudent ? {
             id: selectedStudent.id,
             first_name: selectedStudent.first_name,
@@ -319,7 +375,20 @@ const DirectStudents = () => {
             university_id: selectedStudent.university_id,
             course_id: selectedStudent.course_id,
             academic_session_id: selectedStudent.academic_session_id,
-            status: selectedStudent.status,
+            status: "active",
+            city: selectedStudent.city,
+            country: selectedStudent.country,
+            address: selectedStudent.address,
+            aadhaar_number: selectedStudent.aadhaar_number,
+            passport_number: selectedStudent.passport_number,
+            seat_number: selectedStudent.seat_number,
+            scores: selectedStudent.scores,
+            twelfth_marks: selectedStudent.twelfth_marks,
+            agent_id: selectedStudent.agent_id,
+            photo_url: selectedStudent.photo_url,
+            passport_copy_url: selectedStudent.passport_copy_url,
+            aadhaar_copy_url: selectedStudent.aadhaar_copy_url,
+            twelfth_certificate_url: selectedStudent.twelfth_certificate_url,
           } : undefined}
           onSubmit={selectedStudent ? handleEditStudent : handleAddStudent}
           isSubmitting={isSubmitting}

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -82,7 +81,7 @@ const allNavItems: NavItem[] = [
     ]
   },
   { 
-    title: "Agents", 
+    title: "Profile", 
     href: "/agents", 
     icon: Users
   },
