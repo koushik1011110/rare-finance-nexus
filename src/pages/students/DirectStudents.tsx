@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import PageHeader from "@/components/shared/PageHeader";
@@ -248,7 +249,7 @@ const DirectStudents = () => {
     return (
       <MainLayout>
         <PageHeader
-          title="All Applicants"
+          title="Direct Students"
           description="Manage students admitted directly to universities"
         />
         <div>Loading...</div>
@@ -259,7 +260,7 @@ const DirectStudents = () => {
   return (
     <MainLayout>
       <PageHeader
-        title="All Applicants"
+        title="Direct Students"
         description="Manage students admitted directly to universities"
       />
       
@@ -267,7 +268,7 @@ const DirectStudents = () => {
         <CardHeader>
           <div className="flex justify-between items-center">
             <div>
-              <CardTitle>Applicant List</CardTitle>
+              <CardTitle>Student List</CardTitle>
               <CardDescription>
                 All students admitted directly to universities
               </CardDescription>
@@ -277,7 +278,7 @@ const DirectStudents = () => {
               setIsEditModalOpen(true);
             }}>
               <Plus className="mr-2 h-4 w-4" />
-              Add New Applicant
+              Add New Student
             </Button>
           </div>
         </CardHeader>
@@ -298,7 +299,7 @@ const DirectStudents = () => {
       />
 
       <EditModal
-        title={selectedStudent ? "Edit Applicant" : "Add New Applicant"}
+        title={selectedStudent ? "Edit Student" : "Add New Student"}
         isOpen={isEditModalOpen}
         onClose={() => {
           setIsEditModalOpen(false);
