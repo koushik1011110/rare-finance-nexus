@@ -60,13 +60,13 @@ const allNavItems: NavItem[] = [
     title: "Fees Collection", 
     href: "/fees", 
     icon: DollarSign,
-    allowedRoles: ['admin', 'finance', 'agent'],
+    allowedRoles: ['admin', 'finance'],
     subItems: [
       { title: "Fees Type", href: "/fees/types", allowedRoles: ['admin', 'finance'] },
       { title: "Fees Master", href: "/fees/master", allowedRoles: ['admin', 'finance'] },
-      { title: "Collect Fees", href: "/fees/collect", allowedRoles: ['admin', 'finance', 'agent'] },
-      { title: "Fees Report", href: "/fees/reports", allowedRoles: ['admin', 'finance', 'agent'] },
-      { title: "Payment History", href: "/fees/payment-history", allowedRoles: ['admin', 'finance', 'agent'] },
+      { title: "Collect Fees", href: "/fees/collect", allowedRoles: ['admin', 'finance'] },
+      { title: "Fees Report", href: "/fees/reports", allowedRoles: ['admin', 'finance'] },
+      { title: "Payment History", href: "/fees/payment-history", allowedRoles: ['admin', 'finance'] },
     ]
   },
   { 
@@ -74,7 +74,7 @@ const allNavItems: NavItem[] = [
     href: "/students", 
     icon: GraduationCap,
     subItems: [
-      { title: "Direct Students", href: "/students/direct" },
+      { title: "All Applicants", href: "/students/direct" },
       { title: "Agent Students", href: "/students/agent" },
       { title: "Application", href: "/students/application" },
       { title: "Character", href: "/students/character" },
@@ -124,7 +124,12 @@ const allNavItems: NavItem[] = [
   { title: "Salary Management", href: "/salary", icon: Receipt, allowedRoles: ['admin', 'finance'] },
   { title: "Personal Expenses", href: "/personal-expenses", icon: Calculator, allowedRoles: ['admin', 'finance'] },
   { title: "Reports", href: "/reports", icon: BarChart3, allowedRoles: ['admin', 'finance'] },
-  { title: "Settings", href: "/settings", icon: Settings },
+  { 
+    title: "Settings", 
+    href: "/settings", 
+    icon: Settings,
+    allowedRoles: ['admin', 'finance', 'hostel_team']
+  },
   { title: "Staff", href: "/staff", icon: UserPlus, allowedRoles: ['admin'] },
 ];
 

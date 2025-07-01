@@ -260,17 +260,17 @@ const DirectStudents = () => {
   return (
     <MainLayout>
       <PageHeader
-        title="Direct Students"
-        description="Manage students admitted directly to universities"
+        title="All Applicants"
+        description="Manage student applications and admissions"
       />
       
       <Card>
         <CardHeader>
           <div className="flex justify-between items-center">
             <div>
-              <CardTitle>Student List</CardTitle>
+              <CardTitle>Applicant List</CardTitle>
               <CardDescription>
-                All students admitted directly to universities
+                All student applications and admissions
               </CardDescription>
             </div>
             <Button onClick={() => {
@@ -278,7 +278,7 @@ const DirectStudents = () => {
               setIsEditModalOpen(true);
             }}>
               <Plus className="mr-2 h-4 w-4" />
-              Add New Student
+              Add New Applicant
             </Button>
           </div>
         </CardHeader>
@@ -299,7 +299,7 @@ const DirectStudents = () => {
       />
 
       <EditModal
-        title={selectedStudent ? "Edit Student" : "Add New Student"}
+        title={selectedStudent ? "Edit Applicant" : "Add New Applicant"}
         isOpen={isEditModalOpen}
         onClose={() => {
           setIsEditModalOpen(false);
