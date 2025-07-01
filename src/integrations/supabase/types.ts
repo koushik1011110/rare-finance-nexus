@@ -700,6 +700,9 @@ export type Database = {
           facilities: string | null
           id: number
           location: string
+          mess_budget: number | null
+          mess_budget_remaining: number | null
+          mess_budget_year: number | null
           monthly_rent: number
           name: string
           phone: string | null
@@ -717,6 +720,9 @@ export type Database = {
           facilities?: string | null
           id?: number
           location: string
+          mess_budget?: number | null
+          mess_budget_remaining?: number | null
+          mess_budget_year?: number | null
           monthly_rent?: number
           name: string
           phone?: string | null
@@ -734,6 +740,9 @@ export type Database = {
           facilities?: string | null
           id?: number
           location?: string
+          mess_budget?: number | null
+          mess_budget_remaining?: number | null
+          mess_budget_year?: number | null
           monthly_rent?: number
           name?: string
           phone?: string | null
@@ -1199,6 +1208,57 @@ export type Database = {
         }
         Relationships: []
       }
+      student_fees: {
+        Row: {
+          academic_session_id: number | null
+          amount: number
+          created_at: string | null
+          due_date: string | null
+          fee_type: string
+          id: number
+          is_mandatory: boolean | null
+          student_id: number
+          updated_at: string | null
+        }
+        Insert: {
+          academic_session_id?: number | null
+          amount: number
+          created_at?: string | null
+          due_date?: string | null
+          fee_type: string
+          id?: number
+          is_mandatory?: boolean | null
+          student_id: number
+          updated_at?: string | null
+        }
+        Update: {
+          academic_session_id?: number | null
+          amount?: number
+          created_at?: string | null
+          due_date?: string | null
+          fee_type?: string
+          id?: number
+          is_mandatory?: boolean | null
+          student_id?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_fees_academic_session_id_fkey"
+            columns: ["academic_session_id"]
+            isOneToOne: false
+            referencedRelation: "academic_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_fees_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       student_hostel_assignments: {
         Row: {
           assigned_date: string
@@ -1244,17 +1304,81 @@ export type Database = {
           },
         ]
       }
+      student_payments: {
+        Row: {
+          amount: number
+          created_at: string | null
+          description: string | null
+          fee_id: number | null
+          id: number
+          payment_date: string
+          payment_method: string
+          receipt_url: string | null
+          status: string | null
+          student_id: number
+          transaction_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          description?: string | null
+          fee_id?: number | null
+          id?: number
+          payment_date: string
+          payment_method: string
+          receipt_url?: string | null
+          status?: string | null
+          student_id: number
+          transaction_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          description?: string | null
+          fee_id?: number | null
+          id?: number
+          payment_date?: string
+          payment_method?: string
+          receipt_url?: string | null
+          status?: string | null
+          student_id?: number
+          transaction_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_payments_fee_id_fkey"
+            columns: ["fee_id"]
+            isOneToOne: false
+            referencedRelation: "student_fees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_payments_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       student_visa: {
         Row: {
+          application_step_completed: boolean | null
           application_submitted: boolean | null
+          approval_step_completed: boolean | null
           created_at: string | null
           expiration_date: string | null
           id: number
+          interview_step_completed: boolean | null
           issue_date: string | null
           local_id_number: string | null
           residency_address: string | null
           residency_deadline: string | null
           residency_registration: boolean | null
+          residency_step_completed: boolean | null
           student_id: number
           updated_at: string | null
           visa_approved: boolean | null
@@ -1263,15 +1387,19 @@ export type Database = {
           visa_type: string
         }
         Insert: {
+          application_step_completed?: boolean | null
           application_submitted?: boolean | null
+          approval_step_completed?: boolean | null
           created_at?: string | null
           expiration_date?: string | null
           id?: number
+          interview_step_completed?: boolean | null
           issue_date?: string | null
           local_id_number?: string | null
           residency_address?: string | null
           residency_deadline?: string | null
           residency_registration?: boolean | null
+          residency_step_completed?: boolean | null
           student_id: number
           updated_at?: string | null
           visa_approved?: boolean | null
@@ -1280,15 +1408,19 @@ export type Database = {
           visa_type?: string
         }
         Update: {
+          application_step_completed?: boolean | null
           application_submitted?: boolean | null
+          approval_step_completed?: boolean | null
           created_at?: string | null
           expiration_date?: string | null
           id?: number
+          interview_step_completed?: boolean | null
           issue_date?: string | null
           local_id_number?: string | null
           residency_address?: string | null
           residency_deadline?: string | null
           residency_registration?: boolean | null
+          residency_step_completed?: boolean | null
           student_id?: number
           updated_at?: string | null
           visa_approved?: boolean | null
@@ -1679,6 +1811,38 @@ export type Database = {
       generate_username: {
         Args: { first_name: string; last_name: string; student_id: number }
         Returns: string
+      }
+      get_student_financial_summary: {
+        Args: { input_student_id: number }
+        Returns: {
+          total_fees: number
+          paid_amount: number
+          pending_amount: number
+          next_payment_amount: number
+          next_payment_date: string
+        }[]
+      }
+      get_student_payment_history: {
+        Args: { input_student_id: number }
+        Returns: {
+          id: number
+          description: string
+          amount: number
+          payment_date: string
+          status: string
+          payment_method: string
+          receipt_url: string
+        }[]
+      }
+      get_student_upcoming_payments: {
+        Args: { input_student_id: number }
+        Returns: {
+          id: number
+          description: string
+          amount: number
+          due_date: string
+          status: string
+        }[]
       }
       logout_user: {
         Args: { token_param: string }

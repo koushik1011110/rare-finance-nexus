@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,6 +43,15 @@ export interface SupabaseDirectStudentFormData {
   passport_copy_url?: string;
   aadhaar_copy_url?: string;
   twelfth_certificate_url?: string;
+  // New fields
+  parent_phone_number?: string;
+  tenth_passing_year?: string;
+  twelfth_passing_year?: string;
+  neet_passing_year?: string;
+  tenth_marksheet_number?: string;
+  pcb_average?: number;
+  neet_roll_number?: string;
+  qualification_status?: "qualified" | "not_qualified";
 }
 
 interface SupabaseDirectStudentFormProps {
@@ -73,6 +83,14 @@ const SupabaseDirectStudentForm: React.FC<SupabaseDirectStudentFormProps> = ({
     scores: "",
     twelfth_marks: 0,
     agent_id: 0,
+    parent_phone_number: "",
+    tenth_passing_year: "",
+    twelfth_passing_year: "",
+    neet_passing_year: "",
+    tenth_marksheet_number: "",
+    pcb_average: 0,
+    neet_roll_number: "",
+    qualification_status: "qualified",
   },
   onSubmit,
   isSubmitting = false,
@@ -88,6 +106,9 @@ const SupabaseDirectStudentForm: React.FC<SupabaseDirectStudentFormProps> = ({
     passportCopy: null as File | null,
     aadhaarCopy: null as File | null,
     twelfthCertificate: null as File | null,
+    neetScoreCard: null as File | null,
+    tenthMarksheet: null as File | null,
+    affidavitPaper: null as File | null,
   });
 
   useEffect(() => {
@@ -117,7 +138,7 @@ const SupabaseDirectStudentForm: React.FC<SupabaseDirectStudentFormProps> = ({
     const { name, value } = e.target;
     setFormData((prev) => ({ 
       ...prev, 
-      [name]: name === 'twelfth_marks' || name === 'agent_id' ? 
+      [name]: name === 'twelfth_marks' || name === 'agent_id' || name === 'pcb_average' ? 
         (value === '' ? undefined : parseFloat(value)) : value 
     }));
   };
@@ -143,7 +164,7 @@ const SupabaseDirectStudentForm: React.FC<SupabaseDirectStudentFormProps> = ({
       let updatedFormData = { ...formData };
       
       // For now, just notify about file uploads (Firebase upload will be added later)
-      if (files.studentImage || files.passportCopy || files.aadhaarCopy || files.twelfthCertificate) {
+      if (Object.values(files).some(file => file !== null)) {
         toast({
           title: "Note",
           description: "File upload functionality will be available soon. Form data saved without files.",
@@ -392,6 +413,21 @@ const SupabaseDirectStudentForm: React.FC<SupabaseDirectStudentFormProps> = ({
                 required
               />
             </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="parent_phone_number">Parent's Phone Number</Label>
+              <div className="relative">
+                <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="parent_phone_number"
+                  name="parent_phone_number"
+                  value={formData.parent_phone_number || ""}
+                  onChange={handleChange}
+                  placeholder="Enter parent's phone number"
+                  className="pl-10"
+                />
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -456,6 +492,76 @@ const SupabaseDirectStudentForm: React.FC<SupabaseDirectStudentFormProps> = ({
         <CardContent>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="space-y-2">
+              <Label htmlFor="tenth_passing_year">10th Passing Year</Label>
+              <Input
+                id="tenth_passing_year"
+                name="tenth_passing_year"
+                value={formData.tenth_passing_year || ""}
+                onChange={handleChange}
+                placeholder="Enter 10th passing year"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="twelfth_passing_year">12th Passing Year</Label>
+              <Input
+                id="twelfth_passing_year"
+                name="twelfth_passing_year"
+                value={formData.twelfth_passing_year || ""}
+                onChange={handleChange}
+                placeholder="Enter 12th passing year"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="neet_passing_year">NEET Passing Year</Label>
+              <Input
+                id="neet_passing_year"
+                name="neet_passing_year"
+                value={formData.neet_passing_year || ""}
+                onChange={handleChange}
+                placeholder="Enter NEET passing year"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="tenth_marksheet_number">10th Marksheet Number</Label>
+              <Input
+                id="tenth_marksheet_number"
+                name="tenth_marksheet_number"
+                value={formData.tenth_marksheet_number || ""}
+                onChange={handleChange}
+                placeholder="Enter 10th marksheet number"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="pcb_average">PCB (Physics, Chemistry, Biology) Average (%)</Label>
+              <Input
+                id="pcb_average"
+                name="pcb_average"
+                type="number"
+                value={formData.pcb_average || ""}
+                onChange={handleChange}
+                placeholder="Enter PCB average percentage"
+                min="0"
+                max="100"
+                step="0.01"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="neet_roll_number">NEET Roll Number</Label>
+              <Input
+                id="neet_roll_number"
+                name="neet_roll_number"
+                value={formData.neet_roll_number || ""}
+                onChange={handleChange}
+                placeholder="Enter NEET roll number"
+              />
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="twelfth_marks">12th Grade Marks (%)</Label>
               <Input
                 id="twelfth_marks"
@@ -479,6 +585,22 @@ const SupabaseDirectStudentForm: React.FC<SupabaseDirectStudentFormProps> = ({
                 onChange={handleChange}
                 placeholder="Enter agent ID (if applicable)"
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="qualification_status">Qualified / Not Qualified</Label>
+              <Select
+                value={formData.qualification_status}
+                onValueChange={(value) => handleSelectChange("qualification_status", value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select qualification status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="qualified">Qualified</SelectItem>
+                  <SelectItem value="not_qualified">Not Qualified</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-2 md:col-span-2">
@@ -619,12 +741,71 @@ const SupabaseDirectStudentForm: React.FC<SupabaseDirectStudentFormProps> = ({
                 </p>
               )}
             </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="neetScoreCard">NEET Score Card</Label>
+              <div className="relative">
+                <Upload className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="neetScoreCard"
+                  type="file"
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  onChange={(e) => handleFileChange("neetScoreCard", e)}
+                  className="pl-10 file:mr-4 file:py-1 file:px-2 file:rounded file:border-0 file:text-sm file:font-medium file:bg-muted file:text-muted-foreground hover:file:bg-muted/80"
+                />
+              </div>
+              {files.neetScoreCard && (
+                <p className="text-sm text-muted-foreground">
+                  Selected: {files.neetScoreCard.name}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="tenthMarksheet">10th Marksheet</Label>
+              <div className="relative">
+                <Upload className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="tenthMarksheet"
+                  type="file"
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  onChange={(e) => handleFileChange("tenthMarksheet", e)}
+                  className="pl-10 file:mr-4 file:py-1 file:px-2 file:rounded file:border-0 file:text-sm file:font-medium file:bg-muted file:text-muted-foreground hover:file:bg-muted/80"
+                />
+              </div>
+              {files.tenthMarksheet && (
+                <p className="text-sm text-muted-foreground">
+                  Selected: {files.tenthMarksheet.name}
+                </p>
+              )}
+            </div>
+
+            {formData.qualification_status === "not_qualified" && (
+              <div className="space-y-2">
+                <Label htmlFor="affidavitPaper">Affidavit Paper</Label>
+                <div className="relative">
+                  <Upload className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="affidavitPaper"
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    onChange={(e) => handleFileChange("affidavitPaper", e)}
+                    className="pl-10 file:mr-4 file:py-1 file:px-2 file:rounded file:border-0 file:text-sm file:font-medium file:bg-muted file:text-muted-foreground hover:file:bg-muted/80"
+                  />
+                </div>
+                {files.affidavitPaper && (
+                  <p className="text-sm text-muted-foreground">
+                    Selected: {files.affidavitPaper.name}
+                  </p>
+                )}
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
 
       <Button type="submit" disabled={isSubmitting || uploadingFiles}>
-        {uploadingFiles ? "Uploading Documents..." : isSubmitting ? "Saving..." : "Save Student"}
+        {uploadingFiles ? "Uploading Documents..." : isSubmitting ? "Saving..." : "Save Applicant"}
       </Button>
     </form>
   );
