@@ -34,7 +34,6 @@ interface AgentStudent {
   address?: string;
   aadhaar_number?: string;
   passport_number?: string;
-  seat_number?: string;
   scores?: string;
   twelfth_marks?: number;
   photo_url?: string;
@@ -470,6 +469,7 @@ const AgentStudents = () => {
               university_id: currentStudent.university_id,
               course_id: currentStudent.course_id,
               academic_session_id: currentStudent.academic_session_id,
+              status: currentStudent.status as "active" | "inactive" | "completed",
               city: currentStudent.city,
               country: currentStudent.country,
               address: currentStudent.address,

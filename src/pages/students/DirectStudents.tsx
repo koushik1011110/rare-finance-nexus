@@ -33,7 +33,6 @@ interface ApplyStudent {
   address?: string;
   aadhaar_number?: string;
   passport_number?: string;
-  seat_number?: string;
   scores?: string;
   twelfth_marks?: number;
   agent_id?: number;
@@ -375,6 +374,7 @@ const DirectStudents = () => {
             university_id: selectedStudent.university_id,
             course_id: selectedStudent.course_id,
             academic_session_id: selectedStudent.academic_session_id,
+            status: selectedStudent.status as "active" | "inactive" | "completed",
             city: selectedStudent.city,
             country: selectedStudent.country,
             address: selectedStudent.address,
