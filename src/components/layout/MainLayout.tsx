@@ -38,6 +38,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import ThemeToggle from "@/components/theme/ThemeToggle";
+import NotificationBell from "@/components/notifications/NotificationBell";
 import { useAuth } from "@/contexts/AuthContext";
 
 
@@ -317,6 +318,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
           </div>
           <div className="flex items-center space-x-4">
             <ThemeToggle />
+            <NotificationBell />
             <Button variant="outline" size="sm" className="hidden sm:flex">
               <Download className="mr-2 h-4 w-4" />
               Export

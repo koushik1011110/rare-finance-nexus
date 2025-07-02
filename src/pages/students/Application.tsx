@@ -7,11 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Eye, Download } from "lucide-react";
+import { Eye, Download, FileText } from "lucide-react";
 import MainLayout from "@/components/layout/MainLayout";
 import PageHeader from "@/components/shared/PageHeader";
 import DataTable from "@/components/ui/DataTable";
 import StudentDetailModal from "@/components/students/StudentDetailModal";
+import COLLetterModal from "@/components/students/COLLetterModal";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface ApplyStudent {
@@ -34,12 +35,15 @@ interface ApplyStudent {
   aadhaar_number?: string;
   passport_number?: string;
   twelfth_marks?: number;
-  seat_number?: string;
   scores?: string;
   photo_url?: string;
   passport_copy_url?: string;
   aadhaar_copy_url?: string;
   twelfth_certificate_url?: string;
+  agent_id?: number;
+  admission_letter_confirmed?: boolean;
+  tanlx_requested?: boolean;
+  col_letter_generated?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -57,14 +61,23 @@ export default function Application() {
   const { user, isAdmin } = useAuth();
   const [selectedStudent, setSelectedStudent] = useState<ApplyStudent | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isCOLModalOpen, setIsCOLModalOpen] = useState(false);
+  const [colStudent, setCOLStudent] = useState<ApplyStudent | null>(null);
 
   const { data: applications = [], isLoading } = useQuery({
     queryKey: ["apply-students"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from("apply_students")
         .select("*")
         .order("created_at", { ascending: false });
+
+      // If user is an agent, only show their applications
+      if (user?.role === 'agent') {
+        query = query.eq('agent_id', user.id);
+      }
+
+      const { data, error } = await query;
 
       if (error) {
         throw error;
@@ -85,6 +98,22 @@ export default function Application() {
 
       console.log("Function response:", { data, error });
       if (error) throw error;
+
+      // If status is approved, send notification to agent
+      if (status === 'approved') {
+        const application = applications.find(app => app.id === id);
+        if (application?.agent_id) {
+          await supabase
+            .from('agent_notifications')
+            .insert({
+              agent_id: application.agent_id,
+              message: `Application for ${application.first_name} ${application.last_name} has been approved`,
+              student_name: `${application.first_name} ${application.last_name}`,
+              student_id: application.id
+            });
+        }
+      }
+
       return data;
     },
     onSuccess: () => {
@@ -104,8 +133,34 @@ export default function Application() {
     },
   });
 
+  const updateStagesMutation = useMutation({
+    mutationFn: async ({ id, field, value }: { id: number; field: string; value: boolean }) => {
+      const { data, error } = await supabase
+        .from('apply_students')
+        .update({ [field]: value })
+        .eq('id', id);
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["apply-students"] });
+      toast({
+        title: "Stage Updated",
+        description: "Application stage has been updated successfully.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to update application stage.",
+        variant: "destructive",
+      });
+      console.error("Error updating stage:", error);
+    },
+  });
+
   const handleStatusChange = (id: number, newStatus: string) => {
-    // Only allow admins to change status
     if (!isAdmin) {
       toast({
         title: "Access Denied",
@@ -119,6 +174,10 @@ export default function Application() {
     updateStatusMutation.mutate({ id, status: newStatus });
   };
 
+  const handleStageToggle = (id: number, field: string, currentValue: boolean) => {
+    updateStagesMutation.mutate({ id, field, value: !currentValue });
+  };
+
   const handleViewStudent = (student: ApplyStudent) => {
     setSelectedStudent(student);
     setIsModalOpen(true);
@@ -127,6 +186,11 @@ export default function Application() {
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setSelectedStudent(null);
+  };
+
+  const handleGenerateCOL = (student: ApplyStudent) => {
+    setCOLStudent(student);
+    setIsCOLModalOpen(true);
   };
 
   const columns = [
@@ -169,7 +233,6 @@ export default function Application() {
         const status = row.status;
         const statusOption = statusOptions.find(opt => opt.value === status);
         
-        // If user is not admin, just show the badge without select functionality
         if (!isAdmin) {
           return (
             <Badge variant={statusOption?.variant || "secondary"}>
@@ -201,6 +264,34 @@ export default function Application() {
         );
       },
     },
+    ...(user?.role === 'agent' ? [{
+      header: "Stages",
+      accessorKey: "stages" as keyof ApplyStudent,
+      cell: (row: ApplyStudent) => (
+        <div className="space-y-1">
+          <div className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              checked={row.admission_letter_confirmed || false}
+              onChange={() => handleStageToggle(row.id, 'admission_letter_confirmed', row.admission_letter_confirmed || false)}
+              className="rounded"
+            />
+            <span className="text-xs">Admission Letter</span>
+          </div>
+          {row.admission_letter_confirmed && (
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                checked={row.tanlx_requested || false}
+                onChange={() => handleStageToggle(row.id, 'tanlx_requested', row.tanlx_requested || false)}
+                className="rounded"
+              />
+              <span className="text-xs">TANLX Requested</span>
+            </div>
+          )}
+        </div>
+      ),
+    }] : []),
     {
       header: "Applied Date",
       accessorKey: "created_at" as keyof ApplyStudent,
@@ -217,6 +308,12 @@ export default function Application() {
             <Eye className="h-4 w-4 mr-1" />
             View
           </Button>
+          {user?.role === 'agent' && row.status === 'approved' && (
+            <Button variant="outline" size="sm" onClick={() => handleGenerateCOL(row)}>
+              <FileText className="h-4 w-4 mr-1" />
+              COL Letter
+            </Button>
+          )}
           <Button variant="outline" size="sm">
             <Download className="h-4 w-4 mr-1" />
             Export
@@ -231,14 +328,17 @@ export default function Application() {
       <div className="space-y-6">
         <PageHeader
           title="Student Applications"
-          description="Manage and review student applications"
+          description={user?.role === 'agent' ? "Manage your student applications" : "Manage and review student applications"}
         />
 
         <Card>
           <CardHeader>
             <CardTitle>Applications</CardTitle>
             <CardDescription>
-              Review and manage student applications. Update status as needed.
+              {user?.role === 'agent' 
+                ? "Review and manage your student applications. Update stages as needed."
+                : "Review and manage student applications. Update status as needed."
+              }
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -259,6 +359,12 @@ export default function Application() {
           student={selectedStudent}
           isOpen={isModalOpen}
           onClose={handleCloseModal}
+        />
+
+        <COLLetterModal
+          student={colStudent}
+          isOpen={isCOLModalOpen}
+          onClose={() => setIsCOLModalOpen(false)}
         />
       </div>
     </MainLayout>
