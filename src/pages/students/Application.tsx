@@ -14,39 +14,9 @@ import DataTable from "@/components/ui/DataTable";
 import StudentDetailModal from "@/components/students/StudentDetailModal";
 import COLLetterModal from "@/components/students/COLLetterModal";
 import { useAuth } from "@/contexts/AuthContext";
+import type { Tables } from "@/integrations/supabase/types";
 
-interface ApplyStudent {
-  id: number;
-  first_name: string;
-  last_name: string;
-  father_name: string;
-  mother_name: string;
-  date_of_birth: string;
-  phone_number?: string;
-  email?: string;
-  university_id?: number;
-  course_id?: number;
-  academic_session_id?: number;
-  status: string;
-  application_status: string;
-  city?: string;
-  country?: string;
-  address?: string;
-  aadhaar_number?: string;
-  passport_number?: string;
-  twelfth_marks?: number;
-  scores?: string;
-  photo_url?: string;
-  passport_copy_url?: string;
-  aadhaar_copy_url?: string;
-  twelfth_certificate_url?: string;
-  agent_id?: number;
-  admission_letter_confirmed?: boolean;
-  tanlx_requested?: boolean;
-  col_letter_generated?: boolean;
-  created_at: string;
-  updated_at: string;
-}
+type ApplyStudent = Tables<"apply_students">;
 
 const statusOptions = [
   { value: "pending", label: "Pending", variant: "secondary" as const },
@@ -243,7 +213,7 @@ export default function Application() {
         
         return (
           <Select
-            value={status}
+            value={status || "pending"}
             onValueChange={(newStatus) => handleStatusChange(row.id, newStatus)}
           >
             <SelectTrigger className="w-[140px]">
@@ -296,7 +266,7 @@ export default function Application() {
       header: "Applied Date",
       accessorKey: "created_at" as keyof ApplyStudent,
       cell: (row: ApplyStudent) => {
-        return new Date(row.created_at).toLocaleDateString();
+        return new Date(row.created_at || '').toLocaleDateString();
       },
     },
     {

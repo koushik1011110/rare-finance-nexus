@@ -12,14 +12,9 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import type { Tables } from "@/integrations/supabase/types";
 
-interface Notification {
-  id: number;
-  message: string;
-  created_at: string;
-  read: boolean;
-  student_name: string;
-}
+type Notification = Tables<"agent_notifications">;
 
 export default function NotificationBell() {
   const { user } = useAuth();
@@ -129,7 +124,7 @@ export default function NotificationBell() {
             >
               <div className="font-medium">{notification.message}</div>
               <div className="text-sm text-muted-foreground">
-                {new Date(notification.created_at).toLocaleDateString()}
+                {new Date(notification.created_at || '').toLocaleDateString()}
               </div>
             </DropdownMenuItem>
           ))

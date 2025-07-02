@@ -36,6 +36,44 @@ export type Database = {
         }
         Relationships: []
       }
+      agent_notifications: {
+        Row: {
+          agent_id: number
+          created_at: string | null
+          id: number
+          message: string
+          read: boolean | null
+          student_id: number | null
+          student_name: string
+        }
+        Insert: {
+          agent_id: number
+          created_at?: string | null
+          id?: number
+          message: string
+          read?: boolean | null
+          student_id?: number | null
+          student_name: string
+        }
+        Update: {
+          agent_id?: number
+          created_at?: string | null
+          id?: number
+          message?: string
+          read?: boolean | null
+          student_id?: number | null
+          student_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_notifications_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agent_students: {
         Row: {
           agent_id: number
@@ -129,11 +167,13 @@ export type Database = {
           aadhaar_number: string | null
           academic_session_id: number | null
           address: string | null
+          admission_letter_confirmed: boolean | null
           admission_number: string | null
           affidavit_paper_url: string | null
           agent_id: number | null
           application_status: string | null
           city: string | null
+          col_letter_generated: boolean | null
           country: string | null
           course_id: number | null
           created_at: string | null
@@ -157,6 +197,7 @@ export type Database = {
           scores: string | null
           seat_number: string | null
           status: string | null
+          tanlx_requested: boolean | null
           tenth_marksheet_number: string | null
           tenth_marksheet_url: string | null
           tenth_passing_year: string | null
@@ -171,11 +212,13 @@ export type Database = {
           aadhaar_number?: string | null
           academic_session_id?: number | null
           address?: string | null
+          admission_letter_confirmed?: boolean | null
           admission_number?: string | null
           affidavit_paper_url?: string | null
           agent_id?: number | null
           application_status?: string | null
           city?: string | null
+          col_letter_generated?: boolean | null
           country?: string | null
           course_id?: number | null
           created_at?: string | null
@@ -199,6 +242,7 @@ export type Database = {
           scores?: string | null
           seat_number?: string | null
           status?: string | null
+          tanlx_requested?: boolean | null
           tenth_marksheet_number?: string | null
           tenth_marksheet_url?: string | null
           tenth_passing_year?: string | null
@@ -213,11 +257,13 @@ export type Database = {
           aadhaar_number?: string | null
           academic_session_id?: number | null
           address?: string | null
+          admission_letter_confirmed?: boolean | null
           admission_number?: string | null
           affidavit_paper_url?: string | null
           agent_id?: number | null
           application_status?: string | null
           city?: string | null
+          col_letter_generated?: boolean | null
           country?: string | null
           course_id?: number | null
           created_at?: string | null
@@ -241,6 +287,7 @@ export type Database = {
           scores?: string | null
           seat_number?: string | null
           status?: string | null
+          tanlx_requested?: boolean | null
           tenth_marksheet_number?: string | null
           tenth_marksheet_url?: string | null
           tenth_passing_year?: string | null
