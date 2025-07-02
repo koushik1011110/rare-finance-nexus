@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,6 +12,7 @@ import MainLayout from "@/components/layout/MainLayout";
 import PageHeader from "@/components/shared/PageHeader";
 import DataTable from "@/components/ui/DataTable";
 import StudentDetailModal from "@/components/students/StudentDetailModal";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface ApplyStudent {
   id: number;
@@ -52,6 +54,7 @@ const statusOptions = [
 export default function Application() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user, isAdmin } = useAuth();
   const [selectedStudent, setSelectedStudent] = useState<ApplyStudent | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -102,6 +105,16 @@ export default function Application() {
   });
 
   const handleStatusChange = (id: number, newStatus: string) => {
+    // Only allow admins to change status
+    if (!isAdmin) {
+      toast({
+        title: "Access Denied",
+        description: "Only administrators can change application status.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     console.log("Updating status for ID:", id, "to:", newStatus);
     updateStatusMutation.mutate({ id, status: newStatus });
   };
@@ -155,6 +168,15 @@ export default function Application() {
       cell: (row: ApplyStudent) => {
         const status = row.status;
         const statusOption = statusOptions.find(opt => opt.value === status);
+        
+        // If user is not admin, just show the badge without select functionality
+        if (!isAdmin) {
+          return (
+            <Badge variant={statusOption?.variant || "secondary"}>
+              {statusOption?.label || status}
+            </Badge>
+          );
+        }
         
         return (
           <Select
