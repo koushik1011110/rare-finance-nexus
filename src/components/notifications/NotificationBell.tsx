@@ -21,9 +21,16 @@ export default function NotificationBell() {
   const { toast } = useToast();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [agentId, setAgentId] = useState<number | null>(null);
 
   useEffect(() => {
     if (user && user.role === 'agent') {
+      fetchAgentId();
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (agentId) {
       fetchNotifications();
       
       // Set up real-time subscription for new notifications
@@ -35,7 +42,7 @@ export default function NotificationBell() {
             event: 'INSERT',
             schema: 'public',
             table: 'agent_notifications',
-            filter: `agent_id=eq.${user.id}`
+            filter: `agent_id=eq.${agentId}`
           },
           (payload) => {
             const newNotification = payload.new as Notification;
@@ -53,14 +60,32 @@ export default function NotificationBell() {
         supabase.removeChannel(channel);
       };
     }
-  }, [user, toast]);
+  }, [agentId, toast]);
+
+  const fetchAgentId = async () => {
+    try {
+      const { data: agentData } = await supabase
+        .from('agents')
+        .select('id')
+        .eq('email', user?.email)
+        .single();
+
+      if (agentData) {
+        setAgentId(agentData.id);
+      }
+    } catch (error) {
+      console.error('Error fetching agent ID:', error);
+    }
+  };
 
   const fetchNotifications = async () => {
+    if (!agentId) return;
+    
     try {
       const { data, error } = await supabase
         .from('agent_notifications')
         .select('*')
-        .eq('agent_id', user?.id)
+        .eq('agent_id', agentId)
         .order('created_at', { ascending: false })
         .limit(10);
 
