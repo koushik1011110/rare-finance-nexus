@@ -4,7 +4,7 @@ import MainLayout from "@/components/layout/MainLayout";
 import PageHeader from "@/components/shared/PageHeader";
 import DataTable from "@/components/ui/DataTable";
 import { Button } from "@/components/ui/button";
-import { Plus, Download, Upload, Eye, Edit } from "lucide-react";
+import { Plus, Download, Upload, Eye, Edit, FileText } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
 import DetailViewModal from "@/components/shared/DetailViewModal";
@@ -188,6 +188,14 @@ const AgentStudents = () => {
 
   const handleAddStudent = () => {
     setIsAddModalOpen(true);
+  };
+
+  const handleGenerateTANLX = (student: AgentStudent) => {
+    // Placeholder for TANLX generation logic
+    toast({
+      title: "TANLX Generation",
+      description: `TANLX generation for ${student.first_name} ${student.last_name} will be implemented soon.`,
+    });
   };
 
   const handleSaveStudent = async (formData: ComprehensiveStudentFormData) => {
@@ -374,6 +382,12 @@ const AgentStudents = () => {
             <Button variant="outline" size="sm" onClick={() => handleEditStudent(row)}>
               <Edit className="mr-2 h-4 w-4" />
               Edit
+            </Button>
+          )}
+          {user?.role === 'agent' && (
+            <Button variant="outline" size="sm" onClick={() => handleGenerateTANLX(row)}>
+              <FileText className="mr-2 h-4 w-4" />
+              Generate TANLX
             </Button>
           )}
         </div>

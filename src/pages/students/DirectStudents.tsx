@@ -13,8 +13,9 @@ import { toast } from "@/hooks/use-toast";
 import { Plus, Edit, Trash, Eye } from "lucide-react";
 import { universitiesAPI, coursesAPI, academicSessionsAPI, University, Course, AcademicSession } from "@/lib/supabase-database";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
-interface ApplyStudent {
+interface Student {
   id: number;
   first_name: string;
   last_name: string;
@@ -40,41 +41,33 @@ interface ApplyStudent {
   passport_copy_url?: string;
   aadhaar_copy_url?: string;
   twelfth_certificate_url?: string;
-  parents_phone_number?: string;
-  tenth_passing_year?: string;
-  twelfth_passing_year?: string;
-  neet_passing_year?: string;
-  tenth_marksheet_number?: string;
-  pcb_average?: number;
-  neet_roll_number?: string;
-  qualification_status?: string;
-  neet_score_card_url?: string;
-  tenth_marksheet_url?: string;
-  affidavit_paper_url?: string;
   created_at?: string;
   updated_at?: string;
 }
 
 const DirectStudents = () => {
-  const [students, setStudents] = useState<ApplyStudent[]>([]);
+  const { isAdmin } = useAuth();
+  const [students, setStudents] = useState<Student[]>([]);
   const [universities, setUniversities] = useState<University[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
   const [academicSessions, setAcademicSessions] = useState<AcademicSession[]>([]);
-  const [selectedStudent, setSelectedStudent] = useState<ApplyStudent | null>(null);
+  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadData();
-  }, []);
+    if (isAdmin) {
+      loadData();
+    }
+  }, [isAdmin]);
 
   const loadData = async () => {
     try {
       setLoading(true);
       const [studentsData, universitiesData, coursesData, sessionsData] = await Promise.all([
-        supabase.from('apply_students').select('*'),
+        supabase.from('students').select('*'),
         universitiesAPI.getAll(),
         coursesAPI.getAll(),
         academicSessionsAPI.getAll(),
@@ -111,11 +104,11 @@ const DirectStudents = () => {
         university_id: studentData.university_id || undefined,
         course_id: studentData.course_id || defaultCourse?.id || undefined,
         academic_session_id: studentData.academic_session_id || defaultSession?.id || undefined,
-        status: 'pending'
+        status: 'active'
       };
 
       const { data: newStudent, error } = await supabase
-        .from('apply_students')
+        .from('students')
         .insert(dataToInsert)
         .select()
         .single();
@@ -124,7 +117,7 @@ const DirectStudents = () => {
 
       setStudents(prev => [newStudent, ...prev]);
       toast({
-        title: "Applicant Added",
+        title: "Student Added",
         description: `${newStudent.first_name} ${newStudent.last_name} has been added successfully.`,
       });
       setIsEditModalOpen(false);
@@ -132,7 +125,7 @@ const DirectStudents = () => {
       console.error('Error adding student:', error);
       toast({
         title: "Error",
-        description: "Failed to add applicant.",
+        description: "Failed to add student.",
         variant: "destructive",
       });
     } finally {
@@ -147,7 +140,7 @@ const DirectStudents = () => {
       setIsSubmitting(true);
       
       const { data: updatedStudent, error } = await supabase
-        .from('apply_students')
+        .from('students')
         .update(studentData)
         .eq('id', selectedStudent.id)
         .select()
@@ -159,7 +152,7 @@ const DirectStudents = () => {
         student.id === selectedStudent.id ? updatedStudent : student
       ));
       toast({
-        title: "Applicant Updated",
+        title: "Student Updated",
         description: `${updatedStudent.first_name} ${updatedStudent.last_name} has been updated successfully.`,
       });
       setIsEditModalOpen(false);
@@ -168,7 +161,7 @@ const DirectStudents = () => {
       console.error('Error updating student:', error);
       toast({
         title: "Error",
-        description: "Failed to update applicant.",
+        description: "Failed to update student.",
         variant: "destructive",
       });
     } finally {
@@ -179,7 +172,7 @@ const DirectStudents = () => {
   const handleDeleteStudent = async (id: number) => {
     try {
       const { error } = await supabase
-        .from('apply_students')
+        .from('students')
         .delete()
         .eq('id', id);
 
@@ -187,25 +180,25 @@ const DirectStudents = () => {
 
       setStudents(prev => prev.filter(student => student.id !== id));
       toast({
-        title: "Applicant Deleted",
-        description: "Applicant has been deleted successfully.",
+        title: "Student Deleted",
+        description: "Student has been deleted successfully.",
       });
     } catch (error) {
       console.error('Error deleting student:', error);
       toast({
         title: "Error",
-        description: "Failed to delete applicant.",
+        description: "Failed to delete student.",
         variant: "destructive",
       });
     }
   };
 
-  const handleViewDetails = (student: ApplyStudent) => {
+  const handleViewDetails = (student: Student) => {
     setSelectedStudent(student);
     setIsDetailModalOpen(true);
   };
 
-  const handleEditClick = (student: ApplyStudent) => {
+  const handleEditClick = (student: Student) => {
     setSelectedStudent(student);
     setIsEditModalOpen(true);
   };
@@ -224,12 +217,12 @@ const DirectStudents = () => {
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
-      pending: { variant: "secondary" as const, color: "text-yellow-600" },
-      approved: { variant: "default" as const, color: "text-green-600" },
-      rejected: { variant: "destructive" as const, color: "text-red-600" }
+      active: { variant: "default" as const, color: "text-green-600" },
+      inactive: { variant: "secondary" as const, color: "text-gray-600" },
+      completed: { variant: "outline" as const, color: "text-blue-600" }
     };
     
-    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.pending;
+    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.active;
     return (
       <Badge variant={config.variant} className={config.color}>
         {status.charAt(0).toUpperCase() + status.slice(1)}
@@ -237,18 +230,18 @@ const DirectStudents = () => {
     );
   };
 
-  const columns: Column<ApplyStudent>[] = [
+  const columns: Column<Student>[] = [
     { 
-      header: "Application ID", 
+      header: "Student ID", 
       accessorKey: "id",
-      cell: (student: ApplyStudent) => (
+      cell: (student: Student) => (
         <span className="font-mono text-sm">#{student.id}</span>
       )
     },
     { 
       header: "Name", 
       accessorKey: "first_name",
-      cell: (student: ApplyStudent) => `${student.first_name} ${student.last_name}`
+      cell: (student: Student) => `${student.first_name} ${student.last_name}`
     },
     { 
       header: "Father's Name", 
@@ -257,22 +250,22 @@ const DirectStudents = () => {
     { 
       header: "University", 
       accessorKey: "university_id",
-      cell: (student: ApplyStudent) => getUniversityName(student.university_id)
+      cell: (student: Student) => getUniversityName(student.university_id)
     },
     { 
       header: "Course", 
       accessorKey: "course_id",
-      cell: (student: ApplyStudent) => getCourseName(student.course_id)
+      cell: (student: Student) => getCourseName(student.course_id)
     },
     {
       header: "Status",
       accessorKey: "status",
-      cell: (student: ApplyStudent) => getStatusBadge(student.status)
+      cell: (student: Student) => getStatusBadge(student.status)
     },
     {
       header: "Actions",
       accessorKey: "actions",
-      cell: (student: ApplyStudent) => (
+      cell: (student: Student) => (
         <div className="flex space-x-2">
           <Button
             size="sm"
@@ -300,12 +293,23 @@ const DirectStudents = () => {
     },
   ];
 
+  if (!isAdmin) {
+    return (
+      <MainLayout>
+        <PageHeader
+          title="Access Denied"
+          description="You don't have permission to access this page."
+        />
+      </MainLayout>
+    );
+  }
+
   if (loading) {
     return (
       <MainLayout>
         <PageHeader
-          title="All Applicants"
-          description="Manage student applications and admissions"
+          title="All Students"
+          description="Manage enrolled students"
         />
         <div>Loading...</div>
       </MainLayout>
@@ -315,17 +319,17 @@ const DirectStudents = () => {
   return (
     <MainLayout>
       <PageHeader
-        title="All Applicants"
-        description="Manage student applications and admissions"
+        title="All Students"
+        description="Manage enrolled students"
       />
       
       <Card>
         <CardHeader>
           <div className="flex justify-between items-center">
             <div>
-              <CardTitle>Applicant List</CardTitle>
+              <CardTitle>Student List</CardTitle>
               <CardDescription>
-                All student applications and admissions
+                All enrolled students in the system
               </CardDescription>
             </div>
             <Button onClick={() => {
@@ -333,7 +337,7 @@ const DirectStudents = () => {
               setIsEditModalOpen(true);
             }}>
               <Plus className="mr-2 h-4 w-4" />
-              Add New Applicant
+              Add New Student
             </Button>
           </div>
         </CardHeader>
@@ -354,7 +358,7 @@ const DirectStudents = () => {
       />
 
       <EditModal
-        title={selectedStudent ? "Edit Applicant" : "Add New Applicant"}
+        title={selectedStudent ? "Edit Student" : "Add New Student"}
         isOpen={isEditModalOpen}
         onClose={() => {
           setIsEditModalOpen(false);
@@ -387,17 +391,6 @@ const DirectStudents = () => {
             passport_copy_url: selectedStudent.passport_copy_url,
             aadhaar_copy_url: selectedStudent.aadhaar_copy_url,
             twelfth_certificate_url: selectedStudent.twelfth_certificate_url,
-            parents_phone_number: selectedStudent.parents_phone_number,
-            tenth_passing_year: selectedStudent.tenth_passing_year,
-            twelfth_passing_year: selectedStudent.twelfth_passing_year,
-            neet_passing_year: selectedStudent.neet_passing_year,
-            tenth_marksheet_number: selectedStudent.tenth_marksheet_number,
-            pcb_average: selectedStudent.pcb_average,
-            neet_roll_number: selectedStudent.neet_roll_number,
-            qualification_status: selectedStudent.qualification_status as "qualified" | "not_qualified",
-            neet_score_card_url: selectedStudent.neet_score_card_url,
-            tenth_marksheet_url: selectedStudent.tenth_marksheet_url,
-            affidavit_paper_url: selectedStudent.affidavit_paper_url,
           } : undefined}
           onSubmit={selectedStudent ? handleEditStudent : handleAddStudent}
           isSubmitting={isSubmitting}

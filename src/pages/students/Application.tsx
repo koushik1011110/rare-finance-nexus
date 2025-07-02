@@ -44,7 +44,16 @@ export default function Application() {
 
       // If user is an agent, only show their applications
       if (user?.role === 'agent') {
-        query = query.eq('agent_id', user.id);
+        // Get agent record to find agent_id
+        const { data: agentData } = await supabase
+          .from('agents')
+          .select('id')
+          .eq('email', user.email)
+          .single();
+
+        if (agentData) {
+          query = query.eq('agent_id', agentData.id);
+        }
       }
 
       const { data, error } = await query;
