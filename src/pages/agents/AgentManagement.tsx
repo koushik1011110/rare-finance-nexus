@@ -104,14 +104,20 @@ const AgentManagement = () => {
     }
   };
 
-
   const handleSaveAgent = async (formData: AgentFormData) => {
     setIsSubmitting(true);
     
     try {
       if (formData.id) {
         // Update existing agent
-        await agentsAPI.update(formData.id, formData);
+        await agentsAPI.update(formData.id, {
+          name: formData.name,
+          email: formData.email,
+          contactPerson: formData.contactPerson,
+          phone: formData.phone,
+          location: formData.location,
+          status: formData.status,
+        });
         
         toast({
           title: "Agent Updated",
@@ -119,7 +125,14 @@ const AgentManagement = () => {
         });
       } else {
         // Add new agent
-        await agentsAPI.create(formData);
+        await agentsAPI.create({
+          name: formData.name,
+          email: formData.email,
+          contactPerson: formData.contactPerson,
+          phone: formData.phone,
+          location: formData.location,
+          status: formData.status,
+        });
         
         toast({
           title: "Agent Added",
@@ -144,7 +157,6 @@ const AgentManagement = () => {
     }
   };
 
-
   const handleImport = () => {
     toast({
       title: "Feature Coming Soon",
@@ -166,25 +178,15 @@ const AgentManagement = () => {
     { header: "Location", accessorKey: "location" as keyof Agent },
     { header: "Students Count", accessorKey: "students_count" as keyof Agent },
     { 
-      header: "Commission Rate", 
-      accessorKey: "commission_rate" as keyof Agent,
-      cell: (row: Agent) => `${row.commission_rate}%`
-    },
-    { 
       header: "Total Receivable", 
       accessorKey: "total_received" as keyof Agent,
       cell: (row: Agent) => (
         <span className={`font-medium ${
           row.payment_status === 'Paid' ? 'text-green-600' : 'text-orange-600'
         }`}>
-          ${row.total_received.toFixed(2)}
+          ${(row.total_received || 0).toFixed(2)}
         </span>
       )
-    },
-    { 
-      header: "Commission Due", 
-      accessorKey: "commission_due" as keyof Agent,
-      cell: (row: Agent) => `$${row.commission_due.toFixed(2)}`
     },
     {
       header: "Status",
@@ -318,20 +320,12 @@ const AgentManagement = () => {
               <p>{currentAgent.students_count}</p>
             </div>
             <div>
-              <h3 className="font-semibold">Commission Rate</h3>
-              <p>{currentAgent.commission_rate}%</p>
-            </div>
-            <div>
               <h3 className="font-semibold">Total Receivable</h3>
               <p className={`font-medium ${
                 currentAgent.payment_status === 'Paid' ? 'text-green-600' : 'text-orange-600'
               }`}>
-                ${currentAgent.total_received.toFixed(2)}
+                ${(currentAgent.total_received || 0).toFixed(2)}
               </p>
-            </div>
-            <div>
-              <h3 className="font-semibold">Commission Due</h3>
-              <p>${currentAgent.commission_due.toFixed(2)}</p>
             </div>
             <div>
               <h3 className="font-semibold">Status</h3>
@@ -381,8 +375,7 @@ const AgentManagement = () => {
               email: currentAgent.email,
               phone: currentAgent.phone || '',
               location: currentAgent.location || '',
-              commission: `${currentAgent.commission_rate}%`,
-              status: currentAgent.status,
+              status: currentAgent.status || 'Active',
             }}
             onSubmit={handleSaveAgent}
             isSubmitting={isSubmitting}

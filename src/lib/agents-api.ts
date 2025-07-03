@@ -20,7 +20,7 @@ export interface AgentFormData {
   id?: number;
   name: string;
   email: string;
-  contact_person: string;
+  contactPerson: string;
   phone: string;
   location: string;
   status: 'Active' | 'Inactive';
@@ -38,7 +38,10 @@ export const agentsAPI = {
       throw error;
     }
     
-    return data || [];
+    return (data || []).map(agent => ({
+      ...agent,
+      status: agent.status as 'Active' | 'Inactive'
+    }));
   },
 
   getById: async (id: number): Promise<Agent> => {
@@ -53,7 +56,10 @@ export const agentsAPI = {
       throw error;
     }
     
-    return data;
+    return {
+      ...data,
+      status: data.status as 'Active' | 'Inactive'
+    };
   },
 
   create: async (agentData: Omit<AgentFormData, 'id'>): Promise<Agent> => {
@@ -62,7 +68,7 @@ export const agentsAPI = {
       .insert([{
         name: agentData.name,
         email: agentData.email,
-        contact_person: agentData.contact_person,
+        contact_person: agentData.contactPerson,
         phone: agentData.phone,
         location: agentData.location,
         status: agentData.status,
@@ -75,7 +81,10 @@ export const agentsAPI = {
       throw error;
     }
     
-    return data;
+    return {
+      ...data,
+      status: data.status as 'Active' | 'Inactive'
+    };
   },
 
   update: async (id: number, agentData: Partial<Omit<AgentFormData, 'id'>>): Promise<Agent> => {
@@ -85,7 +94,7 @@ export const agentsAPI = {
 
     if (agentData.name) updateData.name = agentData.name;
     if (agentData.email) updateData.email = agentData.email;
-    if (agentData.contact_person) updateData.contact_person = agentData.contact_person;
+    if (agentData.contactPerson) updateData.contact_person = agentData.contactPerson;
     if (agentData.phone) updateData.phone = agentData.phone;
     if (agentData.location) updateData.location = agentData.location;
     if (agentData.status) updateData.status = agentData.status;
@@ -102,7 +111,10 @@ export const agentsAPI = {
       throw error;
     }
     
-    return data;
+    return {
+      ...data,
+      status: data.status as 'Active' | 'Inactive'
+    };
   },
 
   delete: async (id: number): Promise<void> => {
@@ -113,6 +125,21 @@ export const agentsAPI = {
     
     if (error) {
       console.error('Error deleting agent:', error);
+      throw error;
+    }
+  },
+
+  updatePaymentStatus: async (id: number, paymentStatus: string): Promise<void> => {
+    const { error } = await supabase
+      .from('agents')
+      .update({
+        payment_status: paymentStatus,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id);
+    
+    if (error) {
+      console.error('Error updating payment status:', error);
       throw error;
     }
   },

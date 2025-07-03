@@ -18,7 +18,6 @@ export interface AgentFormData {
   email: string;
   phone: string;
   location: string;
-  commission: string;
   status: "Active" | "Inactive";
 }
 
@@ -35,7 +34,6 @@ const AgentForm: React.FC<AgentFormProps> = ({
     email: "",
     phone: "",
     location: "",
-    commission: "10%",
     status: "Active",
   },
   onSubmit,
@@ -119,18 +117,6 @@ const AgentForm: React.FC<AgentFormProps> = ({
             value={formData.location}
             onChange={handleChange}
             placeholder="Enter location"
-            required
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="commission">Commission Rate</Label>
-          <Input
-            id="commission"
-            name="commission"
-            value={formData.commission}
-            onChange={handleChange}
-            placeholder="Enter commission rate (e.g., 10%)"
             required
           />
         </div>
