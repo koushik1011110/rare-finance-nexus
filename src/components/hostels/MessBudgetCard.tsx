@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Edit, DollarSign, Calendar } from "lucide-react";
+import { Edit, DollarSign, Calendar, AlertCircle } from "lucide-react";
 import type { Hostel } from "@/lib/hostels-api";
 
 interface MessBudgetCardProps {
@@ -28,10 +28,25 @@ export default function MessBudgetCard({ hostel, onUpdate }: MessBudgetCardProps
   const usedBudget = totalBudget - remainingBudget;
   const usedPercentage = totalBudget > 0 ? (usedBudget / totalBudget) * 100 : 0;
 
+  // Check if budget is over-spent
+  const isOverBudget = remainingBudget < 0;
+
   const handleSaveBudget = async () => {
     setIsSubmitting(true);
     try {
       const budgetAmount = parseFloat(budget) || 0;
+      
+      if (budgetAmount < 0) {
+        toast({
+          title: "Invalid Amount",
+          description: "Budget amount cannot be negative.",
+          variant: "destructive",
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
+      console.log(`Setting mess budget for hostel ${hostel.id}: ₹${budgetAmount}`);
       
       const { error } = await supabase
         .from('hostels')
@@ -43,11 +58,14 @@ export default function MessBudgetCard({ hostel, onUpdate }: MessBudgetCardProps
         })
         .eq('id', hostel.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error updating mess budget:', error);
+        throw error;
+      }
 
       toast({
         title: "Success",
-        description: `Mess budget updated for ${hostel.name}`,
+        description: `Mess budget set to ₹${budgetAmount.toLocaleString()} for ${hostel.name}. Budget year: ${currentYear}`,
       });
       
       setIsEditing(false);
@@ -56,7 +74,7 @@ export default function MessBudgetCard({ hostel, onUpdate }: MessBudgetCardProps
       console.error('Error updating mess budget:', error);
       toast({
         title: "Error",
-        description: "Failed to update mess budget",
+        description: "Failed to update mess budget. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -64,8 +82,13 @@ export default function MessBudgetCard({ hostel, onUpdate }: MessBudgetCardProps
     }
   };
 
+  const handleCancel = () => {
+    setIsEditing(false);
+    setBudget(hostel.mess_budget?.toString() || "0");
+  };
+
   return (
-    <Card>
+    <Card className={isOverBudget ? "border-red-200 bg-red-50" : ""}>
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg">{hostel.name}</CardTitle>
@@ -88,22 +111,31 @@ export default function MessBudgetCard({ hostel, onUpdate }: MessBudgetCardProps
             
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Remaining:</span>
-              <span className="font-medium text-green-600">₹{remainingBudget.toLocaleString()}</span>
+              <span className={`font-medium ${isOverBudget ? 'text-red-600' : 'text-green-600'}`}>
+                ₹{remainingBudget.toLocaleString()}
+              </span>
             </div>
             
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Used:</span>
-              <span className="font-medium text-red-600">₹{usedBudget.toLocaleString()}</span>
+              <span className="font-medium text-orange-600">₹{usedBudget.toLocaleString()}</span>
             </div>
+
+            {isOverBudget && (
+              <div className="flex items-center space-x-2 p-2 bg-red-100 rounded-md">
+                <AlertCircle className="h-4 w-4 text-red-600" />
+                <span className="text-sm text-red-600">Budget exceeded!</span>
+              </div>
+            )}
 
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span>Budget Usage</span>
-                <span>{usedPercentage.toFixed(1)}%</span>
+                <span className={isOverBudget ? 'text-red-600 font-semibold' : ''}>{usedPercentage.toFixed(1)}%</span>
               </div>
               <Progress 
                 value={Math.min(usedPercentage, 100)} 
-                className="h-2"
+                className={`h-2 ${isOverBudget ? 'bg-red-200' : ''}`}
               />
             </div>
 
@@ -114,7 +146,7 @@ export default function MessBudgetCard({ hostel, onUpdate }: MessBudgetCardProps
               className="w-full"
             >
               <Edit className="h-4 w-4 mr-2" />
-              Edit Budget
+              {totalBudget === 0 ? 'Set Budget' : 'Edit Budget'}
             </Button>
           </>
         ) : (
@@ -131,7 +163,11 @@ export default function MessBudgetCard({ hostel, onUpdate }: MessBudgetCardProps
                 value={budget}
                 onChange={(e) => setBudget(e.target.value)}
                 placeholder="Enter budget amount"
+                className="mt-1"
               />
+              <p className="text-xs text-muted-foreground mt-1">
+                Current expenses: ₹{usedBudget.toLocaleString()}
+              </p>
             </div>
             
             <div className="flex space-x-2">
@@ -140,14 +176,11 @@ export default function MessBudgetCard({ hostel, onUpdate }: MessBudgetCardProps
                 disabled={isSubmitting}
                 className="flex-1"
               >
-                {isSubmitting ? "Saving..." : "Save"}
+                {isSubmitting ? "Saving..." : "Save Budget"}
               </Button>
               <Button
                 variant="outline"
-                onClick={() => {
-                  setIsEditing(false);
-                  setBudget(hostel.mess_budget?.toString() || "0");
-                }}
+                onClick={handleCancel}
                 disabled={isSubmitting}
                 className="flex-1"
               >
