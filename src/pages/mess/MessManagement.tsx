@@ -5,7 +5,7 @@ import MainLayout from "@/components/layout/MainLayout";
 import PageHeader from "@/components/shared/PageHeader";
 import DataTable from "@/components/ui/DataTable";
 import { Button } from "@/components/ui/button";
-import { Plus, Download, Eye, Edit, Trash2 } from "lucide-react";
+import { Plus, Download, Eye, Edit, Trash2, DollarSign } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { 
   Select,
@@ -15,6 +15,7 @@ import {
   SelectValue, 
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import DetailViewModal from "@/components/shared/DetailViewModal";
 import EditModal from "@/components/shared/EditModal";
 import { hostelsAPI, Hostel } from "@/lib/hostels-api";
@@ -47,10 +48,11 @@ const MessManagement = () => {
     mutationFn: messExpensesAPI.create,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['mess-expenses'] });
+      queryClient.invalidateQueries({ queryKey: ['hostels'] }); // Refresh hostels to update budget
       setAddModalOpen(false);
       toast({
         title: "Success",
-        description: "Mess expense created successfully.",
+        description: "Mess expense created successfully. Budget has been updated automatically.",
       });
     },
     onError: (error) => {
@@ -69,11 +71,12 @@ const MessManagement = () => {
       messExpensesAPI.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['mess-expenses'] });
+      queryClient.invalidateQueries({ queryKey: ['hostels'] }); // Refresh hostels to update budget
       setEditModalOpen(false);
       setSelectedExpense(null);
       toast({
         title: "Success",
-        description: "Mess expense updated successfully.",
+        description: "Mess expense updated successfully. Budget has been adjusted automatically.",
       });
     },
     onError: (error) => {
@@ -91,9 +94,10 @@ const MessManagement = () => {
     mutationFn: messExpensesAPI.delete,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['mess-expenses'] });
+      queryClient.invalidateQueries({ queryKey: ['hostels'] }); // Refresh hostels to update budget
       toast({
         title: "Success",
-        description: "Mess expense deleted successfully.",
+        description: "Mess expense deleted successfully. Budget has been restored automatically.",
       });
     },
     onError: (error) => {
@@ -126,7 +130,7 @@ const MessManagement = () => {
   };
 
   const handleDeleteExpense = (id: number) => {
-    if (window.confirm("Are you sure you want to delete this expense?")) {
+    if (window.confirm("Are you sure you want to delete this expense? This will automatically restore the amount to the hostel's mess budget.")) {
       deleteExpenseMutation.mutate(id);
     }
   };
@@ -150,6 +154,12 @@ const MessManagement = () => {
       description: "Export functionality will be available shortly.",
     });
   };
+
+  // Calculate summary statistics
+  const totalExpenses = messExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+  const totalBudgetAllocated = hostels.reduce((sum, hostel) => sum + (hostel.mess_budget || 0), 0);
+  const totalBudgetRemaining = hostels.reduce((sum, hostel) => sum + (hostel.mess_budget_remaining || 0), 0);
+  const budgetUtilization = totalBudgetAllocated > 0 ? ((totalBudgetAllocated - totalBudgetRemaining) / totalBudgetAllocated * 100) : 0;
 
   const columns = [
     { 
@@ -233,7 +243,7 @@ const MessManagement = () => {
     <MainLayout>
       <PageHeader
         title="Mess Management"
-        description="Manage hostel mess expenses and records"
+        description="Manage hostel mess expenses and track budget utilization in real-time"
         actions={
           <>
             <Button variant="outline" size="sm" onClick={handleExport}>
@@ -248,6 +258,42 @@ const MessManagement = () => {
         }
       />
 
+      {/* Budget Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Budget Allocated</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">₹{totalBudgetAllocated.toLocaleString()}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Budget Remaining</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-600">₹{totalBudgetRemaining.toLocaleString()}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Expenses</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-600">₹{totalExpenses.toLocaleString()}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Budget Utilization</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-orange-600">{budgetUtilization.toFixed(1)}%</div>
+          </CardContent>
+        </Card>
+      </div>
+
       <div className="mb-6">
         <div className="flex gap-4">
           <Select 
@@ -261,7 +307,7 @@ const MessManagement = () => {
               <SelectItem value="all">All Hostels</SelectItem>
               {hostels.map(hostel => (
                 <SelectItem key={hostel.id} value={hostel.id.toString()}>
-                  {hostel.name}
+                  {hostel.name} (Budget: ₹{(hostel.mess_budget_remaining || 0).toLocaleString()} remaining)
                 </SelectItem>
               ))}
             </SelectContent>
