@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,12 +6,14 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Eye, Download, FileText } from "lucide-react";
+import { Eye, Download, FileText, Edit } from "lucide-react";
 import MainLayout from "@/components/layout/MainLayout";
 import PageHeader from "@/components/shared/PageHeader";
 import DataTable from "@/components/ui/DataTable";
 import StudentDetailModal from "@/components/students/StudentDetailModal";
 import COLLetterModal from "@/components/students/COLLetterModal";
+import EditModal from "@/components/shared/EditModal";
+import AgentApplicationEditForm from "@/components/students/AgentApplicationEditForm";
 import { useAuth } from "@/contexts/AuthContext";
 import type { Tables } from "@/integrations/supabase/types";
 
@@ -33,6 +34,8 @@ export default function Application() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCOLModalOpen, setIsCOLModalOpen] = useState(false);
   const [colStudent, setCOLStudent] = useState<ApplyStudent | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingApplication, setEditingApplication] = useState<ApplyStudent | null>(null);
 
   const { data: applications = [], isLoading } = useQuery({
     queryKey: ["apply-students"],
@@ -172,6 +175,17 @@ export default function Application() {
     setIsCOLModalOpen(true);
   };
 
+  const handleEditApplication = (application: ApplyStudent) => {
+    setEditingApplication(application);
+    setIsEditModalOpen(true);
+  };
+
+  const handleEditSuccess = () => {
+    setIsEditModalOpen(false);
+    setEditingApplication(null);
+    queryClient.invalidateQueries({ queryKey: ["apply-students"] });
+  };
+
   const columns = [
     {
       header: "Application ID",
@@ -287,6 +301,12 @@ export default function Application() {
             <Eye className="h-4 w-4 mr-1" />
             View
           </Button>
+          {user?.role === 'agent' && (
+            <Button variant="outline" size="sm" onClick={() => handleEditApplication(row)}>
+              <Edit className="h-4 w-4 mr-1" />
+              Edit
+            </Button>
+          )}
           {user?.role === 'agent' && row.status === 'approved' && (
             <Button variant="outline" size="sm" onClick={() => handleGenerateCOL(row)}>
               <FileText className="h-4 w-4 mr-1" />
@@ -345,6 +365,26 @@ export default function Application() {
           isOpen={isCOLModalOpen}
           onClose={() => setIsCOLModalOpen(false)}
         />
+
+        <EditModal
+          title="Edit Application"
+          isOpen={isEditModalOpen}
+          onClose={() => {
+            setIsEditModalOpen(false);
+            setEditingApplication(null);
+          }}
+        >
+          {editingApplication && (
+            <AgentApplicationEditForm
+              application={editingApplication}
+              onSuccess={handleEditSuccess}
+              onCancel={() => {
+                setIsEditModalOpen(false);
+                setEditingApplication(null);
+              }}
+            />
+          )}
+        </EditModal>
       </div>
     </MainLayout>
   );

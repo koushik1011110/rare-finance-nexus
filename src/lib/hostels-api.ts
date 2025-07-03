@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 export interface Hostel {
@@ -17,6 +18,9 @@ export interface Hostel {
   universities?: {
     name: string;
   };
+  mess_budget?: number;
+  mess_budget_remaining?: number;
+  mess_budget_year?: number;
   created_at: string;
   updated_at: string;
 }
