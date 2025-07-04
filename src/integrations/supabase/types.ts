@@ -1535,6 +1535,7 @@ export type Database = {
           academic_session_id: number | null
           address: string | null
           admission_number: string | null
+          affidavit_paper_url: string | null
           agent_id: number | null
           city: string | null
           country: string | null
@@ -1547,15 +1548,25 @@ export type Database = {
           id: number
           last_name: string
           mother_name: string
+          neet_passing_year: string | null
+          neet_roll_number: string | null
+          neet_score_card_url: string | null
+          parents_phone_number: string | null
           passport_copy_url: string | null
           passport_number: string | null
+          pcb_average: number | null
           phone_number: string | null
           photo_url: string | null
+          qualification_status: string | null
           scores: string | null
           seat_number: string | null
           status: string | null
+          tenth_marksheet_number: string | null
+          tenth_marksheet_url: string | null
+          tenth_passing_year: string | null
           twelfth_certificate_url: string | null
           twelfth_marks: number | null
+          twelfth_passing_year: string | null
           university_id: number | null
           updated_at: string | null
         }
@@ -1565,6 +1576,7 @@ export type Database = {
           academic_session_id?: number | null
           address?: string | null
           admission_number?: string | null
+          affidavit_paper_url?: string | null
           agent_id?: number | null
           city?: string | null
           country?: string | null
@@ -1577,15 +1589,25 @@ export type Database = {
           id?: number
           last_name: string
           mother_name: string
+          neet_passing_year?: string | null
+          neet_roll_number?: string | null
+          neet_score_card_url?: string | null
+          parents_phone_number?: string | null
           passport_copy_url?: string | null
           passport_number?: string | null
+          pcb_average?: number | null
           phone_number?: string | null
           photo_url?: string | null
+          qualification_status?: string | null
           scores?: string | null
           seat_number?: string | null
           status?: string | null
+          tenth_marksheet_number?: string | null
+          tenth_marksheet_url?: string | null
+          tenth_passing_year?: string | null
           twelfth_certificate_url?: string | null
           twelfth_marks?: number | null
+          twelfth_passing_year?: string | null
           university_id?: number | null
           updated_at?: string | null
         }
@@ -1595,6 +1617,7 @@ export type Database = {
           academic_session_id?: number | null
           address?: string | null
           admission_number?: string | null
+          affidavit_paper_url?: string | null
           agent_id?: number | null
           city?: string | null
           country?: string | null
@@ -1607,15 +1630,25 @@ export type Database = {
           id?: number
           last_name?: string
           mother_name?: string
+          neet_passing_year?: string | null
+          neet_roll_number?: string | null
+          neet_score_card_url?: string | null
+          parents_phone_number?: string | null
           passport_copy_url?: string | null
           passport_number?: string | null
+          pcb_average?: number | null
           phone_number?: string | null
           photo_url?: string | null
+          qualification_status?: string | null
           scores?: string | null
           seat_number?: string | null
           status?: string | null
+          tenth_marksheet_number?: string | null
+          tenth_marksheet_url?: string | null
+          tenth_passing_year?: string | null
           twelfth_certificate_url?: string | null
           twelfth_marks?: number | null
+          twelfth_passing_year?: string | null
           university_id?: number | null
           updated_at?: string | null
         }
