@@ -21,6 +21,7 @@ import EditModal from "@/components/shared/EditModal";
 import { hostelsAPI, Hostel } from "@/lib/hostels-api";
 import { messExpensesAPI, MessExpense, MessExpenseFormData } from "@/lib/mess-expenses-api";
 import MessExpenseForm from "@/components/forms/MessExpenseForm";
+import MessBudgetCard from "@/components/mess/MessBudgetCard";
 
 const MessManagement = () => {
   const [selectedHostel, setSelectedHostel] = useState<string>("all");
@@ -153,6 +154,10 @@ const MessManagement = () => {
       title: "Feature Coming Soon",
       description: "Export functionality will be available shortly.",
     });
+  };
+
+  const handleBudgetUpdate = () => {
+    queryClient.invalidateQueries({ queryKey: ['hostels'] });
   };
 
   // Calculate summary statistics
@@ -292,6 +297,34 @@ const MessManagement = () => {
             <div className="text-2xl font-bold text-orange-600">{budgetUtilization.toFixed(1)}%</div>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Hostel Budget Management Section */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-xl font-semibold">Hostel Mess Budgets</h2>
+            <p className="text-sm text-muted-foreground">Set and manage annual mess budgets for each hostel</p>
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {hostels.map((hostel) => (
+            <MessBudgetCard
+              key={hostel.id}
+              hostel={hostel}
+              onUpdate={handleBudgetUpdate}
+            />
+          ))}
+        </div>
+        
+        {hostels.length === 0 && (
+          <div className="text-center py-8">
+            <p className="text-muted-foreground">
+              No hostels found. Please add hostels first to manage their mess budgets.
+            </p>
+          </div>
+        )}
       </div>
 
       <div className="mb-6">

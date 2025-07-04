@@ -152,4 +152,35 @@ export const hostelsAPI = {
       throw error;
     }
   },
+
+  updateMessBudget: async (id: number, budget: number): Promise<Hostel> => {
+    const currentYear = new Date().getFullYear();
+    
+    const { data, error } = await supabase
+      .from('hostels')
+      .update({
+        mess_budget: budget,
+        mess_budget_remaining: budget, // Reset remaining to full amount when setting new budget
+        mess_budget_year: currentYear,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id)
+      .select(`
+        *,
+        universities (
+          name
+        )
+      `)
+      .single();
+    
+    if (error) {
+      console.error('Error updating mess budget:', error);
+      throw error;
+    }
+    
+    return {
+      ...data,
+      status: data.status as 'Active' | 'Inactive' | 'Maintenance'
+    };
+  },
 };
