@@ -9,11 +9,13 @@ import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
 import DetailViewModal from "@/components/shared/DetailViewModal";
 import StudentProfileModal from "@/components/students/StudentProfileModal";
+import StudentSuccessModal from "@/components/students/StudentSuccessModal";
 import EditModal from "@/components/shared/EditModal";
 import ComprehensiveStudentForm, { ComprehensiveStudentFormData } from "@/components/forms/ComprehensiveStudentForm";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { universitiesAPI, coursesAPI, academicSessionsAPI } from "@/lib/supabase-database";
+import { generateCOLLetter } from "@/lib/colLetterGenerator";
 
 interface AgentStudent {
   id: number;
@@ -64,8 +66,11 @@ const AgentStudents = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const [currentStudent, setCurrentStudent] = useState<AgentStudent | null>(null);
+  const [newlyAddedStudent, setNewlyAddedStudent] = useState<any>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGeneratingCOL, setIsGeneratingCOL] = useState(false);
 
   // Load data
   useEffect(() => {
@@ -285,6 +290,8 @@ const AgentStudents = () => {
           title: "Applicant Updated",
           description: `${formData.first_name} ${formData.last_name} has been updated successfully.`,
         });
+        
+        setIsEditModalOpen(false);
       } else {
         // Add new student to apply_students table
         const { data, error } = await supabase
@@ -302,17 +309,20 @@ const AgentStudents = () => {
           return;
         }
         
-        toast({
-          title: "Applicant Added",
-          description: `${formData.first_name} ${formData.last_name} has been added successfully.`,
-        });
+        // Get the enriched student data for COL generation
+        const enrichedStudent = {
+          ...data[0],
+          university_name: universities.find(u => u.id === data[0].university_id)?.name,
+          course_name: courses.find(c => c.id === data[0].course_id)?.name,
+        };
+        
+        setNewlyAddedStudent(enrichedStudent);
+        setIsSuccessModalOpen(true);
+        setIsAddModalOpen(false);
       }
       
       // Reload students data
       await loadStudents();
-      
-      setIsAddModalOpen(false);
-      setIsEditModalOpen(false);
     } catch (error) {
       console.error('Error saving student:', error);
       toast({
@@ -337,6 +347,33 @@ const AgentStudents = () => {
       title: "Feature Coming Soon",
       description: "Export functionality will be available shortly.",
     });
+  };
+
+  const handleGenerateCOL = async () => {
+    if (!newlyAddedStudent) return;
+    
+    setIsGeneratingCOL(true);
+    try {
+      await generateCOLLetter(newlyAddedStudent);
+      toast({
+        title: "COL Letter Generated",
+        description: `COL Letter for ${newlyAddedStudent.first_name} ${newlyAddedStudent.last_name} has been generated and downloaded.`,
+      });
+    } catch (error) {
+      console.error('Error generating COL letter:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate COL letter. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingCOL(false);
+    }
+  };
+
+  const handleCloseSuccessModal = () => {
+    setIsSuccessModalOpen(false);
+    setNewlyAddedStudent(null);
   };
 
   const columns = [
@@ -461,6 +498,15 @@ const AgentStudents = () => {
         isOpen={isViewModalOpen}
         onClose={() => setIsViewModalOpen(false)}
         showAgentInfo={isAdmin}
+      />
+      
+      {/* Success Modal */}
+      <StudentSuccessModal
+        isOpen={isSuccessModalOpen}
+        onClose={handleCloseSuccessModal}
+        student={newlyAddedStudent}
+        onGenerateCOL={handleGenerateCOL}
+        isGeneratingCOL={isGeneratingCOL}
       />
       
       {/* Edit Student Modal */}
