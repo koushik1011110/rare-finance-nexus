@@ -74,9 +74,9 @@ const allNavItems: NavItem[] = [
     href: "/students", 
     icon: GraduationCap,
     subItems: [
-      { title: "All Applicants", href: "/students/direct" },
+      { title: "All Applicants", href: "/students/direct", allowedRoles: ['admin', 'finance'] },
       { title: "Agent Students", href: "/students/agent" },
-      { title: "Application", href: "/students/application" },
+      { title: "Pending Application", href: "/students/application" },
       { title: "Character", href: "/students/character" },
       { title: "Visa", href: "/students/visa" },
     ]
@@ -266,9 +266,11 @@ export default function MainLayout({ children }: MainLayoutProps) {
                                   ? "bg-sidebar-primary text-sidebar-primary-foreground"
                                   : "text-sidebar-foreground"
                               )}
-                            >
-                              {subItem.title}
-                            </Link>
+                             >
+                               {subItem.href === "/students/agent" && user?.role === 'agent' 
+                                 ? "All Applicants" 
+                                 : subItem.title}
+                             </Link>
                           </li>
                         ))}
                       </ul>
