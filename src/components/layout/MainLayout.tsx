@@ -77,6 +77,7 @@ const allNavItems: NavItem[] = [
       { title: "All Applicants", href: "/students/direct", allowedRoles: ['admin', 'finance'] },
       { title: "Agent Students", href: "/students/agent" },
       { title: "Pending Application", href: "/students/application" },
+      { title: "Admission Letter Upload", href: "/students/admission-letters" },
       { title: "Character", href: "/students/character" },
       { title: "Visa", href: "/students/visa" },
     ]

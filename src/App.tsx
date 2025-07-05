@@ -16,6 +16,7 @@ import StudentAdmission from "./pages/students/StudentAdmission";
 import Application from "./pages/students/Application";
 import Character from "./pages/students/Character";
 import Visa from "./pages/students/Visa";
+import AdmissionLetters from "./pages/students/AdmissionLetters";
 
 // Agent Management
 import AgentManagement from "./pages/agents/AgentManagement";
@@ -82,6 +83,7 @@ const App = () => (
             <Route path="/students/agent" element={<ProtectedRoute><AgentStudents /></ProtectedRoute>} />
             <Route path="/students/admission" element={<ProtectedRoute><StudentAdmission /></ProtectedRoute>} />
             <Route path="/students/application" element={<ProtectedRoute><Application /></ProtectedRoute>} />
+            <Route path="/students/admission-letters" element={<ProtectedRoute><AdmissionLetters /></ProtectedRoute>} />
             <Route path="/students/character" element={<ProtectedRoute><Character /></ProtectedRoute>} />
             <Route path="/students/visa" element={<ProtectedRoute><Visa /></ProtectedRoute>} />
             

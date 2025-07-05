@@ -1534,6 +1534,8 @@ export type Database = {
           aadhaar_number: string | null
           academic_session_id: number | null
           address: string | null
+          admission_letter_uploaded_at: string | null
+          admission_letter_url: string | null
           admission_number: string | null
           affidavit_paper_url: string | null
           agent_id: number | null
@@ -1575,6 +1577,8 @@ export type Database = {
           aadhaar_number?: string | null
           academic_session_id?: number | null
           address?: string | null
+          admission_letter_uploaded_at?: string | null
+          admission_letter_url?: string | null
           admission_number?: string | null
           affidavit_paper_url?: string | null
           agent_id?: number | null
@@ -1616,6 +1620,8 @@ export type Database = {
           aadhaar_number?: string | null
           academic_session_id?: number | null
           address?: string | null
+          admission_letter_uploaded_at?: string | null
+          admission_letter_url?: string | null
           admission_number?: string | null
           affidavit_paper_url?: string | null
           agent_id?: number | null

@@ -420,7 +420,7 @@ const AgentStudents = () => {
             )}
             <Button variant="default" size="sm" onClick={handleAddStudent}>
               <Plus className="mr-2 h-4 w-4" />
-              Add Student
+              {user?.role === 'agent' ? 'Add Applicants' : 'Add Student'}
             </Button>
           </>
         }
