@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Upload, FileText, User, GraduationCap, Phone, Mail, Users, MapPin, CreditCard } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { universitiesAPI, coursesAPI, academicSessionsAPI, University, Course, AcademicSession } from "@/lib/supabase-database";
+import { uploadFile } from "@/lib/fileUpload";
 
 export interface SupabaseDirectStudentFormData {
   id?: number;
@@ -154,6 +155,18 @@ const SupabaseDirectStudentForm: React.FC<SupabaseDirectStudentFormProps> = ({
   const handleFileChange = (field: string, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      // Check file size (20KB limit)
+      const maxSize = 20 * 1024; // 20KB in bytes
+      if (file.size > maxSize) {
+        toast({
+          title: "File Too Large",
+          description: `File size must be less than 20KB. Current size: ${Math.round(file.size / 1024)}KB`,
+          variant: "destructive"
+        });
+        e.target.value = ''; // Clear the input
+        return;
+      }
+      
       setFiles(prev => ({ ...prev, [field]: file }));
     }
   };
@@ -162,13 +175,57 @@ const SupabaseDirectStudentForm: React.FC<SupabaseDirectStudentFormProps> = ({
     e.preventDefault();
     
     try {
+      setUploadingFiles(true);
       let updatedFormData = { ...formData };
       
-      // For now, just notify about file uploads (Firebase upload will be added later)
-      if (files.studentImage || files.passportCopy || files.aadhaarCopy || files.twelfthCertificate || files.neetScoreCard || files.tenthMarksheet || files.affidavitPaper) {
+      // Upload files if any are selected
+      const uploadPromises = [];
+      const fileFields = [
+        { key: 'studentImage', field: 'photo_url', folder: 'photos' },
+        { key: 'passportCopy', field: 'passport_copy_url', folder: 'passports' },
+        { key: 'aadhaarCopy', field: 'aadhaar_copy_url', folder: 'aadhaar' },
+        { key: 'twelfthCertificate', field: 'twelfth_certificate_url', folder: 'certificates' },
+        { key: 'neetScoreCard', field: 'neet_score_card_url', folder: 'neet' },
+        { key: 'tenthMarksheet', field: 'tenth_marksheet_url', folder: 'marksheets' },
+        { key: 'affidavitPaper', field: 'affidavit_paper_url', folder: 'affidavits' }
+      ];
+
+      for (const { key, field, folder } of fileFields) {
+        const file = files[key as keyof typeof files];
+        if (file) {
+          uploadPromises.push(
+            uploadFile(file, folder).then(result => ({
+              field,
+              result
+            }))
+          );
+        }
+      }
+
+      if (uploadPromises.length > 0) {
+        const uploadResults = await Promise.all(uploadPromises);
+        
+        // Check for upload errors
+        const failedUploads = uploadResults.filter(r => !r.result.success);
+        if (failedUploads.length > 0) {
+          toast({
+            title: "Upload Error",
+            description: failedUploads.map(f => f.result.error).join(', '),
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // Update form data with uploaded URLs
+        uploadResults.forEach(({ field, result }) => {
+          if (result.success && result.url) {
+            (updatedFormData as any)[field] = result.url;
+          }
+        });
+
         toast({
-          title: "Note",
-          description: "File upload functionality will be available soon. Form data saved without files.",
+          title: "Success",
+          description: `${uploadResults.length} document(s) uploaded successfully`,
         });
       }
       
@@ -180,6 +237,8 @@ const SupabaseDirectStudentForm: React.FC<SupabaseDirectStudentFormProps> = ({
         description: "Failed to submit form. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setUploadingFiles(false);
     }
   };
 
@@ -697,7 +756,7 @@ const SupabaseDirectStudentForm: React.FC<SupabaseDirectStudentFormProps> = ({
             <FileText className="mr-2 h-5 w-5" />
             Document Uploads
           </CardTitle>
-          <CardDescription>Upload student documents (PDF, JPG, PNG accepted)</CardDescription>
+          <CardDescription>Upload student documents (PDF, JPG, PNG accepted - Max 20KB each)</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
