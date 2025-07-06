@@ -15,6 +15,7 @@ import COLLetterModal from "@/components/students/COLLetterModal";
 import EditModal from "@/components/shared/EditModal";
 import AgentApplicationEditForm from "@/components/students/AgentApplicationEditForm";
 import { useAuth } from "@/contexts/AuthContext";
+import { generateCOLLetter } from "@/lib/colLetterGenerator";
 import type { Tables } from "@/integrations/supabase/types";
 
 type ApplyStudent = Tables<"apply_students">;
@@ -186,6 +187,35 @@ export default function Application() {
     queryClient.invalidateQueries({ queryKey: ["apply-students"] });
   };
 
+  const handleExportCOL = async (student: ApplyStudent) => {
+    try {
+      // Get additional data needed for COL generation
+      const [universitiesData, coursesData] = await Promise.all([
+        supabase.from('universities').select('*'),
+        supabase.from('courses').select('*')
+      ]);
+
+      const enrichedStudent = {
+        ...student,
+        university_name: universitiesData.data?.find(u => u.id === student.university_id)?.name,
+        course_name: coursesData.data?.find(c => c.id === student.course_id)?.name,
+      };
+
+      await generateCOLLetter(enrichedStudent);
+      toast({
+        title: "COL Letter Generated",
+        description: `COL Letter for ${student.first_name} ${student.last_name} has been generated and downloaded.`,
+      });
+    } catch (error) {
+      console.error('Error generating COL letter:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate COL letter. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const columns = [
     {
       header: "Application ID",
@@ -313,9 +343,9 @@ export default function Application() {
               COL Letter
             </Button>
           )}
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={() => handleExportCOL(row)}>
             <Download className="h-4 w-4 mr-1" />
-            Export
+            Export COL
           </Button>
         </div>
       ),

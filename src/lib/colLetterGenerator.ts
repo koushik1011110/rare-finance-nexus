@@ -20,17 +20,31 @@ export const generateCOLLetter = (student: StudentData): void => {
   // Set font
   doc.setFont('helvetica');
   
-  // Header - Logo placeholder and date
-  doc.setFillColor(52, 152, 219); // Blue color
-  doc.rect(20, 20, 170, 15, 'F');
+  // Header with logo
+  const logoImg = new Image();
+  logoImg.src = '/lovable-uploads/71c812f6-bbaf-4f30-abe2-481ec95372da.png';
   
-  // Organization logo text (placeholder)
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(14);
-  doc.setFont('helvetica', 'bold');
-  doc.text('📚 Rare Education', 25, 30);
+  // Add logo (convert to base64 for PDF)
+  try {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      canvas.width = logoImg.width;
+      canvas.height = logoImg.height;
+      ctx.drawImage(logoImg, 0, 0);
+      const logoDataUrl = canvas.toDataURL('image/png');
+      doc.addImage(logoDataUrl, 'PNG', 20, 20, 50, 20);
+    }
+  } catch (error) {
+    console.log('Logo loading error, using text instead');
+    // Fallback to text logo
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(30, 144, 255);
+    doc.text('Rare Education', 20, 35);
+  }
   
-  // Date
+  // Date - positioned on right
   doc.setTextColor(0, 0, 0);
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
@@ -41,112 +55,146 @@ export const generateCOLLetter = (student: StudentData): void => {
   });
   doc.text(`Date: ${currentDate}`, 150, 30);
   
-  // QR Code placeholder (positioned on right side)
-  doc.setDrawColor(52, 152, 219);
+  // Header line
+  doc.setDrawColor(30, 144, 255);
   doc.setLineWidth(2);
-  doc.rect(150, 50, 40, 40);
-  doc.setFontSize(8);
-  doc.text('QR Code', 165, 70);
-  doc.text(`ID: ${student.id}`, 160, 75);
+  doc.line(20, 45, 190, 45);
   
-  // Title
-  doc.setFillColor(52, 152, 219);
-  doc.rect(20, 45, 120, 15, 'F');
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(16);
+  // Title - Conditional Offer Letter
+  doc.setTextColor(30, 144, 255);
+  doc.setFontSize(20);
   doc.setFont('helvetica', 'bold');
-  doc.text('Conditional Offer Letter', 25, 55);
+  doc.text('CONDITIONAL OFFER LETTER', 20, 60);
   
-  // Student details section
+  // Decorative line under title  
+  doc.setDrawColor(255, 165, 0);
+  doc.setLineWidth(1);
+  doc.line(20, 65, 140, 65);
+  
+  // Student details box
+  doc.setFillColor(248, 249, 250);
+  doc.rect(20, 75, 170, 35, 'F');
+  doc.setDrawColor(200, 200, 200);
+  doc.rect(20, 75, 170, 35);
+  
   doc.setTextColor(0, 0, 0);
-  doc.setFontSize(10);
+  doc.setFontSize(11);
   doc.setFont('helvetica', 'normal');
   
-  const studentDetailsY = 75;
-  const lineHeight = 8;
+  const studentDetailsY = 85;
+  const lineHeight = 6;
   
-  // Icons and details (using simple text icons)
+  // Student details
   doc.setFont('helvetica', 'bold');
-  doc.text('👤 Name:', 25, studentDetailsY);
+  doc.text('Student Name:', 25, studentDetailsY);
   doc.setFont('helvetica', 'normal');
-  doc.text(`${student.first_name} ${student.last_name}`, 50, studentDetailsY);
+  doc.text(`${student.first_name} ${student.last_name}`, 70, studentDetailsY);
   
   doc.setFont('helvetica', 'bold');
-  doc.text('📅 DoB:', 25, studentDetailsY + lineHeight);
+  doc.text('Date of Birth:', 25, studentDetailsY + lineHeight);
   doc.setFont('helvetica', 'normal');
   const formattedDOB = new Date(student.date_of_birth).toLocaleDateString('en-GB');
-  doc.text(formattedDOB, 50, studentDetailsY + lineHeight);
+  doc.text(formattedDOB, 70, studentDetailsY + lineHeight);
   
   doc.setFont('helvetica', 'bold');
-  doc.text('🆔 ID Number:', 25, studentDetailsY + (lineHeight * 2));
+  doc.text('Application ID:', 25, studentDetailsY + (lineHeight * 2));
   doc.setFont('helvetica', 'normal');
-  doc.text(student.admission_number || `RE-${student.id.toString().padStart(3, '0')}`, 65, studentDetailsY + (lineHeight * 2));
+  doc.text(student.admission_number || `RE-${student.id.toString().padStart(3, '0')}`, 70, studentDetailsY + (lineHeight * 2));
   
   doc.setFont('helvetica', 'bold');
-  doc.text('🏛️ University:', 25, studentDetailsY + (lineHeight * 3));
+  doc.text('University:', 25, studentDetailsY + (lineHeight * 3));
   doc.setFont('helvetica', 'normal');
-  doc.text(student.university_name || 'Selected University', 65, studentDetailsY + (lineHeight * 3));
+  doc.text(student.university_name || 'Selected University', 70, studentDetailsY + (lineHeight * 3));
+  
+  doc.setFont('helvetica', 'bold');
+  doc.text('Course:', 25, studentDetailsY + (lineHeight * 4));
+  doc.setFont('helvetica', 'normal');
+  doc.text(student.course_name || 'Selected Course', 70, studentDetailsY + (lineHeight * 4));
   
   // Letter body
-  const bodyStartY = 115;
-  doc.setFontSize(10);
+  const bodyStartY = 125;
+  doc.setFontSize(11);
   doc.setFont('helvetica', 'normal');
-  
-  const letterText = [
-    `Dear ${student.first_name},`,
-    '',
-    `We are pleased to inform you that we have received your application for admission to`,
-    `${student.university_name || 'University Name'} for the academic session ${new Date().getFullYear()}-${(new Date().getFullYear() + 1).toString().slice(-2)}. Your`,
-    `application is currently under review, and we will complete the verification of your`,
-    `submitted documents.`,
-    '',
-    `Upon successful verification, you will be issued the official Admission Letter from`,
-    `${student.university_name || 'University Name'} within 3-5 working days. Please note that your admission is conditional`,
-    `and subject to the successful verification of all your documents and passing the interview`,
-    `exam if needed.`,
-    '',
-    'Important Note',
-    '',
-    'This is a computer-generated document and does not require any signature or seal. The',
-    'authenticity of this letter can be verified through our website by scanning the QR code',
-    'below or using your application number.',
-    '',
-    'We appreciate your patience and look forward to assisting you with your admission',
-    'process. If you have any queries, feel free to contact our support team.',
-    '',
-    `Thank you for choosing ${student.university_name || 'University Name'}.`,
-    '',
-    'Best regards,',
-  ];
+  doc.setTextColor(0, 0, 0);
   
   let currentY = bodyStartY;
-  letterText.forEach((line, index) => {
-    if (line === 'Important Note') {
-      doc.setFont('helvetica', 'bold');
-      doc.text(line, 25, currentY);
-      doc.setFont('helvetica', 'normal');
-    } else {
-      doc.text(line, 25, currentY);
-    }
+  
+  // Greeting
+  doc.setFont('helvetica', 'normal');
+  doc.text(`Dear ${student.first_name} ${student.last_name},`, 20, currentY);
+  currentY += 10;
+  
+  // Main content paragraphs
+  const paragraphs = [
+    `We are pleased to inform you that we have received your application for admission to ${student.university_name || 'the selected university'} for the ${student.course_name || 'selected course'} program for the academic session ${new Date().getFullYear()}-${(new Date().getFullYear() + 1).toString().slice(-2)}.`,
+    
+    `Your application is currently under review, and we will complete the verification of your submitted documents within the next few business days.`,
+    
+    `Upon successful verification of all required documents, you will be issued the official Admission Letter from ${student.university_name || 'the university'} within 3-5 working days. Please note that your admission is conditional and subject to:`,
+    
+    `• Successful verification of all submitted documents
+• Meeting all academic requirements
+• Completion of any required entrance examinations or interviews
+• Payment of applicable fees as per university guidelines`,
+    
+    `This Conditional Offer Letter serves as confirmation that your application has been received and is being processed. We will notify you immediately once the verification process is complete.`
+  ];
+  
+  paragraphs.forEach((paragraph, index) => {
+    const lines = doc.splitTextToSize(paragraph, 170);
+    lines.forEach((line: string) => {
+      doc.text(line, 20, currentY);
+      currentY += 5;
+    });
+    currentY += 3; // Space between paragraphs
+  });
+  
+  // Important Note section
+  currentY += 5;
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(30, 144, 255);
+  doc.text('IMPORTANT NOTE:', 20, currentY);
+  currentY += 8;
+  
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(0, 0, 0);
+  const importantText = 'This is a computer-generated document and does not require any signature or seal. The authenticity of this letter can be verified through our official website using your application number.';
+  const importantLines = doc.splitTextToSize(importantText, 170);
+  importantLines.forEach((line: string) => {
+    doc.text(line, 20, currentY);
     currentY += 5;
   });
   
-  // Footer
-  const footerY = currentY + 10;
-  doc.setFillColor(52, 152, 219);
-  doc.rect(20, footerY, 170, 25, 'F');
+  currentY += 10;
+  doc.text('We appreciate your patience and look forward to assisting you with your admission process.', 20, currentY);
+  currentY += 8;
+  doc.text(`Thank you for choosing ${student.university_name || 'our services'}.`, 20, currentY);
   
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(9);
+  currentY += 15;
+  doc.text('Best regards,', 20, currentY);
+  currentY += 8;
   doc.setFont('helvetica', 'bold');
-  doc.text('[Your Organization/University Admission Office]', 25, footerY + 8);
-  doc.setFont('helvetica', 'normal');
-  doc.text('📧 email id', 25, footerY + 15);
-  doc.text('www.rareeducation.in', 25, footerY + 20);
+  doc.text('Rare Education Team', 20, currentY);
   
-  doc.setFontSize(8);
-  doc.text('📍 36, 2nd floor Ramahari Rd. opposite Metropolitan Girls high school near', 100, footerY + 15);
-  doc.text('City College, Sai Mile, Guwahati, Assam 781022, India', 100, footerY + 20);
+  // Footer
+  const footerY = currentY + 15;
+  doc.setFillColor(248, 249, 250);
+  doc.rect(20, footerY, 170, 30, 'F');
+  doc.setDrawColor(30, 144, 255);
+  doc.setLineWidth(2);
+  doc.line(20, footerY, 190, footerY);
+  
+  doc.setTextColor(30, 144, 255);
+  doc.setFontSize(12);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Rare Education', 25, footerY + 10);
+  
+  doc.setTextColor(0, 0, 0);
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  doc.text('Email: info@rareeducation.in | Website: www.rareeducation.in', 25, footerY + 18);
+  doc.text('Address: 36, 2nd floor Ramahari Rd. opposite Metropolitan Girls high school', 25, footerY + 24);
+  doc.text('near City College, Sai Mile, Guwahati, Assam 781022, India', 25, footerY + 28);
   
   // Generate filename and download
   const fileName = `COL_Letter_${student.first_name}_${student.last_name}_${currentDate.replace(/\//g, '-')}.pdf`;
