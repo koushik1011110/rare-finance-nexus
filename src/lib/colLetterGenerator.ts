@@ -71,86 +71,48 @@ export const generateCOLLetter = (student: StudentData): void => {
   doc.setLineWidth(1);
   doc.line(20, 65, 140, 65);
   
-  // Add QR code on the right side
-  try {
-    const qrImg = new Image();
-    qrImg.src = '/src/assets/qr-code.png';
-    qrImg.onload = () => {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        canvas.width = qrImg.width;
-        canvas.height = qrImg.height;
-        ctx.drawImage(qrImg, 0, 0);
-        const qrDataUrl = canvas.toDataURL('image/png');
-        doc.addImage(qrDataUrl, 'PNG', 150, 75, 30, 30);
-      }
-    };
-  } catch (error) {
-    console.log('QR code loading error');
-  }
+  // Student details box
+  doc.setFillColor(248, 249, 250);
+  doc.rect(20, 75, 170, 35, 'F');
+  doc.setDrawColor(200, 200, 200);
+  doc.rect(20, 75, 170, 35);
   
   doc.setTextColor(0, 0, 0);
   doc.setFontSize(11);
   doc.setFont('helvetica', 'normal');
   
   const studentDetailsY = 85;
-  const lineHeight = 7;
+  const lineHeight = 6;
   
-  // Student details with icons (using simple shapes as icons)
-  // Student Name with icon
-  doc.setFillColor(30, 144, 255);
-  doc.circle(22, studentDetailsY - 1, 1.5, 'F'); // User icon
+  // Student details
   doc.setFont('helvetica', 'bold');
-  doc.setTextColor(30, 144, 255);
-  doc.text('Student Name:', 28, studentDetailsY);
+  doc.text('Student Name:', 25, studentDetailsY);
   doc.setFont('helvetica', 'normal');
-  doc.setTextColor(0, 0, 0);
-  doc.text(`${student.first_name} ${student.last_name}`, 80, studentDetailsY);
+  doc.text(`${student.first_name} ${student.last_name}`, 70, studentDetailsY);
   
-  // Date of Birth with icon
-  doc.setFillColor(30, 144, 255);
-  doc.rect(20, studentDetailsY + lineHeight - 2, 3, 2, 'F'); // Calendar icon
   doc.setFont('helvetica', 'bold');
-  doc.setTextColor(30, 144, 255);
-  doc.text('Date of Birth:', 28, studentDetailsY + lineHeight);
+  doc.text('Date of Birth:', 25, studentDetailsY + lineHeight);
   doc.setFont('helvetica', 'normal');
-  doc.setTextColor(0, 0, 0);
   const formattedDOB = new Date(student.date_of_birth).toLocaleDateString('en-GB');
-  doc.text(formattedDOB, 80, studentDetailsY + lineHeight);
+  doc.text(formattedDOB, 70, studentDetailsY + lineHeight);
   
-  // Application ID with icon
-  doc.setFillColor(30, 144, 255);
-  doc.rect(20, studentDetailsY + (lineHeight * 2) - 2, 3, 2, 'F'); // ID card icon
   doc.setFont('helvetica', 'bold');
-  doc.setTextColor(30, 144, 255);
-  doc.text('Application ID:', 28, studentDetailsY + (lineHeight * 2));
+  doc.text('Application ID:', 25, studentDetailsY + (lineHeight * 2));
   doc.setFont('helvetica', 'normal');
-  doc.setTextColor(0, 0, 0);
-  doc.text(student.admission_number || `RE-${student.id.toString().padStart(3, '0')}`, 80, studentDetailsY + (lineHeight * 2));
+  doc.text(student.admission_number || `RE-${student.id.toString().padStart(3, '0')}`, 70, studentDetailsY + (lineHeight * 2));
   
-  // University with icon
-  doc.setFillColor(30, 144, 255);
-  doc.rect(20, studentDetailsY + (lineHeight * 3) - 2, 3, 2, 'F'); // Building icon
   doc.setFont('helvetica', 'bold');
-  doc.setTextColor(30, 144, 255);
-  doc.text('University:', 28, studentDetailsY + (lineHeight * 3));
+  doc.text('University:', 25, studentDetailsY + (lineHeight * 3));
   doc.setFont('helvetica', 'normal');
-  doc.setTextColor(0, 0, 0);
-  doc.text(student.university_name || 'Selected University', 80, studentDetailsY + (lineHeight * 3));
+  doc.text(student.university_name || 'Selected University', 70, studentDetailsY + (lineHeight * 3));
   
-  // Course with icon
-  doc.setFillColor(30, 144, 255);
-  doc.circle(22, studentDetailsY + (lineHeight * 4) - 1, 1.5, 'F'); // Book icon
   doc.setFont('helvetica', 'bold');
-  doc.setTextColor(30, 144, 255);
-  doc.text('Course:', 28, studentDetailsY + (lineHeight * 4));
+  doc.text('Course:', 25, studentDetailsY + (lineHeight * 4));
   doc.setFont('helvetica', 'normal');
-  doc.setTextColor(0, 0, 0);
-  doc.text(student.course_name || 'Selected Course', 80, studentDetailsY + (lineHeight * 4));
+  doc.text(student.course_name || 'Selected Course', 70, studentDetailsY + (lineHeight * 4));
   
   // Letter body
-  const bodyStartY = 140;
+  const bodyStartY = 125;
   doc.setFontSize(11);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(0, 0, 0);

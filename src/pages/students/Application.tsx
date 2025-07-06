@@ -14,7 +14,6 @@ import StudentDetailModal from "@/components/students/StudentDetailModal";
 import COLLetterModal from "@/components/students/COLLetterModal";
 import EditModal from "@/components/shared/EditModal";
 import AgentApplicationEditForm from "@/components/students/AgentApplicationEditForm";
-import DocumentViewer from "@/components/students/DocumentViewer";
 import { useAuth } from "@/contexts/AuthContext";
 import { generateCOLLetter } from "@/lib/colLetterGenerator";
 import type { Tables } from "@/integrations/supabase/types";
@@ -38,8 +37,6 @@ export default function Application() {
   const [colStudent, setCOLStudent] = useState<ApplyStudent | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingApplication, setEditingApplication] = useState<ApplyStudent | null>(null);
-  const [isDocumentViewerOpen, setIsDocumentViewerOpen] = useState(false);
-  const [documentViewerStudent, setDocumentViewerStudent] = useState<ApplyStudent | null>(null);
 
   const { data: applications = [], isLoading } = useQuery({
     queryKey: ["apply-students"],
@@ -190,11 +187,6 @@ export default function Application() {
     queryClient.invalidateQueries({ queryKey: ["apply-students"] });
   };
 
-  const handleViewDocuments = (student: ApplyStudent) => {
-    setDocumentViewerStudent(student);
-    setIsDocumentViewerOpen(true);
-  };
-
   const handleExportCOL = async (student: ApplyStudent) => {
     try {
       // Get additional data needed for COL generation
@@ -339,12 +331,6 @@ export default function Application() {
             <Eye className="h-4 w-4 mr-1" />
             View
           </Button>
-          {isAdmin && (
-            <Button variant="outline" size="sm" onClick={() => handleViewDocuments(row)}>
-              <FileText className="h-4 w-4 mr-1" />
-              Documents
-            </Button>
-          )}
           {user?.role === 'agent' && (
             <Button variant="outline" size="sm" onClick={() => handleEditApplication(row)}>
               <Edit className="h-4 w-4 mr-1" />
@@ -429,15 +415,6 @@ export default function Application() {
             />
           )}
         </EditModal>
-
-        <DocumentViewer
-          student={documentViewerStudent}
-          isOpen={isDocumentViewerOpen}
-          onClose={() => {
-            setIsDocumentViewerOpen(false);
-            setDocumentViewerStudent(null);
-          }}
-        />
       </div>
     </MainLayout>
   );
