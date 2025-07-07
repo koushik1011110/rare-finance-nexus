@@ -21,29 +21,11 @@ export const generateCOLLetter = (student: StudentData): void => {
   // Set font
   doc.setFont('helvetica');
   
-  // Header with logo
-  const logoImg = new Image();
-  logoImg.src = '/lovable-uploads/71c812f6-bbaf-4f30-abe2-481ec95372da.png';
-  
-  // Add logo (convert to base64 for PDF)
-  try {
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    if (ctx) {
-      canvas.width = logoImg.width;
-      canvas.height = logoImg.height;
-      ctx.drawImage(logoImg, 0, 0);
-      const logoDataUrl = canvas.toDataURL('image/png');
-      doc.addImage(logoDataUrl, 'PNG', 20, 20, 50, 20);
-    }
-  } catch (error) {
-    console.log('Logo loading error, using text instead');
-    // Fallback to text logo
-    doc.setFontSize(16);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(30, 144, 255);
-    doc.text('Rare Education', 20, 35);
-  }
+  // Header with logo text (since image loading is problematic)
+  doc.setFontSize(16);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(30, 144, 255);
+  doc.text('Rare Education', 20, 35);
   
   // Date - positioned on right
   doc.setTextColor(0, 0, 0);
@@ -72,7 +54,15 @@ export const generateCOLLetter = (student: StudentData): void => {
   doc.setLineWidth(1);
   doc.line(20, 65, 140, 65);
   
-  // Student details section without box
+  // Add QR code placeholder on the right side
+  doc.setDrawColor(200, 200, 200);
+  doc.setFillColor(245, 245, 245);
+  doc.rect(150, 75, 35, 35, 'FD');
+  doc.setTextColor(100, 100, 100);
+  doc.setFontSize(8);
+  doc.text('QR CODE', 159, 95);
+  
+  // Student details section
   doc.setTextColor(0, 0, 0);
   doc.setFontSize(11);
   doc.setFont('helvetica', 'normal');
@@ -80,37 +70,14 @@ export const generateCOLLetter = (student: StudentData): void => {
   const studentDetailsY = 85;
   const lineHeight = 8;
   
-  // Add QR code on the right side
-  try {
-    // Load the QR code image
-    const qrImg = new Image();
-    qrImg.src = '/lovable-uploads/ec19effc-9e4b-48f6-a275-7cb0ff07f928.png';
-    
-    // Create canvas to convert QR code to base64
-    const qrCanvas = document.createElement('canvas');
-    const qrCtx = qrCanvas.getContext('2d');
-    if (qrCtx) {
-      qrCanvas.width = qrImg.width;
-      qrCanvas.height = qrImg.height;
-      qrCtx.drawImage(qrImg, 0, 0);
-      const qrDataUrl = qrCanvas.toDataURL('image/png');
-      // Add QR code on the right side (x: 150, y: 75, width: 35, height: 35)
-      doc.addImage(qrDataUrl, 'PNG', 150, 75, 35, 35);
-    }
-  } catch (error) {
-    console.log('QR code loading error:', error);
-  }
+  // Student details with better icon representation using Unicode symbols
   
-  // Student details with icons
-  const iconSize = 3;
-  
-  // Student Name with user icon
-  doc.setFont('helvetica', 'bold');
+  // Student Name with person icon
   doc.setFillColor(30, 144, 255);
-  doc.circle(27, studentDetailsY - 1, iconSize, 'F');
+  doc.circle(27, studentDetailsY - 1, 2.5, 'F');
   doc.setTextColor(255, 255, 255);
-  doc.setFontSize(8);
-  doc.text('👤', 25.5, studentDetailsY + 0.5);
+  doc.setFontSize(7);
+  doc.text('P', 25.8, studentDetailsY + 0.5);
   
   doc.setTextColor(0, 0, 0);
   doc.setFontSize(11);
@@ -121,10 +88,10 @@ export const generateCOLLetter = (student: StudentData): void => {
   
   // Date of Birth with calendar icon
   doc.setFillColor(30, 144, 255);
-  doc.circle(27, studentDetailsY + lineHeight - 1, iconSize, 'F');
+  doc.circle(27, studentDetailsY + lineHeight - 1, 2.5, 'F');
   doc.setTextColor(255, 255, 255);
-  doc.setFontSize(8);
-  doc.text('📅', 25.5, studentDetailsY + lineHeight + 0.5);
+  doc.setFontSize(7);
+  doc.text('D', 25.8, studentDetailsY + lineHeight + 0.5);
   
   doc.setTextColor(0, 0, 0);
   doc.setFontSize(11);
@@ -136,10 +103,10 @@ export const generateCOLLetter = (student: StudentData): void => {
   
   // Application ID with ID icon
   doc.setFillColor(30, 144, 255);
-  doc.circle(27, studentDetailsY + (lineHeight * 2) - 1, iconSize, 'F');
+  doc.circle(27, studentDetailsY + (lineHeight * 2) - 1, 2.5, 'F');
   doc.setTextColor(255, 255, 255);
-  doc.setFontSize(8);
-  doc.text('🆔', 25.5, studentDetailsY + (lineHeight * 2) + 0.5);
+  doc.setFontSize(7);
+  doc.text('ID', 25.2, studentDetailsY + (lineHeight * 2) + 0.5);
   
   doc.setTextColor(0, 0, 0);
   doc.setFontSize(11);
@@ -150,10 +117,10 @@ export const generateCOLLetter = (student: StudentData): void => {
   
   // University with building icon
   doc.setFillColor(30, 144, 255);
-  doc.circle(27, studentDetailsY + (lineHeight * 3) - 1, iconSize, 'F');
+  doc.circle(27, studentDetailsY + (lineHeight * 3) - 1, 2.5, 'F');
   doc.setTextColor(255, 255, 255);
-  doc.setFontSize(8);
-  doc.text('🏛️', 25.5, studentDetailsY + (lineHeight * 3) + 0.5);
+  doc.setFontSize(7);
+  doc.text('U', 25.8, studentDetailsY + (lineHeight * 3) + 0.5);
   
   doc.setTextColor(0, 0, 0);
   doc.setFontSize(11);
@@ -164,10 +131,10 @@ export const generateCOLLetter = (student: StudentData): void => {
   
   // Course with book icon
   doc.setFillColor(30, 144, 255);
-  doc.circle(27, studentDetailsY + (lineHeight * 4) - 1, iconSize, 'F');
+  doc.circle(27, studentDetailsY + (lineHeight * 4) - 1, 2.5, 'F');
   doc.setTextColor(255, 255, 255);
-  doc.setFontSize(8);
-  doc.text('📚', 25.5, studentDetailsY + (lineHeight * 4) + 0.5);
+  doc.setFontSize(7);
+  doc.text('C', 25.8, studentDetailsY + (lineHeight * 4) + 0.5);
   
   doc.setTextColor(0, 0, 0);
   doc.setFontSize(11);
