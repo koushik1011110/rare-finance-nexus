@@ -1,3 +1,4 @@
+
 import jsPDF from 'jspdf';
 
 interface StudentData {
@@ -71,48 +72,112 @@ export const generateCOLLetter = (student: StudentData): void => {
   doc.setLineWidth(1);
   doc.line(20, 65, 140, 65);
   
-  // Student details box
-  doc.setFillColor(248, 249, 250);
-  doc.rect(20, 75, 170, 35, 'F');
-  doc.setDrawColor(200, 200, 200);
-  doc.rect(20, 75, 170, 35);
-  
+  // Student details section without box
   doc.setTextColor(0, 0, 0);
   doc.setFontSize(11);
   doc.setFont('helvetica', 'normal');
   
   const studentDetailsY = 85;
-  const lineHeight = 6;
+  const lineHeight = 8;
   
-  // Student details
+  // Add QR code on the right side
+  try {
+    // Load the QR code image
+    const qrImg = new Image();
+    qrImg.src = '/lovable-uploads/ec19effc-9e4b-48f6-a275-7cb0ff07f928.png';
+    
+    // Create canvas to convert QR code to base64
+    const qrCanvas = document.createElement('canvas');
+    const qrCtx = qrCanvas.getContext('2d');
+    if (qrCtx) {
+      qrCanvas.width = qrImg.width;
+      qrCanvas.height = qrImg.height;
+      qrCtx.drawImage(qrImg, 0, 0);
+      const qrDataUrl = qrCanvas.toDataURL('image/png');
+      // Add QR code on the right side (x: 150, y: 75, width: 35, height: 35)
+      doc.addImage(qrDataUrl, 'PNG', 150, 75, 35, 35);
+    }
+  } catch (error) {
+    console.log('QR code loading error:', error);
+  }
+  
+  // Student details with icons
+  const iconSize = 3;
+  
+  // Student Name with user icon
   doc.setFont('helvetica', 'bold');
-  doc.text('Student Name:', 25, studentDetailsY);
+  doc.setFillColor(30, 144, 255);
+  doc.circle(27, studentDetailsY - 1, iconSize, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(8);
+  doc.text('👤', 25.5, studentDetailsY + 0.5);
+  
+  doc.setTextColor(0, 0, 0);
+  doc.setFontSize(11);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Student Name:', 35, studentDetailsY);
   doc.setFont('helvetica', 'normal');
-  doc.text(`${student.first_name} ${student.last_name}`, 70, studentDetailsY);
+  doc.text(`${student.first_name} ${student.last_name}`, 80, studentDetailsY);
   
+  // Date of Birth with calendar icon
+  doc.setFillColor(30, 144, 255);
+  doc.circle(27, studentDetailsY + lineHeight - 1, iconSize, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(8);
+  doc.text('📅', 25.5, studentDetailsY + lineHeight + 0.5);
+  
+  doc.setTextColor(0, 0, 0);
+  doc.setFontSize(11);
   doc.setFont('helvetica', 'bold');
-  doc.text('Date of Birth:', 25, studentDetailsY + lineHeight);
+  doc.text('Date of Birth:', 35, studentDetailsY + lineHeight);
   doc.setFont('helvetica', 'normal');
   const formattedDOB = new Date(student.date_of_birth).toLocaleDateString('en-GB');
-  doc.text(formattedDOB, 70, studentDetailsY + lineHeight);
+  doc.text(formattedDOB, 80, studentDetailsY + lineHeight);
   
-  doc.setFont('helvetica', 'bold');
-  doc.text('Application ID:', 25, studentDetailsY + (lineHeight * 2));
-  doc.setFont('helvetica', 'normal');
-  doc.text(student.admission_number || `RE-${student.id.toString().padStart(3, '0')}`, 70, studentDetailsY + (lineHeight * 2));
+  // Application ID with ID icon
+  doc.setFillColor(30, 144, 255);
+  doc.circle(27, studentDetailsY + (lineHeight * 2) - 1, iconSize, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(8);
+  doc.text('🆔', 25.5, studentDetailsY + (lineHeight * 2) + 0.5);
   
+  doc.setTextColor(0, 0, 0);
+  doc.setFontSize(11);
   doc.setFont('helvetica', 'bold');
-  doc.text('University:', 25, studentDetailsY + (lineHeight * 3));
+  doc.text('Application ID:', 35, studentDetailsY + (lineHeight * 2));
   doc.setFont('helvetica', 'normal');
-  doc.text(student.university_name || 'Selected University', 70, studentDetailsY + (lineHeight * 3));
+  doc.text(student.admission_number || `RE-${student.id.toString().padStart(3, '0')}`, 80, studentDetailsY + (lineHeight * 2));
   
+  // University with building icon
+  doc.setFillColor(30, 144, 255);
+  doc.circle(27, studentDetailsY + (lineHeight * 3) - 1, iconSize, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(8);
+  doc.text('🏛️', 25.5, studentDetailsY + (lineHeight * 3) + 0.5);
+  
+  doc.setTextColor(0, 0, 0);
+  doc.setFontSize(11);
   doc.setFont('helvetica', 'bold');
-  doc.text('Course:', 25, studentDetailsY + (lineHeight * 4));
+  doc.text('University:', 35, studentDetailsY + (lineHeight * 3));
   doc.setFont('helvetica', 'normal');
-  doc.text(student.course_name || 'Selected Course', 70, studentDetailsY + (lineHeight * 4));
+  doc.text(student.university_name || 'Selected University', 80, studentDetailsY + (lineHeight * 3));
+  
+  // Course with book icon
+  doc.setFillColor(30, 144, 255);
+  doc.circle(27, studentDetailsY + (lineHeight * 4) - 1, iconSize, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(8);
+  doc.text('📚', 25.5, studentDetailsY + (lineHeight * 4) + 0.5);
+  
+  doc.setTextColor(0, 0, 0);
+  doc.setFontSize(11);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Course:', 35, studentDetailsY + (lineHeight * 4));
+  doc.setFont('helvetica', 'normal');
+  doc.text(student.course_name || 'Selected Course', 80, studentDetailsY + (lineHeight * 4));
   
   // Letter body
-  const bodyStartY = 125;
+  const bodyStartY = 130;
   doc.setFontSize(11);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(0, 0, 0);
