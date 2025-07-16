@@ -64,45 +64,54 @@ interface ComprehensiveStudentFormProps {
 }
 
 const ComprehensiveStudentForm: React.FC<ComprehensiveStudentFormProps> = ({
-  initialData = {
-    first_name: "",
-    last_name: "",
-    father_name: "",
-    mother_name: "",
-    date_of_birth: "",
-    phone_number: "",
-    email: "",
-    university_id: 0,
-    course_id: 0,
-    academic_session_id: 0,
-    status: "active",
-    admission_number: "",
-    city: "",
-    country: "",
-    address: "",
-    aadhaar_number: "",
-    passport_number: "",
-    seat_number: "",
-    scores: "",
-    twelfth_marks: 0,
-    agent_id: 0,
-    parents_phone_number: "",
-    tenth_passing_year: "",
-    twelfth_passing_year: "",
-    neet_passing_year: "",
-    tenth_marksheet_number: "",
-    pcb_average: 0,
-    neet_roll_number: "",
-    qualification_status: "qualified",
-  },
+  initialData,
   onSubmit,
   isSubmitting = false,
 }) => {
-  const [formData, setFormData] = useState<ComprehensiveStudentFormData>(initialData);
   const [universities, setUniversities] = useState<University[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
   const [academicSessions, setAcademicSessions] = useState<AcademicSession[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Set default values with proper defaults for course and session
+  const [formData, setFormData] = useState<ComprehensiveStudentFormData>(() => {
+    if (initialData) {
+      return initialData;
+    }
+    
+    // Default values for new student
+    return {
+      first_name: "",
+      last_name: "",
+      father_name: "",
+      mother_name: "",
+      date_of_birth: "",
+      phone_number: "",
+      email: "",
+      university_id: 0,
+      course_id: 0, // Will be set to MBBS ID after loading
+      academic_session_id: 0, // Will be set to 2025-26 ID after loading
+      status: "active",
+      admission_number: "",
+      city: "",
+      country: "",
+      address: "",
+      aadhaar_number: "",
+      passport_number: "",
+      seat_number: "",
+      scores: "",
+      twelfth_marks: 0,
+      agent_id: 0,
+      parents_phone_number: "",
+      tenth_passing_year: "",
+      twelfth_passing_year: "",
+      neet_passing_year: "",
+      tenth_marksheet_number: "",
+      pcb_average: 0,
+      neet_roll_number: "",
+      qualification_status: "qualified",
+    };
+  });
 
   useEffect(() => {
     loadDropdownData();
@@ -120,8 +129,27 @@ const ComprehensiveStudentForm: React.FC<ComprehensiveStudentFormProps> = ({
       setUniversities(universitiesData);
       setCourses(coursesData);
       setAcademicSessions(sessionsData);
+
+      // Set defaults only for new students (not editing)
+      if (!initialData) {
+        const mbbsCourse = coursesData.find(course => course.name.toLowerCase() === 'mbbs');
+        const session2025 = sessionsData.find(session => session.session_name === '2025-26');
+        
+        if (mbbsCourse || session2025) {
+          setFormData(prev => ({
+            ...prev,
+            ...(mbbsCourse && { course_id: mbbsCourse.id }),
+            ...(session2025 && { academic_session_id: session2025.id })
+          }));
+        }
+      }
     } catch (error) {
       console.error('Error loading dropdown data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load form data.",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -168,7 +196,7 @@ const ComprehensiveStudentForm: React.FC<ComprehensiveStudentFormProps> = ({
             <div className="space-y-2">
               <Label htmlFor="university_id">University *</Label>
               <Select
-                value={formData.university_id.toString()}
+                value={formData.university_id ? formData.university_id.toString() : ""}
                 onValueChange={(value) => handleSelectChange("university_id", value)}
               >
                 <SelectTrigger>
@@ -187,7 +215,7 @@ const ComprehensiveStudentForm: React.FC<ComprehensiveStudentFormProps> = ({
             <div className="space-y-2">
               <Label htmlFor="course_id">Course *</Label>
               <Select
-                value={formData.course_id.toString()}
+                value={formData.course_id ? formData.course_id.toString() : ""}
                 onValueChange={(value) => handleSelectChange("course_id", value)}
               >
                 <SelectTrigger>
@@ -206,7 +234,7 @@ const ComprehensiveStudentForm: React.FC<ComprehensiveStudentFormProps> = ({
             <div className="space-y-2">
               <Label htmlFor="academic_session_id">Academic Session *</Label>
               <Select
-                value={formData.academic_session_id.toString()}
+                value={formData.academic_session_id ? formData.academic_session_id.toString() : ""}
                 onValueChange={(value) => handleSelectChange("academic_session_id", value)}
               >
                 <SelectTrigger>

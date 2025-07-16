@@ -1,8 +1,8 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 export interface DashboardStats {
   totalStudents: number;
-  totalAgents: number;
   totalUniversities: number;
   activeApplications: number;
   totalRevenue: number;
@@ -11,17 +11,15 @@ export interface DashboardStats {
 
 export const getDashboardStatistics = async (): Promise<DashboardStats> => {
   try {
-    // Get all statistics in parallel
+    // Get all statistics in parallel (removed totalAgents)
     const [
       studentsResult,
-      agentsResult,
       universitiesResult,
       applicationsResult,
       revenueResult,
       tasksResult
     ] = await Promise.all([
       supabase.from('students').select('id', { count: 'exact' }),
-      supabase.from('agents').select('id', { count: 'exact' }),
       supabase.from('universities').select('id', { count: 'exact' }),
       supabase.from('apply_students').select('id', { count: 'exact' }).eq('status', 'pending'),
       supabase.from('fee_collections').select('amount_paid'),
@@ -33,7 +31,6 @@ export const getDashboardStatistics = async (): Promise<DashboardStats> => {
 
     return {
       totalStudents: studentsResult.count || 0,
-      totalAgents: agentsResult.count || 0,
       totalUniversities: universitiesResult.count || 0,
       activeApplications: applicationsResult.count || 0,
       totalRevenue,
