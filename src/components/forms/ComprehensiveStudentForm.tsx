@@ -3,12 +3,18 @@ import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/ui/select";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { universitiesAPI, coursesAPI, academicSessionsAPI } from "@/lib/supabase-database";
-import { supabase } from "@/integrations/supabase/client";
+import { User, GraduationCap, Phone, Mail, Users, MapPin, CreditCard, FileText, Link } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
+import { universitiesAPI, coursesAPI, academicSessionsAPI, University, Course, AcademicSession } from "@/lib/supabase-database";
 
 export interface ComprehensiveStudentFormData {
   id?: number;
@@ -19,15 +25,17 @@ export interface ComprehensiveStudentFormData {
   date_of_birth: string;
   phone_number: string;
   email: string;
-  university_id?: number;
-  course_id?: number;
-  academic_session_id?: number;
+  university_id: number;
+  course_id: number;
+  academic_session_id: number;
   status: "active" | "inactive" | "completed";
+  admission_number?: string;
   city?: string;
   country?: string;
   address?: string;
   aadhaar_number?: string;
   passport_number?: string;
+  seat_number?: string;
   scores?: string;
   twelfth_marks?: number;
   agent_id?: number;
@@ -35,10 +43,6 @@ export interface ComprehensiveStudentFormData {
   passport_copy_url?: string;
   aadhaar_copy_url?: string;
   twelfth_certificate_url?: string;
-  neet_score_card_url?: string;
-  tenth_marksheet_url?: string;
-  affidavit_paper_url?: string;
-  admission_letter_url?: string;
   parents_phone_number?: string;
   tenth_passing_year?: string;
   twelfth_passing_year?: string;
@@ -47,7 +51,10 @@ export interface ComprehensiveStudentFormData {
   pcb_average?: number;
   neet_roll_number?: string;
   qualification_status?: "qualified" | "not_qualified";
-  seat_number?: string;
+  neet_score_card_url?: string;
+  tenth_marksheet_url?: string;
+  affidavit_paper_url?: string;
+  admission_letter_url?: string;
 }
 
 interface ComprehensiveStudentFormProps {
@@ -56,21 +63,8 @@ interface ComprehensiveStudentFormProps {
   isSubmitting?: boolean;
 }
 
-export default function ComprehensiveStudentForm({ 
-  initialData, 
-  onSubmit, 
-  isSubmitting = false 
-}: ComprehensiveStudentFormProps) {
-  const [universities, setUniversities] = useState<any[]>([]);
-  const [courses, setCourses] = useState<any[]>([]);
-  const [academicSessions, setAcademicSessions] = useState<any[]>([]);
-  const [agents, setAgents] = useState<any[]>([]);
-  
-  // Get default values
-  const getDefaultCourseId = () => courses.find(c => c.name === 'MBBS')?.id;
-  const getDefaultSessionId = () => academicSessions.find(s => s.session_name === '2025-26')?.id;
-
-  const [formData, setFormData] = useState<ComprehensiveStudentFormData>({
+const ComprehensiveStudentForm: React.FC<ComprehensiveStudentFormProps> = ({
+  initialData = {
     first_name: "",
     last_name: "",
     father_name: "",
@@ -78,139 +72,186 @@ export default function ComprehensiveStudentForm({
     date_of_birth: "",
     phone_number: "",
     email: "",
+    university_id: 0,
+    course_id: 0,
+    academic_session_id: 0,
     status: "active",
+    admission_number: "",
     city: "",
     country: "",
     address: "",
     aadhaar_number: "",
     passport_number: "",
+    seat_number: "",
     scores: "",
-    twelfth_marks: undefined,
-    photo_url: "",
-    passport_copy_url: "",
-    aadhaar_copy_url: "",
-    twelfth_certificate_url: "",
-    neet_score_card_url: "",
-    tenth_marksheet_url: "",
-    affidavit_paper_url: "",
-    admission_letter_url: "",
+    twelfth_marks: 0,
+    agent_id: 0,
     parents_phone_number: "",
     tenth_passing_year: "",
     twelfth_passing_year: "",
     neet_passing_year: "",
     tenth_marksheet_number: "",
-    pcb_average: undefined,
+    pcb_average: 0,
     neet_roll_number: "",
     qualification_status: "qualified",
-    seat_number: "",
-    ...initialData
-  });
+  },
+  onSubmit,
+  isSubmitting = false,
+}) => {
+  const [formData, setFormData] = useState<ComprehensiveStudentFormData>(initialData);
+  const [universities, setUniversities] = useState<University[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [academicSessions, setAcademicSessions] = useState<AcademicSession[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadData();
+    loadDropdownData();
   }, []);
 
-  // Set defaults when courses and sessions are loaded
-  useEffect(() => {
-    if (!initialData && courses.length > 0 && academicSessions.length > 0) {
-      const defaultCourseId = getDefaultCourseId();
-      const defaultSessionId = getDefaultSessionId();
-      
-      setFormData(prev => ({
-        ...prev,
-        course_id: defaultCourseId,
-        academic_session_id: defaultSessionId
-      }));
-    }
-  }, [courses, academicSessions, initialData]);
-
-  const loadData = async () => {
+  const loadDropdownData = async () => {
     try {
-      const [universitiesData, coursesData, sessionsData, agentsData] = await Promise.all([
+      setLoading(true);
+      const [universitiesData, coursesData, sessionsData] = await Promise.all([
         universitiesAPI.getAll(),
         coursesAPI.getAll(),
         academicSessionsAPI.getAll(),
-        supabase.from('agents').select('*')
       ]);
 
       setUniversities(universitiesData);
       setCourses(coursesData);
       setAcademicSessions(sessionsData);
-      setAgents(agentsData.data || []);
     } catch (error) {
-      console.error('Error loading data:', error);
+      console.error('Error loading dropdown data:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ 
+      ...prev, 
+      [name]: name === 'twelfth_marks' || name === 'agent_id' || name === 'pcb_average' ? 
+        (value === '' ? undefined : parseFloat(value)) : value 
+    }));
+  };
+
+  const handleSelectChange = (name: string, value: string) => {
+    setFormData((prev) => ({ 
+      ...prev, 
+      [name]: name.includes('_id') ? parseInt(value) : value 
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit(formData);
   };
 
-  const handleChange = (field: keyof ComprehensiveStudentFormData, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
+  if (loading) {
+    return <div>Loading form data...</div>;
+  }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 max-w-4xl mx-auto">
-      {/* Personal Information */}
+    <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Academic Information */}
       <Card>
         <CardHeader>
-          <CardTitle>Personal Information</CardTitle>
+          <CardTitle className="flex items-center">
+            <GraduationCap className="mr-2 h-5 w-5" />
+            Academic Information
+          </CardTitle>
+          <CardDescription>Select university and course details</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="first_name">First Name *</Label>
-              <Input
-                id="first_name"
-                value={formData.first_name}
-                onChange={(e) => handleChange('first_name', e.target.value)}
-                required
-              />
-            </div>
-            <div>
-              <Label htmlFor="last_name">Last Name *</Label>
-              <Input
-                id="last_name"
-                value={formData.last_name}
-                onChange={(e) => handleChange('last_name', e.target.value)}
-                required
-              />
-            </div>
-            <div>
-              <Label htmlFor="father_name">Father's Name *</Label>
-              <Input
-                id="father_name"
-                value={formData.father_name}
-                onChange={(e) => handleChange('father_name', e.target.value)}
-                required
-              />
-            </div>
-            <div>
-              <Label htmlFor="mother_name">Mother's Name *</Label>
-              <Input
-                id="mother_name"
-                value={formData.mother_name}
-                onChange={(e) => handleChange('mother_name', e.target.value)}
-                required
-              />
-            </div>
-            <div>
-              <Label htmlFor="date_of_birth">Date of Birth *</Label>
-              <Input
-                id="date_of_birth"
-                type="date"
-                value={formData.date_of_birth}
-                onChange={(e) => handleChange('date_of_birth', e.target.value)}
-                required
-              />
-            </div>
-            <div>
-              <Label htmlFor="status">Status</Label>
-              <Select value={formData.status} onValueChange={(value) => handleChange('status', value)}>
+        <CardContent>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            <div className="space-y-2">
+              <Label htmlFor="university_id">University *</Label>
+              <Select
+                value={formData.university_id.toString()}
+                onValueChange={(value) => handleSelectChange("university_id", value)}
+              >
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue placeholder="Select university" />
+                </SelectTrigger>
+                <SelectContent>
+                  {universities.map((university) => (
+                    <SelectItem key={university.id} value={university.id.toString()}>
+                      {university.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="course_id">Course *</Label>
+              <Select
+                value={formData.course_id.toString()}
+                onValueChange={(value) => handleSelectChange("course_id", value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select course" />
+                </SelectTrigger>
+                <SelectContent>
+                  {courses.map((course) => (
+                    <SelectItem key={course.id} value={course.id.toString()}>
+                      {course.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="academic_session_id">Academic Session *</Label>
+              <Select
+                value={formData.academic_session_id.toString()}
+                onValueChange={(value) => handleSelectChange("academic_session_id", value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select academic session" />
+                </SelectTrigger>
+                <SelectContent>
+                  {academicSessions.map((session) => (
+                    <SelectItem key={session.id} value={session.id.toString()}>
+                      {session.session_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="admission_number">Admission Number</Label>
+              <Input
+                id="admission_number"
+                name="admission_number"
+                value={formData.admission_number || ""}
+                onChange={handleChange}
+                placeholder="Auto-generated or enter manually"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="seat_number">Seat Number</Label>
+              <Input
+                id="seat_number"
+                name="seat_number"
+                value={formData.seat_number || ""}
+                onChange={handleChange}
+                placeholder="Enter seat number"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="status">Status</Label>
+              <Select
+                value={formData.status}
+                onValueChange={(value) => handleSelectChange("status", value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select status" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="active">Active</SelectItem>
@@ -223,37 +264,135 @@ export default function ComprehensiveStudentForm({
         </CardContent>
       </Card>
 
-      {/* Contact Information */}
+      {/* Personal Information */}
       <Card>
         <CardHeader>
-          <CardTitle>Contact Information</CardTitle>
+          <CardTitle className="flex items-center">
+            <User className="mr-2 h-5 w-5" />
+            Personal Information
+          </CardTitle>
+          <CardDescription>Enter student's personal details</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
+        <CardContent>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="first_name">First Name *</Label>
+              <Input
+                id="first_name"
+                name="first_name"
+                value={formData.first_name}
+                onChange={handleChange}
+                placeholder="Enter first name"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="last_name">Last Name *</Label>
+              <Input
+                id="last_name"
+                name="last_name"
+                value={formData.last_name}
+                onChange={handleChange}
+                placeholder="Enter last name"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="date_of_birth">Date of Birth *</Label>
+              <Input
+                id="date_of_birth"
+                name="date_of_birth"
+                type="date"
+                value={formData.date_of_birth}
+                onChange={handleChange}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="phone_number">Phone Number</Label>
-              <Input
-                id="phone_number"
-                value={formData.phone_number}
-                onChange={(e) => handleChange('phone_number', e.target.value)}
-              />
+              <div className="relative">
+                <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="phone_number"
+                  name="phone_number"
+                  value={formData.phone_number}
+                  onChange={handleChange}
+                  placeholder="Enter phone number"
+                  className="pl-10"
+                />
+              </div>
             </div>
-            <div>
+
+            <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  placeholder="Enter email address"
+                  className="pl-10"
+                />
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Family Information */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <Users className="mr-2 h-5 w-5" />
+            Family Information
+          </CardTitle>
+          <CardDescription>Enter parent details</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="father_name">Father's Name *</Label>
               <Input
-                id="email"
-                type="email"
-                value={formData.email}
-                onChange={(e) => handleChange('email', e.target.value)}
+                id="father_name"
+                name="father_name"
+                value={formData.father_name}
+                onChange={handleChange}
+                placeholder="Enter father's name"
+                required
               />
             </div>
-            <div>
-              <Label htmlFor="parents_phone_number">Parents' Phone Number</Label>
+
+            <div className="space-y-2">
+              <Label htmlFor="mother_name">Mother's Name *</Label>
               <Input
-                id="parents_phone_number"
-                value={formData.parents_phone_number || ""}
-                onChange={(e) => handleChange('parents_phone_number', e.target.value)}
+                id="mother_name"
+                name="mother_name"
+                value={formData.mother_name}
+                onChange={handleChange}
+                placeholder="Enter mother's name"
+                required
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="parents_phone_number">Parents' Phone Number</Label>
+              <div className="relative">
+                <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="parents_phone_number"
+                  name="parents_phone_number"
+                  value={formData.parents_phone_number || ""}
+                  onChange={handleChange}
+                  placeholder="Enter parents' phone number"
+                  className="pl-10"
+                />
+              </div>
             </div>
           </div>
         </CardContent>
@@ -262,171 +401,191 @@ export default function ComprehensiveStudentForm({
       {/* Address Information */}
       <Card>
         <CardHeader>
-          <CardTitle>Address Information</CardTitle>
+          <CardTitle className="flex items-center">
+            <MapPin className="mr-2 h-5 w-5" />
+            Address Information
+          </CardTitle>
+          <CardDescription>Enter address and location details</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
+        <CardContent>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="space-y-2">
               <Label htmlFor="city">City</Label>
               <Input
                 id="city"
+                name="city"
                 value={formData.city || ""}
-                onChange={(e) => handleChange('city', e.target.value)}
+                onChange={handleChange}
+                placeholder="Enter city"
               />
             </div>
-            <div>
+
+            <div className="space-y-2">
               <Label htmlFor="country">Country</Label>
               <Input
                 id="country"
+                name="country"
                 value={formData.country || ""}
-                onChange={(e) => handleChange('country', e.target.value)}
+                onChange={handleChange}
+                placeholder="Enter country"
               />
             </div>
-          </div>
-          <div>
-            <Label htmlFor="address">Full Address</Label>
-            <Textarea
-              id="address"
-              value={formData.address || ""}
-              onChange={(e) => handleChange('address', e.target.value)}
-              rows={3}
-            />
+
+            <div className="space-y-2 md:col-span-2">
+              <Label htmlFor="address">Full Address</Label>
+              <Textarea
+                id="address"
+                name="address"
+                value={formData.address || ""}
+                onChange={handleChange}
+                placeholder="Enter complete address"
+                rows={3}
+              />
+            </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Academic Information */}
+      {/* Academic Records */}
       <Card>
         <CardHeader>
-          <CardTitle>Academic Information</CardTitle>
+          <CardTitle className="flex items-center">
+            <GraduationCap className="mr-2 h-5 w-5" />
+            Academic Records
+          </CardTitle>
+          <CardDescription>Enter academic performance and exam details</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div>
-              <Label htmlFor="university_id">University</Label>
-              <Select value={formData.university_id?.toString()} onValueChange={(value) => handleChange('university_id', parseInt(value))}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select University" />
-                </SelectTrigger>
-                <SelectContent>
-                  {universities.map((university) => (
-                    <SelectItem key={university.id} value={university.id.toString()}>
-                      {university.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="course_id">Course</Label>
-              <Select value={formData.course_id?.toString()} onValueChange={(value) => handleChange('course_id', parseInt(value))}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select Course" />
-                </SelectTrigger>
-                <SelectContent>
-                  {courses.map((course) => (
-                    <SelectItem key={course.id} value={course.id.toString()}>
-                      {course.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="academic_session_id">Academic Session</Label>
-              <Select value={formData.academic_session_id?.toString()} onValueChange={(value) => handleChange('academic_session_id', parseInt(value))}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select Session" />
-                </SelectTrigger>
-                <SelectContent>
-                  {academicSessions.map((session) => (
-                    <SelectItem key={session.id} value={session.id.toString()}>
-                      {session.session_name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="twelfth_marks">12th Marks (%)</Label>
+        <CardContent>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="tenth_passing_year">Passing Year of Class 10</Label>
               <Input
-                id="twelfth_marks"
-                type="number"
-                min="0"
-                max="100"
-                value={formData.twelfth_marks || ""}
-                onChange={(e) => handleChange('twelfth_marks', e.target.value ? parseFloat(e.target.value) : undefined)}
+                id="tenth_passing_year"
+                name="tenth_passing_year"
+                value={formData.tenth_passing_year || ""}
+                onChange={handleChange}
+                placeholder="Enter passing year"
               />
             </div>
-            <div>
-              <Label htmlFor="pcb_average">PCB Average (%)</Label>
-              <Input
-                id="pcb_average"
-                type="number"
-                min="0"
-                max="100"
-                value={formData.pcb_average || ""}
-                onChange={(e) => handleChange('pcb_average', e.target.value ? parseFloat(e.target.value) : undefined)}
-              />
-            </div>
-            <div>
-              <Label htmlFor="seat_number">Seat Number</Label>
-              <Input
-                id="seat_number"
-                value={formData.seat_number || ""}
-                onChange={(e) => handleChange('seat_number', e.target.value)}
-              />
-            </div>
-            <div>
+
+            <div className="space-y-2">
               <Label htmlFor="twelfth_passing_year">Passing Year of Class 12</Label>
               <Input
                 id="twelfth_passing_year"
+                name="twelfth_passing_year"
                 value={formData.twelfth_passing_year || ""}
-                onChange={(e) => handleChange('twelfth_passing_year', e.target.value)}
-                placeholder="e.g., 2023"
+                onChange={handleChange}
+                placeholder="Enter passing year"
               />
             </div>
-            <div>
+
+            <div className="space-y-2">
+              <Label htmlFor="neet_passing_year">Passing Year of NEET</Label>
+              <Input
+                id="neet_passing_year"
+                name="neet_passing_year"
+                value={formData.neet_passing_year || ""}
+                onChange={handleChange}
+                placeholder="Enter NEET passing year"
+              />
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="tenth_marksheet_number">Class 10 Marksheet Number</Label>
               <Input
                 id="tenth_marksheet_number"
+                name="tenth_marksheet_number"
                 value={formData.tenth_marksheet_number || ""}
-                onChange={(e) => handleChange('tenth_marksheet_number', e.target.value)}
+                onChange={handleChange}
+                placeholder="Enter marksheet number"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="pcb_average">PCB Average</Label>
+              <Input
+                id="pcb_average"
+                name="pcb_average"
+                type="number"
+                value={formData.pcb_average || ""}
+                onChange={handleChange}
+                placeholder="Enter PCB average"
+                min="0"
+                max="100"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="neet_roll_number">NEET Roll Number</Label>
+              <Input
+                id="neet_roll_number"
+                name="neet_roll_number"
+                value={formData.neet_roll_number || ""}
+                onChange={handleChange}
+                placeholder="Enter NEET roll number"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="twelfth_marks">12th Grade Marks (%)</Label>
+              <Input
+                id="twelfth_marks"
+                name="twelfth_marks"
+                type="number"
+                value={formData.twelfth_marks || ""}
+                onChange={handleChange}
+                placeholder="Enter percentage"
+                min="0"
+                max="100"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="agent_id">Agent ID</Label>
+              <Input
+                id="agent_id"
+                name="agent_id"
+                type="number"
+                value={formData.agent_id || ""}
+                onChange={handleChange}
+                placeholder="Enter agent ID (if applicable)"
+              />
+            </div>
+
+            <div className="space-y-2 md:col-span-2">
+              <Label htmlFor="scores">Test Scores/Additional Qualifications</Label>
+              <Textarea
+                id="scores"
+                name="scores"
+                value={formData.scores || ""}
+                onChange={handleChange}
+                placeholder="Enter any test scores (NEET, SAT, etc.) or additional qualifications"
+                rows={3}
               />
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* NEET Information */}
+      {/* Qualification Status */}
       <Card>
         <CardHeader>
-          <CardTitle>NEET Information</CardTitle>
+          <CardTitle className="flex items-center">
+            <GraduationCap className="mr-2 h-5 w-5" />
+            Qualification Status
+          </CardTitle>
+          <CardDescription>Select qualification status</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="neet_roll_number">NEET Roll Number</Label>
-              <Input
-                id="neet_roll_number"
-                value={formData.neet_roll_number || ""}
-                onChange={(e) => handleChange('neet_roll_number', e.target.value)}
-              />
-            </div>
-            <div>
-              <Label htmlFor="neet_passing_year">Passing Year of NEET</Label>
-              <Input
-                id="neet_passing_year"
-                value={formData.neet_passing_year || ""}
-                onChange={(e) => handleChange('neet_passing_year', e.target.value)}
-                placeholder="e.g., 2023"
-              />
-            </div>
-            <div>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="space-y-2">
               <Label htmlFor="qualification_status">Qualification Status</Label>
-              <Select value={formData.qualification_status} onValueChange={(value) => handleChange('qualification_status', value)}>
+              <Select
+                value={formData.qualification_status || "qualified"}
+                onValueChange={(value) => handleSelectChange("qualification_status", value)}
+              >
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue placeholder="Select qualification status" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="qualified">Qualified</SelectItem>
@@ -441,172 +600,149 @@ export default function ComprehensiveStudentForm({
       {/* Identity Documents */}
       <Card>
         <CardHeader>
-          <CardTitle>Identity Documents</CardTitle>
+          <CardTitle className="flex items-center">
+            <CreditCard className="mr-2 h-5 w-5" />
+            Identity Documents
+          </CardTitle>
+          <CardDescription>Enter identification numbers</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
+        <CardContent>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="space-y-2">
               <Label htmlFor="aadhaar_number">Aadhaar Number</Label>
               <Input
                 id="aadhaar_number"
+                name="aadhaar_number"
                 value={formData.aadhaar_number || ""}
-                onChange={(e) => handleChange('aadhaar_number', e.target.value)}
+                onChange={handleChange}
+                placeholder="Enter Aadhaar number"
+                maxLength={12}
               />
             </div>
-            <div>
+
+            <div className="space-y-2">
               <Label htmlFor="passport_number">Passport Number</Label>
               <Input
                 id="passport_number"
+                name="passport_number"
                 value={formData.passport_number || ""}
-                onChange={(e) => handleChange('passport_number', e.target.value)}
+                onChange={handleChange}
+                placeholder="Enter passport number"
               />
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Document Links */}
+      {/* Document Links Section */}
       <Card>
         <CardHeader>
-          <CardTitle>Document Links</CardTitle>
+          <CardTitle className="flex items-center">
+            <Link className="mr-2 h-5 w-5" />
+            Document Links
+          </CardTitle>
+          <CardDescription>Enter direct links to student documents</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
+            <div className="space-y-2">
               <Label htmlFor="photo_url">Student Photo URL</Label>
               <Input
                 id="photo_url"
-                type="url"
+                name="photo_url"
                 value={formData.photo_url || ""}
-                onChange={(e) => handleChange('photo_url', e.target.value)}
-                placeholder="https://..."
+                onChange={handleChange}
+                placeholder="https://example.com/photo.jpg"
               />
             </div>
-            <div>
+
+            <div className="space-y-2">
               <Label htmlFor="passport_copy_url">Passport Copy URL</Label>
               <Input
                 id="passport_copy_url"
-                type="url"
+                name="passport_copy_url"
                 value={formData.passport_copy_url || ""}
-                onChange={(e) => handleChange('passport_copy_url', e.target.value)}
-                placeholder="https://..."
+                onChange={handleChange}
+                placeholder="https://example.com/passport.pdf"
               />
             </div>
-            <div>
+
+            <div className="space-y-2">
               <Label htmlFor="aadhaar_copy_url">Aadhaar Copy URL</Label>
               <Input
                 id="aadhaar_copy_url"
-                type="url"
+                name="aadhaar_copy_url"
                 value={formData.aadhaar_copy_url || ""}
-                onChange={(e) => handleChange('aadhaar_copy_url', e.target.value)}
-                placeholder="https://..."
+                onChange={handleChange}
+                placeholder="https://example.com/aadhaar.pdf"
               />
             </div>
-            <div>
-              <Label htmlFor="twelfth_certificate_url">12th Certificate URL</Label>
+
+            <div className="space-y-2">
+              <Label htmlFor="twelfth_certificate_url">12th Grade Certificate URL</Label>
               <Input
                 id="twelfth_certificate_url"
-                type="url"
+                name="twelfth_certificate_url"
                 value={formData.twelfth_certificate_url || ""}
-                onChange={(e) => handleChange('twelfth_certificate_url', e.target.value)}
-                placeholder="https://..."
+                onChange={handleChange}
+                placeholder="https://example.com/12th-certificate.pdf"
               />
             </div>
-            <div>
+
+            <div className="space-y-2">
               <Label htmlFor="tenth_marksheet_url">10th Marksheet URL</Label>
               <Input
                 id="tenth_marksheet_url"
-                type="url"
+                name="tenth_marksheet_url"
                 value={formData.tenth_marksheet_url || ""}
-                onChange={(e) => handleChange('tenth_marksheet_url', e.target.value)}
-                placeholder="https://..."
+                onChange={handleChange}
+                placeholder="https://example.com/10th-marksheet.pdf"
               />
             </div>
-            <div>
+
+            <div className="space-y-2">
               <Label htmlFor="neet_score_card_url">NEET Score Card URL</Label>
               <Input
                 id="neet_score_card_url"
-                type="url"
+                name="neet_score_card_url"
                 value={formData.neet_score_card_url || ""}
-                onChange={(e) => handleChange('neet_score_card_url', e.target.value)}
-                placeholder="https://..."
+                onChange={handleChange}
+                placeholder="https://example.com/neet-scorecard.pdf"
               />
             </div>
-            <div>
-              <Label htmlFor="affidavit_paper_url">Affidavit Paper URL</Label>
-              <Input
-                id="affidavit_paper_url"
-                type="url"
-                value={formData.affidavit_paper_url || ""}
-                onChange={(e) => handleChange('affidavit_paper_url', e.target.value)}
-                placeholder="https://..."
-              />
-            </div>
-            <div>
+
+            <div className="space-y-2">
               <Label htmlFor="admission_letter_url">Admission Letter URL</Label>
               <Input
                 id="admission_letter_url"
-                type="url"
+                name="admission_letter_url"
                 value={formData.admission_letter_url || ""}
-                onChange={(e) => handleChange('admission_letter_url', e.target.value)}
-                placeholder="https://..."
+                onChange={handleChange}
+                placeholder="https://example.com/admission-letter.pdf"
               />
             </div>
+
+            {formData.qualification_status === "not_qualified" && (
+              <div className="space-y-2">
+                <Label htmlFor="affidavit_paper_url">Affidavit Paper URL</Label>
+                <Input
+                  id="affidavit_paper_url"
+                  name="affidavit_paper_url"
+                  value={formData.affidavit_paper_url || ""}
+                  onChange={handleChange}
+                  placeholder="https://example.com/affidavit.pdf"
+                />
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
 
-      {/* Agent Information */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Agent Information</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div>
-            <Label htmlFor="agent_id">Agent (Optional)</Label>
-            <Select value={formData.agent_id?.toString() || "none"} onValueChange={(value) => handleChange('agent_id', value === "none" ? undefined : parseInt(value))}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select Agent (Optional)" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">No Agent</SelectItem>
-                {agents.map((agent) => (
-                  <SelectItem key={agent.id} value={agent.id.toString()}>
-                    {agent.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Additional Information */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Additional Information</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div>
-            <Label htmlFor="scores">Scores/Notes</Label>
-            <Textarea
-              id="scores"
-              value={formData.scores || ""}
-              onChange={(e) => handleChange('scores', e.target.value)}
-              rows={3}
-              placeholder="Any additional scores or notes..."
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      <Separator />
-
-      <div className="flex justify-end space-x-2">
-        <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? "Saving..." : "Save Student"}
-        </Button>
-      </div>
+      <Button type="submit" disabled={isSubmitting}>
+        {isSubmitting ? "Saving..." : "Save Student"}
+      </Button>
     </form>
   );
-}
+};
+
+export default ComprehensiveStudentForm;
