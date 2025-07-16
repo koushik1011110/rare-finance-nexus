@@ -88,13 +88,6 @@ export default function StudentProfileModal({
                   {student.email || 'N/A'}
                 </p>
               </div>
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Parents' Phone</label>
-                <p className="text-sm flex items-center">
-                  <Phone className="mr-1 h-3 w-3" />
-                  {student.parents_phone_number || 'N/A'}
-                </p>
-              </div>
             </div>
           </CardContent>
         </Card>
@@ -116,6 +109,13 @@ export default function StudentProfileModal({
               <div>
                 <label className="text-sm font-medium text-muted-foreground">Mother's Name</label>
                 <p className="text-sm">{student.mother_name}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">Parents' Phone Number</label>
+                <p className="text-sm flex items-center">
+                  <Phone className="mr-1 h-3 w-3" />
+                  {student.parents_phone_number || 'N/A'}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -178,7 +178,7 @@ export default function StudentProfileModal({
                 <p className="text-sm">{student.session_name || 'N/A'}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-muted-foreground">12th Marks</label>
+                <label className="text-sm font-medium text-muted-foreground">12th Grade Marks (%)</label>
                 <p className="text-sm">{student.twelfth_marks ? `${student.twelfth_marks}%` : 'N/A'}</p>
               </div>
               <div>
@@ -188,6 +188,22 @@ export default function StudentProfileModal({
               <div>
                 <label className="text-sm font-medium text-muted-foreground">NEET Roll Number</label>
                 <p className="text-sm">{student.neet_roll_number || 'N/A'}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">Passing Year of Class 12</label>
+                <p className="text-sm">{student.twelfth_passing_year || 'N/A'}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">Passing Year of Class 10</label>
+                <p className="text-sm">{student.tenth_passing_year || 'N/A'}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">Passing Year of NEET</label>
+                <p className="text-sm">{student.neet_passing_year || 'N/A'}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">Class 10 Marksheet Number</label>
+                <p className="text-sm">{student.tenth_marksheet_number || 'N/A'}</p>
               </div>
             </div>
           </CardContent>
