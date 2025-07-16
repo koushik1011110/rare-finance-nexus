@@ -13,6 +13,7 @@ interface EditModalProps {
   isOpen: boolean;
   onClose: () => void;
   children: React.ReactNode;
+  fullScreen?: boolean;
 }
 
 export default function EditModal({
@@ -20,14 +21,15 @@ export default function EditModal({
   isOpen,
   onClose,
   children,
+  fullScreen = false,
 }: EditModalProps) {
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-3xl max-h-[80vh]">
+      <DialogContent className={fullScreen ? "max-w-[95vw] max-h-[95vh] w-full" : "max-w-3xl max-h-[80vh]"}>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
-        <ScrollArea className="max-h-[60vh] pr-4">
+        <ScrollArea className={fullScreen ? "max-h-[85vh] pr-4" : "max-h-[60vh] pr-4"}>
           <div className="py-4">{children}</div>
         </ScrollArea>
       </DialogContent>

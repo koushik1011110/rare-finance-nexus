@@ -41,6 +41,10 @@ interface Student {
   passport_copy_url?: string;
   aadhaar_copy_url?: string;
   twelfth_certificate_url?: string;
+  neet_score_card_url?: string;
+  tenth_marksheet_url?: string;
+  affidavit_paper_url?: string;
+  admission_letter_url?: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -121,6 +125,9 @@ const DirectStudents = () => {
         description: `${newStudent.first_name} ${newStudent.last_name} has been added successfully.`,
       });
       setIsEditModalOpen(false);
+      
+      // Reload data to ensure we have the latest information
+      await loadData();
     } catch (error) {
       console.error('Error adding student:', error);
       toast({
@@ -157,6 +164,9 @@ const DirectStudents = () => {
       });
       setIsEditModalOpen(false);
       setSelectedStudent(null);
+      
+      // Reload data to ensure we have the latest information
+      await loadData();
     } catch (error) {
       console.error('Error updating student:', error);
       toast({
@@ -364,6 +374,7 @@ const DirectStudents = () => {
           setIsEditModalOpen(false);
           setSelectedStudent(null);
         }}
+        fullScreen={true}
       >
         <ComprehensiveStudentForm
           initialData={selectedStudent ? {
