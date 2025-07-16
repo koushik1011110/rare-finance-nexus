@@ -465,7 +465,7 @@ export default function ComprehensiveStudentForm({
         </CardContent>
       </Card>
 
-      {/* Document URLs */}
+      {/* Document Links */}
       <Card>
         <CardHeader>
           <CardTitle>Document Links</CardTitle>
@@ -564,12 +564,12 @@ export default function ComprehensiveStudentForm({
         <CardContent>
           <div>
             <Label htmlFor="agent_id">Agent (Optional)</Label>
-            <Select value={formData.agent_id?.toString()} onValueChange={(value) => handleChange('agent_id', value ? parseInt(value) : undefined)}>
+            <Select value={formData.agent_id?.toString() || "none"} onValueChange={(value) => handleChange('agent_id', value === "none" ? undefined : parseInt(value))}>
               <SelectTrigger>
                 <SelectValue placeholder="Select Agent (Optional)" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">No Agent</SelectItem>
+                <SelectItem value="none">No Agent</SelectItem>
                 {agents.map((agent) => (
                   <SelectItem key={agent.id} value={agent.id.toString()}>
                     {agent.name}
