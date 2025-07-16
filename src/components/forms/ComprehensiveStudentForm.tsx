@@ -3,7 +3,6 @@ import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { 
   Select, 
   SelectContent, 
@@ -12,12 +11,10 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Upload, FileText, User, GraduationCap, Phone, Mail, Users, MapPin, CreditCard } from "lucide-react";
-import { universitiesAPI, coursesAPI, academicSessionsAPI } from "@/lib/supabase-database";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
-import { uploadStudentDocument } from "@/lib/fileUpload";
+import { Textarea } from "@/components/ui/textarea";
+import { User, GraduationCap, Phone, Mail, Users, MapPin, CreditCard, FileText, Link } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { universitiesAPI, coursesAPI, academicSessionsAPI, University, Course, AcademicSession } from "@/lib/supabase-database";
 
 export interface ComprehensiveStudentFormData {
   id?: number;
@@ -26,24 +23,26 @@ export interface ComprehensiveStudentFormData {
   father_name: string;
   mother_name: string;
   date_of_birth: string;
-  phone_number?: string;
-  email?: string;
-  university_id: number | null;
-  course_id: number | null;
-  academic_session_id: number | null;
+  phone_number: string;
+  email: string;
+  university_id: number;
+  course_id: number;
+  academic_session_id: number;
   status: "active" | "inactive" | "completed";
+  admission_number?: string;
   city?: string;
   country?: string;
   address?: string;
   aadhaar_number?: string;
   passport_number?: string;
+  seat_number?: string;
   scores?: string;
   twelfth_marks?: number;
+  agent_id?: number;
   photo_url?: string;
   passport_copy_url?: string;
   aadhaar_copy_url?: string;
   twelfth_certificate_url?: string;
-  agent_id?: number;
   parents_phone_number?: string;
   tenth_passing_year?: string;
   twelfth_passing_year?: string;
@@ -55,6 +54,7 @@ export interface ComprehensiveStudentFormData {
   neet_score_card_url?: string;
   tenth_marksheet_url?: string;
   affidavit_paper_url?: string;
+  admission_letter_url?: string;
 }
 
 interface ComprehensiveStudentFormProps {
@@ -64,210 +64,93 @@ interface ComprehensiveStudentFormProps {
 }
 
 const ComprehensiveStudentForm: React.FC<ComprehensiveStudentFormProps> = ({
-  initialData,
+  initialData = {
+    first_name: "",
+    last_name: "",
+    father_name: "",
+    mother_name: "",
+    date_of_birth: "",
+    phone_number: "",
+    email: "",
+    university_id: 0,
+    course_id: 0,
+    academic_session_id: 0,
+    status: "active",
+    admission_number: "",
+    city: "",
+    country: "",
+    address: "",
+    aadhaar_number: "",
+    passport_number: "",
+    seat_number: "",
+    scores: "",
+    twelfth_marks: 0,
+    agent_id: 0,
+    parents_phone_number: "",
+    tenth_passing_year: "",
+    twelfth_passing_year: "",
+    neet_passing_year: "",
+    tenth_marksheet_number: "",
+    pcb_average: 0,
+    neet_roll_number: "",
+    qualification_status: "qualified",
+  },
   onSubmit,
   isSubmitting = false,
 }) => {
-  const [formData, setFormData] = useState<ComprehensiveStudentFormData>(
-    initialData || {
-      first_name: "",
-      last_name: "",
-      father_name: "",
-      mother_name: "",
-      date_of_birth: "",
-      phone_number: "",
-      email: "",
-      university_id: null,
-      course_id: null,
-      academic_session_id: null,
-      status: "active",
-      city: "",
-      country: "",
-      address: "",
-      aadhaar_number: "",
-      passport_number: "",
-      scores: "",
-      twelfth_marks: 0,
-      photo_url: "",
-      passport_copy_url: "",
-      aadhaar_copy_url: "",
-      twelfth_certificate_url: "",
-      parents_phone_number: "",
-      tenth_passing_year: "",
-      twelfth_passing_year: "",
-      neet_passing_year: "",
-      tenth_marksheet_number: "",
-      pcb_average: 0,
-      neet_roll_number: "",
-      qualification_status: "qualified",
-    }
-  );
-
-  const [universities, setUniversities] = useState<any[]>([]);
-  const [courses, setCourses] = useState<any[]>([]);
-  const [academicSessions, setAcademicSessions] = useState<any[]>([]);
-  const [agents, setAgents] = useState<any[]>([]);
-  const [files, setFiles] = useState({
-    studentImage: null as File | null,
-    passportCopy: null as File | null,
-    aadhaarCopy: null as File | null,
-    twelfthCertificate: null as File | null,
-    neetScoreCard: null as File | null,
-    tenthMarksheet: null as File | null,
-    affidavitPaper: null as File | null,
-  });
-  const { user, isAdmin } = useAuth();
+  const [formData, setFormData] = useState<ComprehensiveStudentFormData>(initialData);
+  const [universities, setUniversities] = useState<University[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [academicSessions, setAcademicSessions] = useState<AcademicSession[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        const [universitiesData, coursesData, sessionsData, agentsData] = await Promise.all([
-          universitiesAPI.getAll(),
-          coursesAPI.getAll(),
-          academicSessionsAPI.getAll(),
-          supabase.from('agents').select('*').eq('status', 'Active')
-        ]);
-        setUniversities(universitiesData);
-        setCourses(coursesData);
-        setAcademicSessions(sessionsData);
-        setAgents(agentsData.data || []);
+    loadDropdownData();
+  }, []);
 
-        // Set default values if not editing
-        if (!initialData) {
-          const defaultCourse = coursesData.find(c => c.name === 'MBBS');
-          const defaultSession = sessionsData.find(s => s.session_name === '2025-26');
-          
-          setFormData(prev => ({
-            ...prev,
-            course_id: defaultCourse?.id || null,
-            academic_session_id: defaultSession?.id || null,
-          }));
-        }
-      } catch (error) {
-        console.error("Error loading form data:", error);
-      }
-    };
+  const loadDropdownData = async () => {
+    try {
+      setLoading(true);
+      const [universitiesData, coursesData, sessionsData] = await Promise.all([
+        universitiesAPI.getAll(),
+        coursesAPI.getAll(),
+        academicSessionsAPI.getAll(),
+      ]);
 
-    loadData();
-  }, [initialData]);
+      setUniversities(universitiesData);
+      setCourses(coursesData);
+      setAcademicSessions(sessionsData);
+    } catch (error) {
+      console.error('Error loading dropdown data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ 
       ...prev, 
-      [name]: name === 'twelfth_marks' || name === 'pcb_average' ? (value ? parseFloat(value) : 0) : value 
+      [name]: name === 'twelfth_marks' || name === 'agent_id' || name === 'pcb_average' ? 
+        (value === '' ? undefined : parseFloat(value)) : value 
     }));
   };
 
   const handleSelectChange = (name: string, value: string) => {
     setFormData((prev) => ({ 
       ...prev, 
-      [name]: name.includes('_id') ? (value && value !== '0' ? parseInt(value) : null) : value 
+      [name]: name.includes('_id') ? parseInt(value) : value 
     }));
-  };
-
-  const handleFileChange = (field: string, e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setFiles(prev => ({ ...prev, [field]: file }));
-    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    let updatedFormData = { ...formData };
-    
-    try {
-      // Upload files to Supabase storage and get URLs
-      const uploadPromises: Promise<void>[] = [];
-      
-      if (files.studentImage) {
-        uploadPromises.push(
-          uploadStudentDocument(files.studentImage, 'photo', formData.id).then(result => {
-            if (result.url) updatedFormData.photo_url = result.url;
-            else console.error('Photo upload failed:', result.error);
-          })
-        );
-      }
-      
-      if (files.passportCopy) {
-        uploadPromises.push(
-          uploadStudentDocument(files.passportCopy, 'passport-copy', formData.id).then(result => {
-            if (result.url) updatedFormData.passport_copy_url = result.url;
-            else console.error('Passport copy upload failed:', result.error);
-          })
-        );
-      }
-      
-      if (files.aadhaarCopy) {
-        uploadPromises.push(
-          uploadStudentDocument(files.aadhaarCopy, 'aadhaar-copy', formData.id).then(result => {
-            if (result.url) updatedFormData.aadhaar_copy_url = result.url;
-            else console.error('Aadhaar copy upload failed:', result.error);
-          })
-        );
-      }
-      
-      if (files.twelfthCertificate) {
-        uploadPromises.push(
-          uploadStudentDocument(files.twelfthCertificate, '12th-certificate', formData.id).then(result => {
-            if (result.url) updatedFormData.twelfth_certificate_url = result.url;
-            else console.error('12th certificate upload failed:', result.error);
-          })
-        );
-      }
-      
-      if (files.neetScoreCard) {
-        uploadPromises.push(
-          uploadStudentDocument(files.neetScoreCard, 'neet-score-card', formData.id).then(result => {
-            if (result.url) updatedFormData.neet_score_card_url = result.url;
-            else console.error('NEET score card upload failed:', result.error);
-          })
-        );
-      }
-      
-      if (files.tenthMarksheet) {
-        uploadPromises.push(
-          uploadStudentDocument(files.tenthMarksheet, '10th-marksheet', formData.id).then(result => {
-            if (result.url) updatedFormData.tenth_marksheet_url = result.url;
-            else console.error('10th marksheet upload failed:', result.error);
-          })
-        );
-      }
-      
-      if (files.affidavitPaper) {
-        uploadPromises.push(
-          uploadStudentDocument(files.affidavitPaper, 'affidavit-paper', formData.id).then(result => {
-            if (result.url) updatedFormData.affidavit_paper_url = result.url;
-            else console.error('Affidavit paper upload failed:', result.error);
-          })
-        );
-      }
-      
-      // Wait for all uploads to complete
-      if (uploadPromises.length > 0) {
-        await Promise.all(uploadPromises);
-        toast({
-          title: "Documents Uploaded",
-          description: `${uploadPromises.length} document(s) uploaded successfully.`,
-        });
-      }
-      
-    } catch (error) {
-      console.error('Error uploading documents:', error);
-      toast({
-        title: "Upload Error",
-        description: "Some documents failed to upload. Student data will be saved without them.",
-        variant: "destructive",
-      });
-    }
-    
-    // Submit the form data with document URLs
-    onSubmit(updatedFormData);
+    onSubmit(formData);
   };
+
+  if (loading) {
+    return <div>Loading form data...</div>;
+  }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -281,11 +164,11 @@ const ComprehensiveStudentForm: React.FC<ComprehensiveStudentFormProps> = ({
           <CardDescription>Select university and course details</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             <div className="space-y-2">
-              <Label htmlFor="university_id">University</Label>
+              <Label htmlFor="university_id">University *</Label>
               <Select
-                value={formData.university_id?.toString() || ""}
+                value={formData.university_id.toString()}
                 onValueChange={(value) => handleSelectChange("university_id", value)}
               >
                 <SelectTrigger>
@@ -302,9 +185,9 @@ const ComprehensiveStudentForm: React.FC<ComprehensiveStudentFormProps> = ({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="course_id">Course</Label>
+              <Label htmlFor="course_id">Course *</Label>
               <Select
-                value={formData.course_id?.toString() || ""}
+                value={formData.course_id.toString()}
                 onValueChange={(value) => handleSelectChange("course_id", value)}
               >
                 <SelectTrigger>
@@ -321,9 +204,9 @@ const ComprehensiveStudentForm: React.FC<ComprehensiveStudentFormProps> = ({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="academic_session_id">Academic Session</Label>
+              <Label htmlFor="academic_session_id">Academic Session *</Label>
               <Select
-                value={formData.academic_session_id?.toString() || ""}
+                value={formData.academic_session_id.toString()}
                 onValueChange={(value) => handleSelectChange("academic_session_id", value)}
               >
                 <SelectTrigger>
@@ -339,27 +222,44 @@ const ComprehensiveStudentForm: React.FC<ComprehensiveStudentFormProps> = ({
               </Select>
             </div>
 
-            {isAdmin && (
-              <div className="space-y-2">
-                <Label htmlFor="agent_id">Agent (Optional)</Label>
-                <Select
-                  value={formData.agent_id?.toString() || ""}
-                  onValueChange={(value) => handleSelectChange("agent_id", value || "0")}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select agent (optional)" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="0">Direct Student (No Agent)</SelectItem>
-                    {agents.map((agent) => (
-                      <SelectItem key={agent.id} value={agent.id.toString()}>
-                        {agent.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
+            <div className="space-y-2">
+              <Label htmlFor="admission_number">Admission Number</Label>
+              <Input
+                id="admission_number"
+                name="admission_number"
+                value={formData.admission_number || ""}
+                onChange={handleChange}
+                placeholder="Auto-generated or enter manually"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="seat_number">Seat Number</Label>
+              <Input
+                id="seat_number"
+                name="seat_number"
+                value={formData.seat_number || ""}
+                onChange={handleChange}
+                placeholder="Enter seat number"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="status">Status</Label>
+              <Select
+                value={formData.status}
+                onValueChange={(value) => handleSelectChange("status", value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -531,7 +431,7 @@ const ComprehensiveStudentForm: React.FC<ComprehensiveStudentFormProps> = ({
               />
             </div>
 
-            <div className="col-span-2 space-y-2">
+            <div className="space-y-2 md:col-span-2">
               <Label htmlFor="address">Full Address</Label>
               <Textarea
                 id="address"
@@ -640,6 +540,18 @@ const ComprehensiveStudentForm: React.FC<ComprehensiveStudentFormProps> = ({
               />
             </div>
 
+            <div className="space-y-2">
+              <Label htmlFor="agent_id">Agent ID</Label>
+              <Input
+                id="agent_id"
+                name="agent_id"
+                type="number"
+                value={formData.agent_id || ""}
+                onChange={handleChange}
+                placeholder="Enter agent ID (if applicable)"
+              />
+            </div>
+
             <div className="space-y-2 md:col-span-2">
               <Label htmlFor="scores">Test Scores/Additional Qualifications</Label>
               <Textarea
@@ -681,27 +593,6 @@ const ComprehensiveStudentForm: React.FC<ComprehensiveStudentFormProps> = ({
                 </SelectContent>
               </Select>
             </div>
-
-            {formData.qualification_status === "not_qualified" && (
-              <div className="space-y-2">
-                <Label htmlFor="affidavitPaper">Affidavit Paper Upload</Label>
-                <div className="relative">
-                  <Upload className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="affidavitPaper"
-                    type="file"
-                    accept=".pdf,.jpg,.jpeg,.png"
-                    onChange={(e) => handleFileChange("affidavitPaper", e)}
-                    className="pl-10 file:mr-4 file:py-1 file:px-2 file:rounded file:border-0 file:text-sm file:font-medium file:bg-muted file:text-muted-foreground hover:file:bg-muted/80"
-                  />
-                </div>
-                {files.affidavitPaper && (
-                  <p className="text-sm text-muted-foreground">
-                    Selected: {files.affidavitPaper.name}
-                  </p>
-                )}
-              </div>
-            )}
           </div>
         </CardContent>
       </Card>
@@ -743,136 +634,112 @@ const ComprehensiveStudentForm: React.FC<ComprehensiveStudentFormProps> = ({
         </CardContent>
       </Card>
 
-      {/* Document Upload Section */}
+      {/* Document Links Section */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center">
-            <FileText className="mr-2 h-5 w-5" />
-            Document Uploads
+            <Link className="mr-2 h-5 w-5" />
+            Document Links
           </CardTitle>
-          <CardDescription>Upload student documents (PDF, JPG, PNG accepted)</CardDescription>
+          <CardDescription>Enter direct links to student documents</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="studentImage">Student Photo</Label>
-              <div className="relative">
-                <Upload className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="studentImage"
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => handleFileChange("studentImage", e)}
-                  className="pl-10 file:mr-4 file:py-1 file:px-2 file:rounded file:border-0 file:text-sm file:font-medium file:bg-muted file:text-muted-foreground hover:file:bg-muted/80"
-                />
-              </div>
-              {files.studentImage && (
-                <p className="text-sm text-muted-foreground">
-                  Selected: {files.studentImage.name}
-                </p>
-              )}
+              <Label htmlFor="photo_url">Student Photo URL</Label>
+              <Input
+                id="photo_url"
+                name="photo_url"
+                value={formData.photo_url || ""}
+                onChange={handleChange}
+                placeholder="https://example.com/photo.jpg"
+              />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="passportCopy">Passport Copy</Label>
-              <div className="relative">
-                <Upload className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="passportCopy"
-                  type="file"
-                  accept=".pdf,.jpg,.jpeg,.png"
-                  onChange={(e) => handleFileChange("passportCopy", e)}
-                  className="pl-10 file:mr-4 file:py-1 file:px-2 file:rounded file:border-0 file:text-sm file:font-medium file:bg-muted file:text-muted-foreground hover:file:bg-muted/80"
-                />
-              </div>
-              {files.passportCopy && (
-                <p className="text-sm text-muted-foreground">
-                  Selected: {files.passportCopy.name}
-                </p>
-              )}
+              <Label htmlFor="passport_copy_url">Passport Copy URL</Label>
+              <Input
+                id="passport_copy_url"
+                name="passport_copy_url"
+                value={formData.passport_copy_url || ""}
+                onChange={handleChange}
+                placeholder="https://example.com/passport.pdf"
+              />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="aadhaarCopy">Aadhaar Copy</Label>
-              <div className="relative">
-                <Upload className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="aadhaarCopy"
-                  type="file"
-                  accept=".pdf,.jpg,.jpeg,.png"
-                  onChange={(e) => handleFileChange("aadhaarCopy", e)}
-                  className="pl-10 file:mr-4 file:py-1 file:px-2 file:rounded file:border-0 file:text-sm file:font-medium file:bg-muted file:text-muted-foreground hover:file:bg-muted/80"
-                />
-              </div>
-              {files.aadhaarCopy && (
-                <p className="text-sm text-muted-foreground">
-                  Selected: {files.aadhaarCopy.name}
-                </p>
-              )}
+              <Label htmlFor="aadhaar_copy_url">Aadhaar Copy URL</Label>
+              <Input
+                id="aadhaar_copy_url"
+                name="aadhaar_copy_url"
+                value={formData.aadhaar_copy_url || ""}
+                onChange={handleChange}
+                placeholder="https://example.com/aadhaar.pdf"
+              />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="twelfthCertificate">12th Grade Certificate</Label>
-              <div className="relative">
-                <Upload className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="twelfthCertificate"
-                  type="file"
-                  accept=".pdf,.jpg,.jpeg,.png"
-                  onChange={(e) => handleFileChange("twelfthCertificate", e)}
-                  className="pl-10 file:mr-4 file:py-1 file:px-2 file:rounded file:border-0 file:text-sm file:font-medium file:bg-muted file:text-muted-foreground hover:file:bg-muted/80"
-                />
-              </div>
-              {files.twelfthCertificate && (
-                <p className="text-sm text-muted-foreground">
-                  Selected: {files.twelfthCertificate.name}
-                </p>
-              )}
+              <Label htmlFor="twelfth_certificate_url">12th Grade Certificate URL</Label>
+              <Input
+                id="twelfth_certificate_url"
+                name="twelfth_certificate_url"
+                value={formData.twelfth_certificate_url || ""}
+                onChange={handleChange}
+                placeholder="https://example.com/12th-certificate.pdf"
+              />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="neetScoreCard">NEET Score Card</Label>
-              <div className="relative">
-                <Upload className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="neetScoreCard"
-                  type="file"
-                  accept=".pdf,.jpg,.jpeg,.png"
-                  onChange={(e) => handleFileChange("neetScoreCard", e)}
-                  className="pl-10 file:mr-4 file:py-1 file:px-2 file:rounded file:border-0 file:text-sm file:font-medium file:bg-muted file:text-muted-foreground hover:file:bg-muted/80"
-                />
-              </div>
-              {files.neetScoreCard && (
-                <p className="text-sm text-muted-foreground">
-                  Selected: {files.neetScoreCard.name}
-                </p>
-              )}
+              <Label htmlFor="tenth_marksheet_url">10th Marksheet URL</Label>
+              <Input
+                id="tenth_marksheet_url"
+                name="tenth_marksheet_url"
+                value={formData.tenth_marksheet_url || ""}
+                onChange={handleChange}
+                placeholder="https://example.com/10th-marksheet.pdf"
+              />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="tenthMarksheet">10th Marksheet</Label>
-              <div className="relative">
-                <Upload className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Label htmlFor="neet_score_card_url">NEET Score Card URL</Label>
+              <Input
+                id="neet_score_card_url"
+                name="neet_score_card_url"
+                value={formData.neet_score_card_url || ""}
+                onChange={handleChange}
+                placeholder="https://example.com/neet-scorecard.pdf"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="admission_letter_url">Admission Letter URL</Label>
+              <Input
+                id="admission_letter_url"
+                name="admission_letter_url"
+                value={formData.admission_letter_url || ""}
+                onChange={handleChange}
+                placeholder="https://example.com/admission-letter.pdf"
+              />
+            </div>
+
+            {formData.qualification_status === "not_qualified" && (
+              <div className="space-y-2">
+                <Label htmlFor="affidavit_paper_url">Affidavit Paper URL</Label>
                 <Input
-                  id="tenthMarksheet"
-                  type="file"
-                  accept=".pdf,.jpg,.jpeg,.png"
-                  onChange={(e) => handleFileChange("tenthMarksheet", e)}
-                  className="pl-10 file:mr-4 file:py-1 file:px-2 file:rounded file:border-0 file:text-sm file:font-medium file:bg-muted file:text-muted-foreground hover:file:bg-muted/80"
+                  id="affidavit_paper_url"
+                  name="affidavit_paper_url"
+                  value={formData.affidavit_paper_url || ""}
+                  onChange={handleChange}
+                  placeholder="https://example.com/affidavit.pdf"
                 />
               </div>
-              {files.tenthMarksheet && (
-                <p className="text-sm text-muted-foreground">
-                  Selected: {files.tenthMarksheet.name}
-                </p>
-              )}
-            </div>
+            )}
           </div>
         </CardContent>
       </Card>
 
-      <Button type="submit" disabled={isSubmitting} className="w-full">
-        {isSubmitting ? (initialData ? "Updating Applicant..." : "Adding Applicant...") : (initialData ? "Update Applicant" : "Add Applicant")}
+      <Button type="submit" disabled={isSubmitting}>
+        {isSubmitting ? "Saving..." : "Save Student"}
       </Button>
     </form>
   );

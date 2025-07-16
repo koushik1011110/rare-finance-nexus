@@ -2,7 +2,7 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { FileText, Image, Download, Eye } from "lucide-react";
+import { FileText, Image, Download, Eye, ExternalLink } from "lucide-react";
 
 interface StudentDocumentsProps {
   student: {
@@ -31,16 +31,6 @@ const documentFields = [
 export default function StudentDocuments({ student }: StudentDocumentsProps) {
   const handleViewDocument = (url: string) => {
     window.open(url, '_blank');
-  };
-
-  const handleDownloadDocument = (url: string, filename: string) => {
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filename;
-    link.target = '_blank';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
   };
 
   const availableDocuments = documentFields.filter(field => 
@@ -99,6 +89,10 @@ export default function StudentDocuments({ student }: StudentDocumentsProps) {
                   </div>
                 )}
                 
+                <div className="mb-2">
+                  <p className="text-xs text-muted-foreground break-all">{url}</p>
+                </div>
+                
                 <div className="flex gap-2">
                   <Button
                     variant="outline"
@@ -106,17 +100,8 @@ export default function StudentDocuments({ student }: StudentDocumentsProps) {
                     onClick={() => handleViewDocument(url)}
                     className="flex items-center gap-1"
                   >
-                    <Eye className="h-3 w-3" />
-                    View
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleDownloadDocument(url, `${field.label}.pdf`)}
-                    className="flex items-center gap-1"
-                  >
-                    <Download className="h-3 w-3" />
-                    Download
+                    <ExternalLink className="h-3 w-3" />
+                    Open Link
                   </Button>
                 </div>
               </div>

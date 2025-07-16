@@ -45,6 +45,15 @@ interface Student {
   tenth_marksheet_url?: string;
   affidavit_paper_url?: string;
   admission_letter_url?: string;
+  parents_phone_number?: string;
+  tenth_passing_year?: string;
+  twelfth_passing_year?: string;
+  neet_passing_year?: string;
+  tenth_marksheet_number?: string;
+  pcb_average?: number;
+  neet_roll_number?: string;
+  qualification_status?: string;
+  seat_number?: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -402,6 +411,19 @@ const DirectStudents = () => {
             passport_copy_url: selectedStudent.passport_copy_url,
             aadhaar_copy_url: selectedStudent.aadhaar_copy_url,
             twelfth_certificate_url: selectedStudent.twelfth_certificate_url,
+            neet_score_card_url: selectedStudent.neet_score_card_url,
+            tenth_marksheet_url: selectedStudent.tenth_marksheet_url,
+            affidavit_paper_url: selectedStudent.affidavit_paper_url,
+            admission_letter_url: selectedStudent.admission_letter_url,
+            parents_phone_number: selectedStudent.parents_phone_number,
+            tenth_passing_year: selectedStudent.tenth_passing_year,
+            twelfth_passing_year: selectedStudent.twelfth_passing_year,
+            neet_passing_year: selectedStudent.neet_passing_year,
+            tenth_marksheet_number: selectedStudent.tenth_marksheet_number,
+            pcb_average: selectedStudent.pcb_average,
+            neet_roll_number: selectedStudent.neet_roll_number,
+            qualification_status: selectedStudent.qualification_status as "qualified" | "not_qualified",
+            seat_number: selectedStudent.seat_number,
           } : undefined}
           onSubmit={selectedStudent ? handleEditStudent : handleAddStudent}
           isSubmitting={isSubmitting}
