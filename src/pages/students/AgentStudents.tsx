@@ -480,17 +480,18 @@ const AgentStudents = () => {
         </div>
       )}
       
-      {/* Add Student Modal */}
-      <EditModal
+      {/* Add Student Modal - Full Screen */}
+      <DetailViewModal
         title="Add New Student"
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
+        fullScreen={true}
       >
         <ComprehensiveStudentForm 
           onSubmit={handleSaveStudent}
           isSubmitting={isSubmitting}
         />
-      </EditModal>
+      </DetailViewModal>
       
       {/* View Student Modal */}
       <StudentProfileModal

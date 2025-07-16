@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Upload, FileText, User, GraduationCap, Phone, Mail, Users, MapPin, CreditCard } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { universitiesAPI, coursesAPI, academicSessionsAPI, University, Course, AcademicSession } from "@/lib/supabase-database";
+import { uploadStudentDocument } from "@/lib/fileUpload";
 
 export interface SupabaseDirectStudentFormData {
   id?: number;
@@ -158,19 +160,55 @@ const SupabaseDirectStudentForm: React.FC<SupabaseDirectStudentFormProps> = ({
     }
   };
 
+  const uploadFiles = async (studentId?: number) => {
+    const uploadPromises: Promise<void>[] = [];
+    let updatedFormData = { ...formData };
+
+    // Map file fields to form data fields
+    const fileFieldMap = {
+      studentImage: 'photo_url',
+      passportCopy: 'passport_copy_url',
+      aadhaarCopy: 'aadhaar_copy_url',
+      twelfthCertificate: 'twelfth_certificate_url',
+      neetScoreCard: 'neet_score_card_url',
+      tenthMarksheet: 'tenth_marksheet_url',
+      affidavitPaper: 'affidavit_paper_url',
+    };
+
+    for (const [fileField, formField] of Object.entries(fileFieldMap)) {
+      const file = files[fileField as keyof typeof files];
+      if (file) {
+        const uploadPromise = uploadStudentDocument(file, fileField, studentId).then((result) => {
+          if (result.url) {
+            updatedFormData = { ...updatedFormData, [formField]: result.url };
+          } else if (result.error) {
+            console.error(`Failed to upload ${fileField}:`, result.error);
+            toast({
+              title: "Upload Error",
+              description: `Failed to upload ${fileField}: ${result.error}`,
+              variant: "destructive",
+            });
+          }
+        });
+        uploadPromises.push(uploadPromise);
+      }
+    }
+
+    if (uploadPromises.length > 0) {
+      await Promise.all(uploadPromises);
+    }
+
+    return updatedFormData;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     try {
-      let updatedFormData = { ...formData };
+      setUploadingFiles(true);
       
-      // For now, just notify about file uploads (Firebase upload will be added later)
-      if (files.studentImage || files.passportCopy || files.aadhaarCopy || files.twelfthCertificate || files.neetScoreCard || files.tenthMarksheet || files.affidavitPaper) {
-        toast({
-          title: "Note",
-          description: "File upload functionality will be available soon. Form data saved without files.",
-        });
-      }
+      // Upload files and get updated form data with URLs
+      const updatedFormData = await uploadFiles(formData.id);
       
       onSubmit(updatedFormData);
     } catch (error) {
@@ -180,6 +218,8 @@ const SupabaseDirectStudentForm: React.FC<SupabaseDirectStudentFormProps> = ({
         description: "Failed to submit form. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setUploadingFiles(false);
     }
   };
 
