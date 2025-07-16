@@ -56,7 +56,6 @@ const Index = () => {
   const [loading, setLoading] = useState(true);
   const [dashboardStats, setDashboardStats] = useState({
     totalStudents: 0,
-    totalAgents: 0,
     totalUniversities: 0,
     activeApplications: 0,
     totalRevenue: 0,
@@ -205,12 +204,6 @@ const Index = () => {
           title="Total Students"
           value={dashboardStats.totalStudents.toLocaleString()}
           icon={<GraduationCap className="h-5 w-5" />}
-          variant="default"
-        />
-        <StatCard
-          title="Active Agents"
-          value={dashboardStats.totalAgents.toLocaleString()}
-          icon={<Users className="h-5 w-5" />}
           variant="default"
         />
         <StatCard
