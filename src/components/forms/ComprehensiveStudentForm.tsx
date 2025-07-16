@@ -16,6 +16,8 @@ import { Upload, FileText, User, GraduationCap, Phone, Mail, Users, MapPin, Cred
 import { universitiesAPI, coursesAPI, academicSessionsAPI } from "@/lib/supabase-database";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { uploadStudentDocument } from "@/lib/fileUpload";
+import { toast } from "@/hooks/use-toast";
 
 export interface ComprehensiveStudentFormData {
   id?: number;
@@ -173,9 +175,98 @@ const ComprehensiveStudentForm: React.FC<ComprehensiveStudentFormProps> = ({
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(formData);
+    
+    let updatedFormData = { ...formData };
+    
+    try {
+      // Upload files to Supabase storage and get URLs
+      const uploadPromises: Promise<void>[] = [];
+      
+      if (files.studentImage) {
+        uploadPromises.push(
+          uploadStudentDocument(files.studentImage, 'photo', formData.id).then(result => {
+            if (result.url) updatedFormData.photo_url = result.url;
+            else console.error('Photo upload failed:', result.error);
+          })
+        );
+      }
+      
+      if (files.passportCopy) {
+        uploadPromises.push(
+          uploadStudentDocument(files.passportCopy, 'passport-copy', formData.id).then(result => {
+            if (result.url) updatedFormData.passport_copy_url = result.url;
+            else console.error('Passport copy upload failed:', result.error);
+          })
+        );
+      }
+      
+      if (files.aadhaarCopy) {
+        uploadPromises.push(
+          uploadStudentDocument(files.aadhaarCopy, 'aadhaar-copy', formData.id).then(result => {
+            if (result.url) updatedFormData.aadhaar_copy_url = result.url;
+            else console.error('Aadhaar copy upload failed:', result.error);
+          })
+        );
+      }
+      
+      if (files.twelfthCertificate) {
+        uploadPromises.push(
+          uploadStudentDocument(files.twelfthCertificate, '12th-certificate', formData.id).then(result => {
+            if (result.url) updatedFormData.twelfth_certificate_url = result.url;
+            else console.error('12th certificate upload failed:', result.error);
+          })
+        );
+      }
+      
+      if (files.neetScoreCard) {
+        uploadPromises.push(
+          uploadStudentDocument(files.neetScoreCard, 'neet-score-card', formData.id).then(result => {
+            if (result.url) updatedFormData.neet_score_card_url = result.url;
+            else console.error('NEET score card upload failed:', result.error);
+          })
+        );
+      }
+      
+      if (files.tenthMarksheet) {
+        uploadPromises.push(
+          uploadStudentDocument(files.tenthMarksheet, '10th-marksheet', formData.id).then(result => {
+            if (result.url) updatedFormData.tenth_marksheet_url = result.url;
+            else console.error('10th marksheet upload failed:', result.error);
+          })
+        );
+      }
+      
+      if (files.affidavitPaper) {
+        uploadPromises.push(
+          uploadStudentDocument(files.affidavitPaper, 'affidavit-paper', formData.id).then(result => {
+            if (result.url) updatedFormData.affidavit_paper_url = result.url;
+            else console.error('Affidavit paper upload failed:', result.error);
+          })
+        );
+      }
+      
+      // Wait for all uploads to complete
+      if (uploadPromises.length > 0) {
+        await Promise.all(uploadPromises);
+        toast({
+          title: "Documents Uploaded",
+          description: `${uploadPromises.length} document(s) uploaded successfully.`,
+        });
+      }
+      
+    } catch (error) {
+      console.error('Error uploading documents:', error);
+      toast({
+        title: "Upload Error",
+        description: "Some documents failed to upload. Student data will be saved without them.",
+        variant: "destructive",
+      });
+    }
+    
+    // Submit the form data with document URLs
+    onSubmit(updatedFormData);
   };
 
   return (
