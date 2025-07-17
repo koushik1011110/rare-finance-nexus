@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import PageHeader from "@/components/shared/PageHeader";
@@ -117,7 +116,9 @@ const DirectStudents = () => {
         university_id: studentData.university_id || undefined,
         course_id: studentData.course_id || defaultCourse?.id || undefined,
         academic_session_id: studentData.academic_session_id || defaultSession?.id || undefined,
-        status: 'active'
+        status: 'active',
+        // Ensure agent_id is null for direct students instead of 0
+        agent_id: studentData.agent_id && studentData.agent_id !== 0 ? studentData.agent_id : null
       };
 
       const { data: newStudent, error } = await supabase
@@ -155,9 +156,15 @@ const DirectStudents = () => {
     try {
       setIsSubmitting(true);
       
+      // Ensure agent_id is properly handled for updates too
+      const dataToUpdate = {
+        ...studentData,
+        agent_id: studentData.agent_id && studentData.agent_id !== 0 ? studentData.agent_id : null
+      };
+      
       const { data: updatedStudent, error } = await supabase
         .from('students')
-        .update(studentData)
+        .update(dataToUpdate)
         .eq('id', selectedStudent.id)
         .select()
         .single();
