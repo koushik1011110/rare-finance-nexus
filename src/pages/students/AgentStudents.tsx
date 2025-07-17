@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import PageHeader from "@/components/shared/PageHeader";
@@ -72,11 +71,6 @@ const AgentStudents = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGeneratingCOL, setIsGeneratingCOL] = useState(false);
 
-  // Load data
-  useEffect(() => {
-    loadData();
-  }, [user]);
-
   const loadStudents = useCallback(async () => {
     if (!user || universities.length === 0 || courses.length === 0 || academicSessions.length === 0) return;
     
@@ -136,7 +130,6 @@ const AgentStudents = () => {
     }
   }, [user, universities, courses, academicSessions, agents]);
 
-  // Load students when reference data is available
   useEffect(() => {
     if (universities.length > 0 && courses.length > 0 && academicSessions.length > 0 && agents.length > 0) {
       loadStudents();
@@ -171,6 +164,10 @@ const AgentStudents = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    loadData();
+  }, [user]);
 
   const filteredData = students.filter(
     (student) =>
@@ -530,7 +527,6 @@ const AgentStudents = () => {
               university_id: currentStudent.university_id,
               course_id: currentStudent.course_id,
               academic_session_id: currentStudent.academic_session_id,
-              status: currentStudent.status as "active" | "inactive" | "completed",
               city: currentStudent.city,
               country: currentStudent.country,
               address: currentStudent.address,

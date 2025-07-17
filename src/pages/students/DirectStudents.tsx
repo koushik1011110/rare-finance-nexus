@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import PageHeader from "@/components/shared/PageHeader";
@@ -405,7 +406,6 @@ const DirectStudents = () => {
             university_id: selectedStudent.university_id,
             course_id: selectedStudent.course_id,
             academic_session_id: selectedStudent.academic_session_id,
-            status: selectedStudent.status as "active" | "inactive" | "completed",
             city: selectedStudent.city,
             country: selectedStudent.country,
             address: selectedStudent.address,
@@ -430,7 +430,6 @@ const DirectStudents = () => {
             pcb_average: selectedStudent.pcb_average,
             neet_roll_number: selectedStudent.neet_roll_number,
             qualification_status: selectedStudent.qualification_status as "qualified" | "not_qualified",
-            seat_number: selectedStudent.seat_number,
           } : undefined}
           onSubmit={selectedStudent ? handleEditStudent : handleAddStudent}
           isSubmitting={isSubmitting}
