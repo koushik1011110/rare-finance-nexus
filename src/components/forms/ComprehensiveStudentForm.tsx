@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,14 +27,12 @@ export interface ComprehensiveStudentFormData {
   university_id: number;
   course_id: number;
   academic_session_id: number;
-  status: "active" | "inactive" | "completed";
   admission_number?: string;
   city?: string;
   country?: string;
   address?: string;
   aadhaar_number?: string;
   passport_number?: string;
-  seat_number?: string;
   scores?: string;
   twelfth_marks?: number;
   agent_id?: number;
@@ -91,14 +88,12 @@ const ComprehensiveStudentForm: React.FC<ComprehensiveStudentFormProps> = ({
       university_id: 0,
       course_id: 0, // Will be set to MBBS ID after loading
       academic_session_id: 0, // Will be set to 2025-26 ID after loading
-      status: "active",
       admission_number: "",
       city: "",
       country: "",
       address: "",
       aadhaar_number: "",
       passport_number: "",
-      seat_number: "",
       scores: "",
       twelfth_marks: 0,
       agent_id: 0,
@@ -259,34 +254,6 @@ const ComprehensiveStudentForm: React.FC<ComprehensiveStudentFormProps> = ({
                 onChange={handleChange}
                 placeholder="Auto-generated or enter manually"
               />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="seat_number">Seat Number</Label>
-              <Input
-                id="seat_number"
-                name="seat_number"
-                value={formData.seat_number || ""}
-                onChange={handleChange}
-                placeholder="Enter seat number"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="status">Status</Label>
-              <Select
-                value={formData.status}
-                onValueChange={(value) => handleSelectChange("status", value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
           </div>
         </CardContent>

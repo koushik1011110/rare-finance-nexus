@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import StatCard from "@/components/dashboard/StatCard";
@@ -26,6 +25,7 @@ import { toast } from "@/hooks/use-toast";
 import { getDashboardStatistics, getRecentActivities } from "@/lib/dashboard-api";
 import { getTodoTaskStatistics } from "@/lib/todo-api";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface ChartData {
   name: string;
@@ -53,6 +53,7 @@ const activityColumns = [
 ];
 
 const Index = () => {
+  const { isAdmin } = useAuth();
   const [loading, setLoading] = useState(true);
   const [dashboardStats, setDashboardStats] = useState({
     totalStudents: 0,
@@ -60,6 +61,7 @@ const Index = () => {
     activeApplications: 0,
     totalRevenue: 0,
     pendingTasks: 0,
+    totalAgents: 0,
   });
   const [todoStats, setTodoStats] = useState({
     total: 0,
@@ -212,6 +214,14 @@ const Index = () => {
           icon={<Building2 className="h-5 w-5" />}
           variant="default"
         />
+        {isAdmin && (
+          <StatCard
+            title="Total Agents"
+            value={dashboardStats.totalAgents.toLocaleString()}
+            icon={<Users className="h-5 w-5" />}
+            variant="default"
+          />
+        )}
       </div>
 
       {/* Financial & Task Stats */}

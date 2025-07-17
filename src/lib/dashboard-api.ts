@@ -7,23 +7,26 @@ export interface DashboardStats {
   activeApplications: number;
   totalRevenue: number;
   pendingTasks: number;
+  totalAgents: number;
 }
 
 export const getDashboardStatistics = async (): Promise<DashboardStats> => {
   try {
-    // Get all statistics in parallel (removed totalAgents)
+    // Get all statistics in parallel (including totalAgents)
     const [
       studentsResult,
       universitiesResult,
       applicationsResult,
       revenueResult,
-      tasksResult
+      tasksResult,
+      agentsResult
     ] = await Promise.all([
       supabase.from('students').select('id', { count: 'exact' }),
       supabase.from('universities').select('id', { count: 'exact' }),
       supabase.from('apply_students').select('id', { count: 'exact' }).eq('status', 'pending'),
       supabase.from('fee_collections').select('amount_paid'),
-      supabase.from('todo_tasks').select('id', { count: 'exact' }).eq('status', 'pending')
+      supabase.from('todo_tasks').select('id', { count: 'exact' }).eq('status', 'pending'),
+      supabase.from('agents').select('id', { count: 'exact' })
     ]);
 
     // Calculate total revenue
@@ -35,6 +38,7 @@ export const getDashboardStatistics = async (): Promise<DashboardStats> => {
       activeApplications: applicationsResult.count || 0,
       totalRevenue,
       pendingTasks: tasksResult.count || 0,
+      totalAgents: agentsResult.count || 0,
     };
   } catch (error) {
     console.error('Error fetching dashboard statistics:', error);

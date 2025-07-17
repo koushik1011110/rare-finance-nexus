@@ -116,7 +116,7 @@ const DirectStudents = () => {
         university_id: studentData.university_id || undefined,
         course_id: studentData.course_id || defaultCourse?.id || undefined,
         academic_session_id: studentData.academic_session_id || defaultSession?.id || undefined,
-        status: 'active',
+        status: 'active', // Always set to active for new students
         // Ensure agent_id is null for direct students instead of 0
         agent_id: studentData.agent_id && studentData.agent_id !== 0 ? studentData.agent_id : null
       };
