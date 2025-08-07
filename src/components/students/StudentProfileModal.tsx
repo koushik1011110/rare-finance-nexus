@@ -1,10 +1,11 @@
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { User, Mail, Phone, MapPin, GraduationCap, Calendar, CreditCard, Users } from "lucide-react";
+import { User, Mail, Phone, MapPin, GraduationCap, Calendar, CreditCard, Users, Key } from "lucide-react";
 import DetailViewModal from "@/components/shared/DetailViewModal";
 import StudentDocuments from "@/components/students/StudentDocuments";
+import { supabase } from "@/integrations/supabase/client";
 
 interface StudentProfileModalProps {
   student: any;
@@ -19,6 +20,26 @@ export default function StudentProfileModal({
   onClose,
   showAgentInfo = false,
 }: StudentProfileModalProps) {
+  const [credentials, setCredentials] = useState<{ username: string; password: string } | null>(null);
+
+  useEffect(() => {
+    const fetchCredentials = async () => {
+      if (student?.id && isOpen) {
+        const { data, error } = await supabase
+          .from('student_credentials')
+          .select('username, password')
+          .eq('student_id', student.id)
+          .single();
+        
+        if (!error && data) {
+          setCredentials(data);
+        }
+      }
+    };
+
+    fetchCredentials();
+  }, [student?.id, isOpen]);
+
   if (!student) return null;
 
   return (
@@ -230,6 +251,30 @@ export default function StudentProfileModal({
             </div>
           </CardContent>
         </Card>
+
+        {/* Login Credentials */}
+        {credentials && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Key className="mr-2 h-5 w-5" />
+                Login Credentials
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Username</label>
+                  <p className="text-sm font-mono bg-muted p-2 rounded">{credentials.username}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Password</label>
+                  <p className="text-sm font-mono bg-muted p-2 rounded">{credentials.password}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {showAgentInfo && student.agent_name && (
           <Card>
