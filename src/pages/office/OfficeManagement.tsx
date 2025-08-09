@@ -257,9 +257,15 @@ const OfficeManagement = () => {
               <p className="text-sm font-medium text-muted-foreground">Phone</p>
               <p className="text-lg">{selectedOffice.phone || 'N/A'}</p>
             </div>
-            <div className="md:col-span-2">
+            <div>
               <p className="text-sm font-medium text-muted-foreground">Email</p>
               <p className="text-lg">{selectedOffice.email || 'N/A'}</p>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Login Password</p>
+              <p className="text-lg font-mono bg-muted px-2 py-1 rounded">
+                {selectedOffice.password || 'Not Available'}
+              </p>
             </div>
           </div>
         </DetailViewModal>

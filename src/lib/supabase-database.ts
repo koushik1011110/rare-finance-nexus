@@ -1304,6 +1304,7 @@ export interface Office {
   contact_person: string | null;
   phone: string | null;
   email: string | null;
+  password?: string | null;
   status: string;
   created_at: string;
   updated_at: string;
@@ -1362,6 +1363,32 @@ export const officesAPI = {
       .eq('id', id);
 
     if (error) throw error;
+  },
+
+  createOfficeUser: async (email: string, password: string, officeName: string): Promise<void> => {
+    const { error } = await supabase.rpc('create_staff_member', {
+      email_param: email,
+      password_param: password,
+      first_name_param: officeName,
+      last_name_param: 'Office',
+      role_param: 'office' as any,
+    });
+
+    if (error) {
+      console.error('Error creating office user:', error);
+      throw error;
+    }
+
+    // Update the office record with the password for reference
+    const { error: updateError } = await supabase
+      .from('offices')
+      .update({ password })
+      .eq('email', email);
+
+    if (updateError) {
+      console.error('Error updating office with password:', updateError);
+      // Don't throw here as user creation succeeded
+    }
   },
 };
 

@@ -21,6 +21,7 @@ interface FormData {
   contact_person: string;
   phone: string;
   email: string;
+  password: string;
   status: string;
 }
 
@@ -43,6 +44,7 @@ const OfficeForm: React.FC<OfficeFormProps> = ({
       contact_person: "",
       phone: "",
       email: "",
+      password: "",
       status: "Active",
     },
   });
@@ -61,10 +63,24 @@ const OfficeForm: React.FC<OfficeFormProps> = ({
       };
 
       await officesAPI.create(officeData);
+
+      // Create user account for office login
+      if (data.email && data.password) {
+        try {
+          await officesAPI.createOfficeUser(data.email, data.password, data.name);
+        } catch (userError) {
+          console.error('Error creating office user:', userError);
+          toast({
+            title: "Warning",
+            description: "Office created but failed to create user account. Please create manually.",
+            variant: "destructive",
+          });
+        }
+      }
       
       toast({
         title: "Success",
-        description: `Office ${data.name} has been created.`,
+        description: `Office ${data.name} has been created with login credentials.`,
       });
       
       reset();
@@ -152,13 +168,29 @@ const OfficeForm: React.FC<OfficeFormProps> = ({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">Email *</Label>
             <Input
               id="email"
               type="email"
-              {...register("email")}
+              {...register("email", { required: "Email is required for login access" })}
               placeholder="office@example.com"
             />
+            {errors.email && (
+              <p className="text-sm text-destructive">{errors.email.message}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="password">Password *</Label>
+            <Input
+              id="password"
+              type="password"
+              {...register("password", { required: "Password is required for login access" })}
+              placeholder="Create a password"
+            />
+            {errors.password && (
+              <p className="text-sm text-destructive">{errors.password.message}</p>
+            )}
           </div>
 
           <div className="flex justify-end space-x-2 pt-4">
