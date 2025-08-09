@@ -1910,6 +1910,7 @@ export type Database = {
           last_name: string
           role: Database["public"]["Enums"]["user_role"]
           is_active: boolean
+          office_location: string
         }[]
       }
       cleanup_expired_sessions: {
@@ -2029,6 +2030,7 @@ export type Database = {
           last_name: string
           role: Database["public"]["Enums"]["user_role"]
           is_active: boolean
+          office_location: string
         }[]
       }
       verify_student_login: {
