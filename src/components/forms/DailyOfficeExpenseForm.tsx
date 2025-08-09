@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Loader2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { officeExpensesAPI, officesAPI, type Office } from "@/lib/supabase-database";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface DailyOfficeExpenseFormProps {
   isOpen: boolean;
@@ -42,6 +43,7 @@ const DailyOfficeExpenseForm: React.FC<DailyOfficeExpenseFormProps> = ({
   onClose,
   onSuccess,
 }) => {
+  const { isOfficeUser, getUserOfficeLocation } = useAuth();
   const [offices, setOffices] = useState<Office[]>([]);
   const [loadingOffices, setLoadingOffices] = useState(true);
   const {
@@ -69,6 +71,15 @@ const DailyOfficeExpenseForm: React.FC<DailyOfficeExpenseFormProps> = ({
       try {
         const data = await officesAPI.getAll();
         setOffices(data.filter(office => office.status === 'Active'));
+        
+        // Auto-select office for office users
+        if (isOfficeUser) {
+          const userOfficeLocation = getUserOfficeLocation();
+          const userOffice = data.find(office => office.name === userOfficeLocation);
+          if (userOffice) {
+            setValue("office_id", userOffice.id);
+          }
+        }
       } catch (error) {
         console.error('Error loading offices:', error);
         toast({
@@ -81,7 +92,7 @@ const DailyOfficeExpenseForm: React.FC<DailyOfficeExpenseFormProps> = ({
       }
     };
     loadOffices();
-  }, []);
+  }, [isOfficeUser, getUserOfficeLocation, setValue]);
 
   const onSubmit = async (data: FormData) => {
     try {
@@ -150,22 +161,28 @@ const DailyOfficeExpenseForm: React.FC<DailyOfficeExpenseFormProps> = ({
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="office_id">Office *</Label>
-            <Select
-              value={selectedOfficeId ? selectedOfficeId.toString() : ""}
-              onValueChange={(value) => setValue("office_id", parseInt(value))}
-              disabled={loadingOffices}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder={loadingOffices ? "Loading offices..." : "Select office"} />
-              </SelectTrigger>
-              <SelectContent>
-                {offices.map((office) => (
-                  <SelectItem key={office.id} value={office.id.toString()}>
-                    {office.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {isOfficeUser ? (
+              <div className="p-3 bg-muted rounded-md">
+                <span className="text-sm font-medium">{getUserOfficeLocation()}</span>
+              </div>
+            ) : (
+              <Select
+                value={selectedOfficeId ? selectedOfficeId.toString() : ""}
+                onValueChange={(value) => setValue("office_id", parseInt(value))}
+                disabled={loadingOffices}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={loadingOffices ? "Loading offices..." : "Select office"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {offices.map((office) => (
+                    <SelectItem key={office.id} value={office.id.toString()}>
+                      {office.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
             {!selectedOfficeId && (
               <p className="text-sm text-destructive">Office selection is required</p>
             )}

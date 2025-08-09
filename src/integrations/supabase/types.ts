@@ -1849,6 +1849,7 @@ export type Database = {
           id: number
           is_active: boolean
           last_name: string
+          office_location: string | null
           password_hash: string
           role: Database["public"]["Enums"]["user_role"]
           updated_at: string | null
@@ -1860,6 +1861,7 @@ export type Database = {
           id?: number
           is_active?: boolean
           last_name: string
+          office_location?: string | null
           password_hash: string
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string | null
@@ -1871,6 +1873,7 @@ export type Database = {
           id?: number
           is_active?: boolean
           last_name?: string
+          office_location?: string | null
           password_hash?: string
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string | null
@@ -1990,6 +1993,10 @@ export type Database = {
           status: string
         }[]
       }
+      get_user_office_location: {
+        Args: { user_id_param: number }
+        Returns: string
+      }
       logout_user: {
         Args: { token_param: string }
         Returns: undefined
@@ -2037,7 +2044,17 @@ export type Database = {
       }
     }
     Enums: {
-      user_role: "admin" | "agent" | "hostel_team" | "finance" | "staff"
+      user_role:
+        | "admin"
+        | "agent"
+        | "hostel_team"
+        | "finance"
+        | "staff"
+        | "office_guwahati"
+        | "office_delhi"
+        | "office_mumbai"
+        | "office_bangalore"
+        | "office_kolkata"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2165,7 +2182,18 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      user_role: ["admin", "agent", "hostel_team", "finance", "staff"],
+      user_role: [
+        "admin",
+        "agent",
+        "hostel_team",
+        "finance",
+        "staff",
+        "office_guwahati",
+        "office_delhi",
+        "office_mumbai",
+        "office_bangalore",
+        "office_kolkata",
+      ],
     },
   },
 } as const

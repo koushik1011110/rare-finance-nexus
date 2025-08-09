@@ -13,29 +13,30 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import DetailViewModal from "@/components/shared/DetailViewModal";
-import EditModal from "@/components/shared/EditModal";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { officeExpensesAPI, type OfficeExpense } from "@/lib/supabase-database";
 import OfficeExpenseForm from "@/components/forms/OfficeExpenseForm";
 import DailyOfficeExpenseForm from "@/components/forms/DailyOfficeExpenseForm";
 import OfficeExpenseReports from "@/components/office/OfficeExpenseReports";
+import { useAuth } from "@/contexts/AuthContext";
 
 const OfficeExpenses = () => {
+  const { isOfficeUser, getUserOfficeLocation } = useAuth();
   const [expenses, setExpenses] = useState<OfficeExpense[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedLocation, setSelectedLocation] = useState<string>("all");
   const [viewModalOpen, setViewModalOpen] = useState(false);
-  const [editModalOpen, setEditModalOpen] = useState(false);
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [dailyExpenseModalOpen, setDailyExpenseModalOpen] = useState(false);
   const [reportsModalOpen, setReportsModalOpen] = useState(false);
   const [selectedExpense, setSelectedExpense] = useState<OfficeExpense | null>(null);
-  const [editedExpense, setEditedExpense] = useState<OfficeExpense | null>(null);
-  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     loadExpenses();
+    // Set default location for office users
+    const userOfficeLocation = getUserOfficeLocation();
+    if (userOfficeLocation) {
+      setSelectedLocation(userOfficeLocation);
+    }
   }, []);
 
   const loadExpenses = async () => {
@@ -55,57 +56,25 @@ const OfficeExpenses = () => {
     }
   };
 
-  const filteredData =
-    selectedLocation === "all"
-      ? expenses
-      : expenses.filter((expense) => expense.location === selectedLocation);
+  const filteredData = (() => {
+    const userOfficeLocation = getUserOfficeLocation();
+    let data = expenses;
+    
+    // Filter by user's office location if they're an office user
+    if (isOfficeUser && userOfficeLocation) {
+      data = expenses.filter((expense) => expense.location === userOfficeLocation);
+    } else if (selectedLocation !== "all") {
+      data = expenses.filter((expense) => expense.location === selectedLocation);
+    }
+    
+    return data;
+  })();
 
   const handleViewExpense = (expense: OfficeExpense) => {
     setSelectedExpense(expense);
     setViewModalOpen(true);
   };
 
-  const handleEditExpense = (expense: OfficeExpense) => {
-    setSelectedExpense(expense);
-    setEditedExpense({...expense});
-    setEditModalOpen(true);
-  };
-
-  const handleSaveEdit = async () => {
-    if (!editedExpense) return;
-
-    try {
-      setSaving(true);
-      await officeExpensesAPI.update(editedExpense.id, {
-        location: editedExpense.location,
-        month: editedExpense.month,
-        rent: editedExpense.rent,
-        utilities: editedExpense.utilities,
-        internet: editedExpense.internet,
-        marketing: editedExpense.marketing,
-        travel: editedExpense.travel,
-        miscellaneous: editedExpense.miscellaneous,
-        monthly_total: editedExpense.monthly_total,
-      });
-      
-      toast({
-        title: "Success",
-        description: `Office expense for ${editedExpense.location} has been updated.`,
-      });
-      
-      setEditModalOpen(false);
-      loadExpenses(); // Reload data
-    } catch (error) {
-      console.error('Error updating expense:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update office expense.",
-        variant: "destructive",
-      });
-    } finally {
-      setSaving(false);
-    }
-  };
 
   const handleAddExpense = () => {
     setAddModalOpen(true);
@@ -186,13 +155,6 @@ const OfficeExpenses = () => {
           >
             View
           </Button>
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => handleEditExpense(row)}
-          >
-            Edit
-          </Button>
         </div>
       ),
     },
@@ -223,22 +185,29 @@ const OfficeExpenses = () => {
 
       <div className="mb-6">
         <div className="flex gap-4">
-          <Select
-            value={selectedLocation}
-            onValueChange={setSelectedLocation}
-          >
-            <SelectTrigger className="w-[250px]">
-              <SelectValue placeholder="Select Office Location" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Locations</SelectItem>
-              {locations.map((location) => (
-                <SelectItem key={location} value={location}>
-                  {location}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {!isOfficeUser && (
+            <Select
+              value={selectedLocation}
+              onValueChange={setSelectedLocation}
+            >
+              <SelectTrigger className="w-[250px]">
+                <SelectValue placeholder="Select Office Location" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Locations</SelectItem>
+                {locations.map((location) => (
+                  <SelectItem key={location} value={location}>
+                    {location}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+          {isOfficeUser && (
+            <div className="flex items-center bg-primary/10 px-4 py-2 rounded-lg">
+              <span className="text-sm font-medium">Office: {getUserOfficeLocation()}</span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -373,119 +342,6 @@ const OfficeExpenses = () => {
         onClose={() => setReportsModalOpen(false)}
       />
 
-      {/* Edit Modal */}
-      {editedExpense && (
-        <EditModal
-          title={`Edit Office Expense - ${editedExpense.location}`}
-          isOpen={editModalOpen}
-          onClose={() => setEditModalOpen(false)}
-        >
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="location">Office Location</Label>
-              <Input 
-                id="location" 
-                value={editedExpense.location} 
-                onChange={(e) => setEditedExpense({...editedExpense, location: e.target.value})}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="month">Month (YYYY-MM-DD)</Label>
-              <Input 
-                id="month" 
-                type="date"
-                value={editedExpense.month} 
-                onChange={(e) => setEditedExpense({...editedExpense, month: e.target.value})}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="rent">Rent</Label>
-              <Input 
-                id="rent" 
-                type="number"
-                step="0.01"
-                value={editedExpense.rent} 
-                onChange={(e) => setEditedExpense({...editedExpense, rent: parseFloat(e.target.value) || 0})}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="utilities">Utilities</Label>
-              <Input 
-                id="utilities" 
-                type="number"
-                step="0.01"
-                value={editedExpense.utilities} 
-                onChange={(e) => setEditedExpense({...editedExpense, utilities: parseFloat(e.target.value) || 0})}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="internet">Internet</Label>
-              <Input 
-                id="internet" 
-                type="number"
-                step="0.01"
-                value={editedExpense.internet} 
-                onChange={(e) => setEditedExpense({...editedExpense, internet: parseFloat(e.target.value) || 0})}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="marketing">Marketing</Label>
-              <Input 
-                id="marketing" 
-                type="number"
-                step="0.01"
-                value={editedExpense.marketing} 
-                onChange={(e) => setEditedExpense({...editedExpense, marketing: parseFloat(e.target.value) || 0})}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="travel">Travel</Label>
-              <Input 
-                id="travel" 
-                type="number"
-                step="0.01"
-                value={editedExpense.travel} 
-                onChange={(e) => setEditedExpense({...editedExpense, travel: parseFloat(e.target.value) || 0})}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="miscellaneous">Miscellaneous</Label>
-              <Input 
-                id="miscellaneous" 
-                type="number"
-                step="0.01"
-                value={editedExpense.miscellaneous} 
-                onChange={(e) => setEditedExpense({...editedExpense, miscellaneous: parseFloat(e.target.value) || 0})}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="monthly_total">Monthly Total</Label>
-              <Input 
-                id="monthly_total" 
-                type="number"
-                step="0.01"
-                value={editedExpense.monthly_total} 
-                onChange={(e) => setEditedExpense({...editedExpense, monthly_total: parseFloat(e.target.value) || 0})}
-              />
-            </div>
-          </div>
-          <div className="flex justify-end space-x-2 pt-4">
-            <Button variant="outline" onClick={() => setEditModalOpen(false)} disabled={saving}>
-              Cancel
-            </Button>
-            <Button onClick={handleSaveEdit} disabled={saving}>
-              {saving ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                'Save Changes'
-              )}
-            </Button>
-          </div>
-        </EditModal>
-      )}
     </MainLayout>
   );
 };

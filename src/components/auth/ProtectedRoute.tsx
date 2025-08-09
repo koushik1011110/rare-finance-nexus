@@ -47,6 +47,11 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
 
   if (allowedRoles && !allowedRoles.includes(user?.role!) && user?.role !== 'admin') {
+    // Allow office users to access office expenses
+    if (user?.role?.startsWith('office_') && allowedRoles.includes('office_user' as UserRole)) {
+      return <>{children}</>;
+    }
+    
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
         <Alert className="max-w-md">

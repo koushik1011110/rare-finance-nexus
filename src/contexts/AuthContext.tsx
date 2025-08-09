@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
-export type UserRole = 'admin' | 'agent' | 'hostel_team' | 'finance' | 'staff';
+export type UserRole = 'admin' | 'agent' | 'hostel_team' | 'finance' | 'staff' | 'office_guwahati' | 'office_delhi' | 'office_mumbai' | 'office_bangalore' | 'office_kolkata';
 
 export interface User {
   id: string;
@@ -10,6 +10,7 @@ export interface User {
   lastName: string;
   role: UserRole;
   isActive: boolean;
+  officeLocation?: string;
 }
 
 interface AuthContextType {
@@ -20,6 +21,8 @@ interface AuthContextType {
   isAuthenticated: boolean;
   hasRole: (role: UserRole) => boolean;
   isAdmin: boolean;
+  isOfficeUser: boolean;
+  getUserOfficeLocation: () => string | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -64,6 +67,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           lastName: userData.last_name,
           role: userData.role as UserRole,
           isActive: userData.is_active,
+          officeLocation: userData.office_location,
         });
       }
     } catch (error) {
@@ -111,6 +115,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         lastName: userData.last_name,
         role: userData.role as UserRole,
         isActive: userData.is_active,
+        officeLocation: userData.office_location,
       });
 
       return { success: true };
@@ -141,6 +146,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const isAdmin = user?.role === 'admin';
+  const isOfficeUser = user?.role?.startsWith('office_') || false;
+
+  const getUserOfficeLocation = () => {
+    if (user?.role?.startsWith('office_')) {
+      return user.officeLocation || null;
+    }
+    return null;
+  };
 
   const value: AuthContextType = {
     user,
@@ -150,6 +163,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     isAuthenticated: !!user,
     hasRole,
     isAdmin,
+    isOfficeUser,
+    getUserOfficeLocation,
   };
 
   return (
