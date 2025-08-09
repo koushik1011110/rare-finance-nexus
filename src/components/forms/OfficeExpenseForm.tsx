@@ -101,6 +101,10 @@ const OfficeExpenseForm: React.FC<OfficeExpenseFormProps> = ({
         location: selectedOffice.name,
         office_id: data.office_id,
         month: data.month,
+        expense_date: data.month, // Use the month as expense_date for monthly records
+        expense_category: 'Monthly Expenses',
+        amount: monthlyTotal,
+        notes: '',
         rent: data.rent,
         utilities: data.utilities,
         internet: data.internet,

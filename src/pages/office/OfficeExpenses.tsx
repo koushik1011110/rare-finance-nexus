@@ -18,6 +18,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { officeExpensesAPI, type OfficeExpense } from "@/lib/supabase-database";
 import OfficeExpenseForm from "@/components/forms/OfficeExpenseForm";
+import DailyOfficeExpenseForm from "@/components/forms/DailyOfficeExpenseForm";
+import OfficeExpenseReports from "@/components/office/OfficeExpenseReports";
 
 const OfficeExpenses = () => {
   const [expenses, setExpenses] = useState<OfficeExpense[]>([]);
@@ -26,6 +28,8 @@ const OfficeExpenses = () => {
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [addModalOpen, setAddModalOpen] = useState(false);
+  const [dailyExpenseModalOpen, setDailyExpenseModalOpen] = useState(false);
+  const [reportsModalOpen, setReportsModalOpen] = useState(false);
   const [selectedExpense, setSelectedExpense] = useState<OfficeExpense | null>(null);
   const [editedExpense, setEditedExpense] = useState<OfficeExpense | null>(null);
   const [saving, setSaving] = useState(false);
@@ -107,6 +111,14 @@ const OfficeExpenses = () => {
     setAddModalOpen(true);
   };
 
+  const handleAddDailyExpense = () => {
+    setDailyExpenseModalOpen(true);
+  };
+
+  const handleShowReports = () => {
+    setReportsModalOpen(true);
+  };
+
   const handleExport = () => {
     const csvContent = [
       ["Location", "Month", "Rent", "Utilities", "Internet", "Marketing", "Travel", "Miscellaneous", "Monthly Total"],
@@ -144,44 +156,23 @@ const OfficeExpenses = () => {
   const columns = [
     { header: "Office Location", accessorKey: "location" as const },
     { 
-      header: "Month", 
-      accessorKey: "month" as const,
-      cell: (row: OfficeExpense) => formatMonth(row.month)
+      header: "Date", 
+      accessorKey: "expense_date" as const,
+      cell: (row: OfficeExpense) => new Date(row.expense_date).toLocaleDateString()
     },
     { 
-      header: "Rent", 
-      accessorKey: "rent" as const,
-      cell: (row: OfficeExpense) => formatCurrency(row.rent)
+      header: "Category", 
+      accessorKey: "expense_category" as const
     },
     { 
-      header: "Utilities", 
-      accessorKey: "utilities" as const,
-      cell: (row: OfficeExpense) => formatCurrency(row.utilities)
+      header: "Amount", 
+      accessorKey: "amount" as const,
+      cell: (row: OfficeExpense) => formatCurrency(row.amount)
     },
     { 
-      header: "Internet", 
-      accessorKey: "internet" as const,
-      cell: (row: OfficeExpense) => formatCurrency(row.internet)
-    },
-    { 
-      header: "Marketing", 
-      accessorKey: "marketing" as const,
-      cell: (row: OfficeExpense) => formatCurrency(row.marketing)
-    },
-    { 
-      header: "Travel", 
-      accessorKey: "travel" as const,
-      cell: (row: OfficeExpense) => formatCurrency(row.travel)
-    },
-    { 
-      header: "Miscellaneous", 
-      accessorKey: "miscellaneous" as const,
-      cell: (row: OfficeExpense) => formatCurrency(row.miscellaneous)
-    },
-    { 
-      header: "Monthly Total", 
-      accessorKey: "monthly_total" as const,
-      cell: (row: OfficeExpense) => formatCurrency(row.monthly_total)
+      header: "Notes", 
+      accessorKey: "notes" as const,
+      cell: (row: OfficeExpense) => row.notes ? (row.notes.length > 50 ? row.notes.substring(0, 50) + '...' : row.notes) : '-'
     },
     {
       header: "Actions",
@@ -214,13 +205,17 @@ const OfficeExpenses = () => {
         description="Track and manage all office-related expenses by location"
         actions={
           <>
-            <Button variant="outline" size="sm" onClick={handleExport}>
+            <Button variant="outline" size="sm" onClick={handleShowReports}>
               <Download className="mr-2 h-4 w-4" />
-              Export
+              Reports
             </Button>
-            <Button variant="default" size="sm" onClick={handleAddExpense}>
+            <Button variant="outline" size="sm" onClick={handleAddExpense}>
               <Plus className="mr-2 h-4 w-4" />
-              Add Expense
+              Add Monthly
+            </Button>
+            <Button variant="default" size="sm" onClick={handleAddDailyExpense}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Daily Expense
             </Button>
           </>
         }
@@ -358,11 +353,24 @@ const OfficeExpenses = () => {
         </DetailViewModal>
       )}
 
-      {/* Add Expense Form */}
+      {/* Add Monthly Expense Form */}
       <OfficeExpenseForm
         isOpen={addModalOpen}
         onClose={() => setAddModalOpen(false)}
         onSuccess={loadExpenses}
+      />
+
+      {/* Add Daily Expense Form */}
+      <DailyOfficeExpenseForm
+        isOpen={dailyExpenseModalOpen}
+        onClose={() => setDailyExpenseModalOpen(false)}
+        onSuccess={loadExpenses}
+      />
+
+      {/* Reports Modal */}
+      <OfficeExpenseReports
+        isOpen={reportsModalOpen}
+        onClose={() => setReportsModalOpen(false)}
       />
 
       {/* Edit Modal */}

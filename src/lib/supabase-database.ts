@@ -1185,6 +1185,10 @@ export interface OfficeExpense {
   location: string;
   office_id?: number;
   month: string;
+  expense_date: string;
+  expense_category: string;
+  amount: number;
+  notes?: string;
   rent: number;
   utilities: number;
   internet: number;
@@ -1202,10 +1206,46 @@ export const officeExpensesAPI = {
     const { data, error } = await supabase
       .from('office_expenses')
       .select('*')
-      .order('month', { ascending: false });
+      .order('expense_date', { ascending: false });
     
     if (error) {
       console.error('Error fetching office expenses:', error);
+      throw error;
+    }
+    
+    return data || [];
+  },
+
+  getByDateRange: async (startDate: string, endDate: string): Promise<OfficeExpense[]> => {
+    const { data, error } = await supabase
+      .from('office_expenses')
+      .select('*')
+      .gte('expense_date', startDate)
+      .lte('expense_date', endDate)
+      .order('expense_date', { ascending: false });
+    
+    if (error) {
+      console.error('Error fetching office expenses by date range:', error);
+      throw error;
+    }
+    
+    return data || [];
+  },
+
+  getByOfficeAndMonth: async (officeId: number, year: number, month: number): Promise<OfficeExpense[]> => {
+    const startDate = `${year}-${month.toString().padStart(2, '0')}-01`;
+    const endDate = new Date(year, month, 0).toISOString().split('T')[0]; // Last day of month
+    
+    const { data, error } = await supabase
+      .from('office_expenses')
+      .select('*')
+      .eq('office_id', officeId)
+      .gte('expense_date', startDate)
+      .lte('expense_date', endDate)
+      .order('expense_date', { ascending: false });
+    
+    if (error) {
+      console.error('Error fetching office expenses by office and month:', error);
       throw error;
     }
     
