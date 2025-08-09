@@ -916,7 +916,10 @@ export type Database = {
       }
       office_expenses: {
         Row: {
+          amount: number | null
           created_at: string
+          expense_category: string | null
+          expense_date: string | null
           id: number
           internet: number
           location: string
@@ -924,6 +927,7 @@ export type Database = {
           miscellaneous: number
           month: string
           monthly_total: number
+          notes: string | null
           office_id: number | null
           rent: number
           travel: number
@@ -931,7 +935,10 @@ export type Database = {
           utilities: number
         }
         Insert: {
+          amount?: number | null
           created_at?: string
+          expense_category?: string | null
+          expense_date?: string | null
           id?: number
           internet?: number
           location: string
@@ -939,6 +946,7 @@ export type Database = {
           miscellaneous?: number
           month: string
           monthly_total?: number
+          notes?: string | null
           office_id?: number | null
           rent?: number
           travel?: number
@@ -946,7 +954,10 @@ export type Database = {
           utilities?: number
         }
         Update: {
+          amount?: number | null
           created_at?: string
+          expense_category?: string | null
+          expense_date?: string | null
           id?: number
           internet?: number
           location?: string
@@ -954,6 +965,7 @@ export type Database = {
           miscellaneous?: number
           month?: string
           monthly_total?: number
+          notes?: string | null
           office_id?: number | null
           rent?: number
           travel?: number
