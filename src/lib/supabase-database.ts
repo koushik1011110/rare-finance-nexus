@@ -1315,7 +1315,7 @@ export const officesAPI = {
   getAll: async (): Promise<Office[]> => {
     const { data, error } = await supabase
       .from('offices')
-      .select('*')
+      .select('*, password')
       .order('name', { ascending: true });
 
     if (error) throw error;
@@ -1366,12 +1366,13 @@ export const officesAPI = {
   },
 
   createOfficeUser: async (email: string, password: string, officeName: string): Promise<void> => {
+    // Create user with admin role but set office_location to the office name
     const { error } = await supabase.rpc('create_staff_member', {
       email_param: email,
       password_param: password,
       first_name_param: officeName,
       last_name_param: 'Office',
-      role_param: 'office' as any,
+      role_param: 'staff',
     });
 
     if (error) {
@@ -1379,10 +1380,20 @@ export const officesAPI = {
       throw error;
     }
 
+    // Update the user's office_location to match the office name
+    const { error: updateUserError } = await supabase
+      .from('users')
+      .update({ office_location: officeName })
+      .eq('email', email);
+
+    if (updateUserError) {
+      console.error('Error updating user office location:', updateUserError);
+    }
+
     // Update the office record with the password for reference
     const { error: updateError } = await supabase
       .from('offices')
-      .update({ password })
+      .update({ password } as any)
       .eq('email', email);
 
     if (updateError) {
