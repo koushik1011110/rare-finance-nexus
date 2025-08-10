@@ -149,6 +149,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return user?.role === role;
   };
 
+  // Define role checks
   const isAdmin = user?.role === 'admin';
   const isOfficeUser = user?.role === 'office_user';
   const isOffice = user?.role === 'office';
