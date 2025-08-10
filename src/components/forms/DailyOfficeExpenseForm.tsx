@@ -43,7 +43,7 @@ const DailyOfficeExpenseForm: React.FC<DailyOfficeExpenseFormProps> = ({
   onClose,
   onSuccess,
 }) => {
-  const { isOfficeUser, getUserOfficeLocation } = useAuth();
+  const { isOfficeUser, isOffice, getUserOfficeLocation } = useAuth();
   const [offices, setOffices] = useState<Office[]>([]);
   const [loadingOffices, setLoadingOffices] = useState(true);
   const {
@@ -73,7 +73,7 @@ const DailyOfficeExpenseForm: React.FC<DailyOfficeExpenseFormProps> = ({
         setOffices(data.filter(office => office.status === 'Active'));
         
         // Auto-select office for office users
-        if (isOfficeUser) {
+        if (isOfficeUser || isOffice) {
           const userOfficeLocation = getUserOfficeLocation();
           const userOffice = data.find(office => office.name === userOfficeLocation);
           if (userOffice) {
@@ -92,7 +92,7 @@ const DailyOfficeExpenseForm: React.FC<DailyOfficeExpenseFormProps> = ({
       }
     };
     loadOffices();
-  }, [isOfficeUser, getUserOfficeLocation, setValue]);
+  }, [isOfficeUser, isOffice, getUserOfficeLocation, setValue]);
 
   const onSubmit = async (data: FormData) => {
     try {
@@ -161,7 +161,7 @@ const DailyOfficeExpenseForm: React.FC<DailyOfficeExpenseFormProps> = ({
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="office_id">Office *</Label>
-            {isOfficeUser ? (
+            {(isOfficeUser || isOffice) ? (
               <div className="p-3 bg-muted rounded-md">
                 <span className="text-sm font-medium">{getUserOfficeLocation()}</span>
               </div>

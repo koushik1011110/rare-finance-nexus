@@ -1,7 +1,7 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
-export type UserRole = 'admin' | 'agent' | 'hostel_team' | 'finance' | 'staff' | 'office_guwahati' | 'office_delhi' | 'office_mumbai' | 'office_bangalore' | 'office_kolkata';
+export type UserRole = 'admin' | 'agent' | 'hostel_team' | 'finance' | 'staff' | 'office_user' | 'office' | 'office_guwahati' | 'office_delhi' | 'office_mumbai' | 'office_bangalore' | 'office_kolkata';
 
 export interface User {
   id: string;
@@ -11,6 +11,7 @@ export interface User {
   role: UserRole;
   isActive: boolean;
   officeLocation?: string;
+  office_location?: string;
 }
 
 interface AuthContextType {
@@ -22,6 +23,7 @@ interface AuthContextType {
   hasRole: (role: UserRole) => boolean;
   isAdmin: boolean;
   isOfficeUser: boolean;
+  isOffice: boolean;
   getUserOfficeLocation: () => string | null;
 }
 
@@ -68,6 +70,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           role: userData.role as UserRole,
           isActive: userData.is_active,
           officeLocation: userData.office_location,
+          office_location: userData.office_location,
         });
       }
     } catch (error) {
@@ -116,6 +119,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         role: userData.role as UserRole,
         isActive: userData.is_active,
         officeLocation: userData.office_location,
+        office_location: userData.office_location,
       });
 
       return { success: true };
@@ -146,14 +150,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const isAdmin = user?.role === 'admin';
-  const isOfficeUser = user?.role?.startsWith('office_') || false;
+  const isOfficeUser = user?.role === 'office_user';
+  const isOffice = user?.role === 'office';
 
-  const getUserOfficeLocation = () => {
-    if (user?.role?.startsWith('office_')) {
-      return user.officeLocation || null;
-    }
-    return null;
-  };
+  const getUserOfficeLocation = useCallback(() => {
+    return user?.office_location || null;
+  }, [user]);
 
   const value: AuthContextType = {
     user,
@@ -164,6 +166,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     hasRole,
     isAdmin,
     isOfficeUser,
+    isOffice,
     getUserOfficeLocation,
   };
 

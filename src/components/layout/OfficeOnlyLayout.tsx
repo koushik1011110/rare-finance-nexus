@@ -8,10 +8,10 @@ interface OfficeOnlyLayoutProps {
 }
 
 const OfficeOnlyLayout: React.FC<OfficeOnlyLayoutProps> = ({ children }) => {
-  const { isOfficeUser, isAdmin } = useAuth();
+  const { isOfficeUser, isOffice, isAdmin } = useAuth();
 
   // Redirect non-office users to main dashboard
-  if (!isOfficeUser && !isAdmin) {
+  if (!isOfficeUser && !isOffice && !isAdmin) {
     return <Navigate to="/" replace />;
   }
 

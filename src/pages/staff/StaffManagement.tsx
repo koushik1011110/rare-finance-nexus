@@ -106,7 +106,7 @@ const StaffManagement = () => {
         password_param: formData.password,
         first_name_param: formData.firstName,
         last_name_param: formData.lastName,
-        role_param: formData.role,
+        role_param: formData.role as any,
         agent_name_param: formData.role === 'agent' ? formData.agentName : null,
         agent_phone_param: formData.role === 'agent' ? formData.agentPhone : null,
         agent_location_param: formData.role === 'agent' ? formData.agentLocation : null,

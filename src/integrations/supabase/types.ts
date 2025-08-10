@@ -1920,6 +1920,14 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      create_office_user: {
+        Args: {
+          email_param: string
+          password_param: string
+          office_name_param: string
+        }
+        Returns: number
+      }
       create_staff_member: {
         Args: {
           email_param: string
@@ -2060,6 +2068,7 @@ export type Database = {
         | "office_mumbai"
         | "office_bangalore"
         | "office_kolkata"
+        | "office"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2198,6 +2207,7 @@ export const Constants = {
         "office_mumbai",
         "office_bangalore",
         "office_kolkata",
+        "office",
       ],
     },
   },

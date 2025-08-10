@@ -20,7 +20,7 @@ import OfficeExpenseReports from "@/components/office/OfficeExpenseReports";
 import { useAuth } from "@/contexts/AuthContext";
 
 const OfficeExpenses = () => {
-  const { isOfficeUser, getUserOfficeLocation } = useAuth();
+  const { isOfficeUser, isOffice, getUserOfficeLocation } = useAuth();
   const [expenses, setExpenses] = useState<OfficeExpense[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedLocation, setSelectedLocation] = useState<string>("all");
@@ -34,10 +34,10 @@ const OfficeExpenses = () => {
     loadExpenses();
     // Set default location for office users
     const userOfficeLocation = getUserOfficeLocation();
-    if (userOfficeLocation) {
+    if ((isOffice || isOfficeUser) && userOfficeLocation) {
       setSelectedLocation(userOfficeLocation);
     }
-  }, []);
+  }, [isOffice, isOfficeUser, getUserOfficeLocation]);
 
   const loadExpenses = async () => {
     try {
@@ -61,7 +61,7 @@ const OfficeExpenses = () => {
     let data = expenses;
     
     // Filter by user's office location if they're an office user
-    if (isOfficeUser && userOfficeLocation) {
+    if ((isOfficeUser || isOffice) && userOfficeLocation) {
       data = expenses.filter((expense) => expense.location === userOfficeLocation);
     } else if (selectedLocation !== "all") {
       data = expenses.filter((expense) => expense.location === selectedLocation);
@@ -185,7 +185,7 @@ const OfficeExpenses = () => {
 
       <div className="mb-6">
         <div className="flex gap-4">
-          {!isOfficeUser && (
+          {!isOfficeUser && !isOffice && (
             <Select
               value={selectedLocation}
               onValueChange={setSelectedLocation}
@@ -203,7 +203,7 @@ const OfficeExpenses = () => {
               </SelectContent>
             </Select>
           )}
-          {isOfficeUser && (
+          {(isOfficeUser || isOffice) && (
             <div className="flex items-center bg-primary/10 px-4 py-2 rounded-lg">
               <span className="text-sm font-medium">Office: {getUserOfficeLocation()}</span>
             </div>
