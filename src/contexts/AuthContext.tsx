@@ -111,7 +111,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.setItem('session_token', sessionToken);
 
       // Set user data
-      setUser({
+      const newUser = {
         id: userData.user_id.toString(),
         email: userData.email,
         firstName: userData.first_name,
@@ -120,7 +120,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isActive: userData.is_active,
         officeLocation: userData.office_location,
         office_location: userData.office_location,
-      });
+      };
+      setUser(newUser);
+
+      // Redirect office users to /office-expenses after login
+      if (newUser.role === 'office') {
+        window.location.href = '/office-expenses';
+      }
 
       return { success: true };
     } catch (error) {

@@ -103,7 +103,7 @@ const App = () => (
             
             {/* Office Expenses */}
             <Route path="/office-expenses/management" element={<ProtectedRoute allowedRoles={['admin', 'finance']}><OfficeManagement /></ProtectedRoute>} />
-            <Route path="/office-expenses" element={<ProtectedRoute allowedRoles={['admin', 'finance']}><OfficeExpenses /></ProtectedRoute>} />
+            <Route path="/office-expenses" element={<ProtectedRoute allowedRoles={['admin', 'finance', 'office']}><OfficeExpenses /></ProtectedRoute>} />
             
             {/* Salary Management */}
             <Route path="/salary" element={<ProtectedRoute allowedRoles={['admin', 'finance']}><SalaryManagement /></ProtectedRoute>} />

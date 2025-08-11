@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from 'react-router-dom';
 import MainLayout from "@/components/layout/MainLayout";
 import StatCard from "@/components/dashboard/StatCard";
 import ChartCard from "@/components/dashboard/ChartCard";
@@ -53,7 +54,15 @@ const activityColumns = [
 ];
 
 const Index = () => {
-  const { isAdmin } = useAuth();
+  const navigate = useNavigate();
+  const { isAdmin, isOffice } = useAuth();
+
+  // Redirect office users to /office-expenses
+  useEffect(() => {
+    if (isOffice) {
+      navigate('/office-expenses', { replace: true });
+    }
+  }, [isOffice, navigate]);
   const [loading, setLoading] = useState(true);
   const [dashboardStats, setDashboardStats] = useState({
     totalStudents: 0,
