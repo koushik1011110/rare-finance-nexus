@@ -28,6 +28,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Download,
+  UserSearch,
+  Plus,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import {
@@ -55,6 +57,15 @@ const allNavItems: NavItem[] = [
     title: "Dashboard", 
     href: "/", 
     icon: BarChart3
+  },
+  { 
+    title: "Lead", 
+    href: "/lead", 
+    icon: UserSearch,
+    subItems: [
+      { title: "Lead Enquiry", href: "/lead/enquiry" },
+      { title: "Add Lead", href: "/lead/add" },
+    ]
   },
   { 
     title: "Fees Collection", 

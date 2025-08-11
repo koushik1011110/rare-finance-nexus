@@ -62,6 +62,10 @@ import Login from "./pages/auth/Login";
 // Staff Management
 import StaffManagement from "./pages/staff/StaffManagement";
 
+// Lead Management
+import LeadEnquiry from "./pages/lead/LeadEnquiry";
+import AddLead from "./pages/lead/AddLead";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -77,6 +81,10 @@ const App = () => (
             
             {/* Protected Routes */}
             <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            
+            {/* Lead Management */}
+            <Route path="/lead/enquiry" element={<ProtectedRoute><LeadEnquiry /></ProtectedRoute>} />
+            <Route path="/lead/add" element={<ProtectedRoute><AddLead /></ProtectedRoute>} />
             
             {/* Student Module */}
             <Route path="/students/direct" element={<ProtectedRoute><DirectStudents /></ProtectedRoute>} />
