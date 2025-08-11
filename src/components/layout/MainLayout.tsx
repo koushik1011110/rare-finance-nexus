@@ -116,10 +116,10 @@ const allNavItems: NavItem[] = [
     title: "Office Expenses", 
     href: "/office-expenses", 
     icon: FileText,
-    allowedRoles: ['admin', 'finance', 'office_guwahati', 'office_delhi', 'office_mumbai', 'office_bangalore', 'office_kolkata'],
+    allowedRoles: ['admin', 'finance', 'office', 'office_guwahati', 'office_delhi', 'office_mumbai', 'office_bangalore', 'office_kolkata'],
     subItems: [
       { title: "Office Management", href: "/office-expenses/management", allowedRoles: ['admin', 'finance'] },
-      { title: "Expenses", href: "/office-expenses", allowedRoles: ['admin', 'finance', 'office_guwahati', 'office_delhi', 'office_mumbai', 'office_bangalore', 'office_kolkata'] },
+      { title: "Expenses", href: "/office-expenses", allowedRoles: ['admin', 'finance', 'office', 'office_guwahati', 'office_delhi', 'office_mumbai', 'office_bangalore', 'office_kolkata'] },
     ]
   },
   { title: "Salary Management", href: "/salary", icon: Receipt, allowedRoles: ['admin', 'finance'] },
@@ -148,14 +148,14 @@ export default function MainLayout({ children }: MainLayoutProps) {
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const location = useLocation();
   
-  const { user, logout, isOfficeUser, getUserOfficeLocation } = useAuth();
+  const { user, logout, isOfficeUser, isOffice, getUserOfficeLocation } = useAuth();
 
   // Filter navigation items based on user role
   const navItems = allNavItems.filter(item => {
     if (!user) return false;
     
     // For office users, only show Dashboard and Office Expenses
-    if (isOfficeUser) {
+    if (isOfficeUser || isOffice) {
       return item.title === 'Dashboard' || item.title === 'Office Expenses';
     }
     
@@ -347,9 +347,9 @@ export default function MainLayout({ children }: MainLayoutProps) {
                     <div className="px-2 py-1.5">
                       <p className="text-sm font-medium">{user.firstName} {user.lastName}</p>
                       <p className="text-xs text-muted-foreground">{user.email}</p>
-                      {isOfficeUser && (
-                        <p className="text-xs text-muted-foreground">Office: {getUserOfficeLocation()}</p>
-                      )}
+                       {(isOfficeUser || isOffice) && (
+                         <p className="text-xs text-muted-foreground">Office: {getUserOfficeLocation()}</p>
+                       )}
                       <p className="mt-1 text-xs font-medium bg-primary/10 text-primary rounded-sm px-1.5 py-0.5 inline-block">
                         {user.role.replace('_', ' ').toUpperCase()}
                       </p>
