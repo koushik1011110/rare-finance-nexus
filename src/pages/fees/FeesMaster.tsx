@@ -321,7 +321,13 @@ const FeesMaster = () => {
                       <Label>Fee Type *</Label>
                       <Select
                         value={component.feeTypeId.toString()}
-                        onValueChange={(value) => updateFeeComponent(index, "feeTypeId", parseInt(value))}
+                        onValueChange={(value) => {
+                          const selectedFeeType = feeTypes.find(ft => ft.id === parseInt(value));
+                          updateFeeComponent(index, "feeTypeId", parseInt(value));
+                          if (selectedFeeType) {
+                            updateFeeComponent(index, "amount", selectedFeeType.amount.toString());
+                          }
+                        }}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Select fee type" />
@@ -329,7 +335,7 @@ const FeesMaster = () => {
                         <SelectContent>
                           {feeTypes.map((feeType) => (
                             <SelectItem key={feeType.id} value={feeType.id.toString()}>
-                              {feeType.name}
+                              {feeType.name} - ${feeType.amount}
                             </SelectItem>
                           ))}
                         </SelectContent>

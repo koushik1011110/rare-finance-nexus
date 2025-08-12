@@ -91,6 +91,7 @@ const allNavItems: NavItem[] = [
       { title: "Admission Letter Upload", href: "/students/admission-letters" },
       { title: "Character", href: "/students/character" },
       { title: "Visa", href: "/students/visa" },
+      { title: "Invoice", href: "/students/invoice" },
     ]
   },
   { 

@@ -21,6 +21,7 @@ const FeesType = () => {
     category: "Academic",
     frequency: "One Time",
     status: "Active",
+    amount: "",
   });
   const [editingId, setEditingId] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -55,10 +56,10 @@ const FeesType = () => {
     e.preventDefault();
     setIsSubmitting(true);
 
-    if (!formData.name.trim()) {
+    if (!formData.name.trim() || !formData.amount) {
       toast({
         title: "Error",
-        description: "Fee type name is required.",
+        description: "Fee type name and amount are required.",
         variant: "destructive",
       });
       setIsSubmitting(false);
@@ -73,6 +74,7 @@ const FeesType = () => {
           category: formData.category,
           frequency: formData.frequency,
           status: formData.status,
+          amount: parseFloat(formData.amount),
           is_active: true,
         });
         setFeeTypes(prev => prev.map(fee => 
@@ -90,7 +92,7 @@ const FeesType = () => {
           category: formData.category,
           frequency: formData.frequency,
           status: formData.status,
-          amount: 0, // Default amount since it's set at structure level
+          amount: parseFloat(formData.amount),
           is_active: true,
         });
         setFeeTypes(prev => [...prev, newFeeType]);
@@ -105,7 +107,8 @@ const FeesType = () => {
         description: "", 
         category: "Academic",
         frequency: "One Time",
-        status: "Active"
+        status: "Active",
+        amount: ""
       });
     } catch (error) {
       console.error('Error saving fee type:', error);
@@ -126,6 +129,7 @@ const FeesType = () => {
       category: feeType.category,
       frequency: feeType.frequency,
       status: feeType.status,
+      amount: feeType.amount.toString(),
     });
     setEditingId(feeType.id);
   };
@@ -152,6 +156,11 @@ const FeesType = () => {
     { header: "Name", accessorKey: "name" },
     { header: "Category", accessorKey: "category" },
     { header: "Frequency", accessorKey: "frequency" },
+    { 
+      header: "Amount ($)", 
+      accessorKey: "amount",
+      cell: (feeType: FeeType) => `$${feeType.amount.toLocaleString()}`
+    },
     { header: "Description", accessorKey: "description" },
     {
       header: "Status",
@@ -276,6 +285,18 @@ const FeesType = () => {
               </div>
 
               <div className="space-y-2">
+                <Label htmlFor="amount">Amount ($) *</Label>
+                <Input
+                  id="amount"
+                  type="number"
+                  step="0.01"
+                  value={formData.amount}
+                  onChange={(e) => handleInputChange("amount", e.target.value)}
+                  placeholder="Enter amount"
+                />
+              </div>
+
+              <div className="space-y-2">
                 <Label htmlFor="description">Description</Label>
                 <Textarea
                   id="description"
@@ -302,7 +323,8 @@ const FeesType = () => {
                         description: "", 
                         category: "Academic",
                         frequency: "One Time",
-                        status: "Active"
+                        status: "Active",
+                        amount: ""
                       });
                     }}
                   >

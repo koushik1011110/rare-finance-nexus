@@ -66,6 +66,9 @@ import StaffManagement from "./pages/staff/StaffManagement";
 import LeadEnquiry from "./pages/lead/LeadEnquiry";
 import AddLead from "./pages/lead/AddLead";
 
+// Invoice
+import Invoice from "./pages/students/Invoice";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -94,6 +97,7 @@ const App = () => (
             <Route path="/students/admission-letters" element={<ProtectedRoute><AdmissionLetters /></ProtectedRoute>} />
             <Route path="/students/character" element={<ProtectedRoute><Character /></ProtectedRoute>} />
             <Route path="/students/visa" element={<ProtectedRoute><Visa /></ProtectedRoute>} />
+            <Route path="/students/invoice" element={<ProtectedRoute><Invoice /></ProtectedRoute>} />
             
             {/* Agent Management */}
             <Route path="/agents" element={<ProtectedRoute><AgentManagement /></ProtectedRoute>} />
