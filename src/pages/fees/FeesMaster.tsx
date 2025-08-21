@@ -159,7 +159,7 @@ const FeesMaster = () => {
       return;
     }
 
-    if (feeComponents.some(comp => !comp.feeTypeId || !comp.amount)) {
+    if (feeComponents.some(comp => comp.feeTypeId <= 0 || !comp.amount.trim() || isNaN(Number(comp.amount)))) {
       toast({
         title: "Error",
         description: "Please complete all fee component details.",
