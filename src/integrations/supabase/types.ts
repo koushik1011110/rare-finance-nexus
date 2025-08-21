@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
@@ -780,6 +780,57 @@ export type Database = {
             columns: ["hostel_id"]
             isOneToOne: false
             referencedRelation: "hostels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hostel_registrations: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          hostel_id: number
+          id: number
+          notes: string | null
+          requested_at: string
+          requested_by: string
+          status: Database["public"]["Enums"]["hostel_registration_status"]
+          student_id: number
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          hostel_id: number
+          id?: number
+          notes?: string | null
+          requested_at?: string
+          requested_by: string
+          status?: Database["public"]["Enums"]["hostel_registration_status"]
+          student_id: number
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          hostel_id?: number
+          id?: number
+          notes?: string | null
+          requested_at?: string
+          requested_by?: string
+          status?: Database["public"]["Enums"]["hostel_registration_status"]
+          student_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hostel_registrations_hostel_id_fkey"
+            columns: ["hostel_id"]
+            isOneToOne: false
+            referencedRelation: "hostels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hostel_registrations_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
             referencedColumns: ["id"]
           },
         ]
@@ -1885,15 +1936,49 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      v_latest_hostel_registration: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          hostel_id: number | null
+          id: number | null
+          notes: string | null
+          requested_at: string | null
+          requested_by: string | null
+          status:
+            | Database["public"]["Enums"]["hostel_registration_status"]
+            | null
+          student_id: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hostel_registrations_hostel_id_fkey"
+            columns: ["hostel_id"]
+            isOneToOne: false
+            referencedRelation: "hostels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hostel_registrations_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       apply_student_fee_customizations: {
         Args: {
-          p_student_id: number
-          p_fee_structure_component_id: number
           p_custom_amount: number
+          p_fee_structure_component_id: number
+          p_student_id: number
         }
+        Returns: undefined
+      }
+      approve_hostel_request: {
+        Args: { p_admin: string; p_id: number; p_notes?: string }
         Returns: undefined
       }
       approve_student_application: {
@@ -1907,13 +1992,13 @@ export type Database = {
       authenticate_user: {
         Args: { email_param: string; password_param: string }
         Returns: {
-          user_id: number
           email: string
           first_name: string
-          last_name: string
-          role: Database["public"]["Enums"]["user_role"]
           is_active: boolean
+          last_name: string
           office_location: string
+          role: Database["public"]["Enums"]["user_role"]
+          user_id: number
         }[]
       }
       cleanup_expired_sessions: {
@@ -1923,21 +2008,21 @@ export type Database = {
       create_office_user: {
         Args: {
           email_param: string
-          password_param: string
           office_name_param: string
+          password_param: string
         }
         Returns: number
       }
       create_staff_member: {
         Args: {
-          email_param: string
-          password_param: string
-          first_name_param: string
-          last_name_param: string
-          role_param: Database["public"]["Enums"]["user_role"]
+          agent_location_param?: string
           agent_name_param?: string
           agent_phone_param?: string
-          agent_location_param?: string
+          email_param: string
+          first_name_param: string
+          last_name_param: string
+          password_param: string
+          role_param: Database["public"]["Enums"]["user_role"]
         }
         Returns: number
       }
@@ -1976,32 +2061,32 @@ export type Database = {
       get_student_financial_summary: {
         Args: { input_student_id: number }
         Returns: {
-          total_fees: number
-          paid_amount: number
-          pending_amount: number
           next_payment_amount: number
           next_payment_date: string
+          paid_amount: number
+          pending_amount: number
+          total_fees: number
         }[]
       }
       get_student_payment_history: {
         Args: { input_student_id: number }
         Returns: {
-          id: number
-          description: string
           amount: number
+          description: string
+          id: number
           payment_date: string
-          status: string
           payment_method: string
           receipt_url: string
+          status: string
         }[]
       }
       get_student_upcoming_payments: {
         Args: { input_student_id: number }
         Returns: {
-          id: number
-          description: string
           amount: number
+          description: string
           due_date: string
+          id: number
           status: string
         }[]
       }
@@ -2035,28 +2120,29 @@ export type Database = {
       validate_session: {
         Args: { token_param: string }
         Returns: {
-          user_id: number
           email: string
           first_name: string
-          last_name: string
-          role: Database["public"]["Enums"]["user_role"]
           is_active: boolean
+          last_name: string
           office_location: string
+          role: Database["public"]["Enums"]["user_role"]
+          user_id: number
         }[]
       }
       verify_student_login: {
-        Args: { input_username: string; input_password: string }
+        Args: { input_password: string; input_username: string }
         Returns: {
-          student_id: number
-          username: string
+          admission_number: string
+          email: string
           first_name: string
           last_name: string
-          email: string
-          admission_number: string
+          student_id: number
+          username: string
         }[]
       }
     }
     Enums: {
+      hostel_registration_status: "pending" | "approved" | "rejected"
       user_role:
         | "admin"
         | "agent"
@@ -2196,6 +2282,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      hostel_registration_status: ["pending", "approved", "rejected"],
       user_role: [
         "admin",
         "agent",
