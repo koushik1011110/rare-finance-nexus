@@ -162,7 +162,10 @@ const FeesMaster = () => {
       return;
     }
 
-    if (feeComponents.some(comp => comp.feeTypeId <= 0 || !comp.amount.trim() || isNaN(Number(comp.amount)))) {
+    if (feeComponents.some(comp => {
+      const amt = String((comp as any).amount ?? "").trim();
+      return (comp.feeTypeId <= 0) || amt === "" || Number.isNaN(Number(amt));
+    })) {
       toast({
         title: "Error",
         description: "Please complete all fee component details.",
@@ -325,10 +328,16 @@ const FeesMaster = () => {
                       <Select
                         value={component.feeTypeId.toString()}
                         onValueChange={(value) => {
-                          const selectedFeeType = feeTypes.find(ft => ft.id === parseInt(value));
-                          updateFeeComponent(index, "feeTypeId", parseInt(value));
+                          const id = parseInt(value);
+                          const selectedFeeType = feeTypes.find(ft => ft.id === id);
+                          updateFeeComponent(index, "feeTypeId", id);
                           if (selectedFeeType) {
-                            updateFeeComponent(index, "amount", selectedFeeType.amount.toString());
+                            const amt = typeof selectedFeeType.amount === 'number' && !Number.isNaN(selectedFeeType.amount)
+                              ? selectedFeeType.amount.toString()
+                              : "";
+                            updateFeeComponent(index, "amount", amt);
+                          } else {
+                            updateFeeComponent(index, "amount", "");
                           }
                         }}
                       >
@@ -349,7 +358,7 @@ const FeesMaster = () => {
                       <Label>Amount ($) *</Label>
                       <Input
                         type="number"
-                        value={component.amount}
+                        value={String(component.amount ?? "")}
                         onChange={(e) => updateFeeComponent(index, "amount", e.target.value)}
                         placeholder="Enter amount"
                       />
