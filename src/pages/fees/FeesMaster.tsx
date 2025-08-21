@@ -129,9 +129,12 @@ const FeesMaster = () => {
   };
 
   const updateFeeComponent = (index: number, field: keyof FeeComponent, value: string | number) => {
-    const updated = [...feeComponents];
-    updated[index] = { ...updated[index], [field]: value };
-    setFeeComponents(updated);
+    setFeeComponents((prev) => {
+      const updated = [...prev];
+      const item = updated[index] ?? { feeTypeId: 0, amount: "", frequency: "one-time" };
+      updated[index] = { ...item, [field]: value as any };
+      return updated;
+    });
   };
 
   const removeFeeComponent = (index: number) => {
