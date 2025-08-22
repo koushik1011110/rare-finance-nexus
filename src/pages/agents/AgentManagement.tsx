@@ -13,6 +13,7 @@ import AgentForm, { AgentFormData } from "@/components/forms/AgentForm";
 
 import { agentsAPI, Agent } from "@/lib/agents-api";
 import { useAuth } from "@/contexts/AuthContext";
+import AgentProfile from "./AgentProfile";
 
 const AgentManagement = () => {
   const { user, isAdmin } = useAuth();
@@ -233,15 +234,16 @@ const AgentManagement = () => {
     );
   }
 
+  // If user is an agent, redirect to profile page
+  if (user?.role === 'agent') {
+    return <AgentProfile />;
+  }
+
   return (
     <MainLayout>
       <PageHeader
-        title={user?.role === 'agent' ? "My Agent Profile" : "Agent Management"}
-        description={
-          user?.role === 'agent' 
-            ? "View and manage your agent profile and students" 
-            : "Manage all education agents, their students, and commission structures"
-        }
+        title="Agent Management"
+        description="Manage all education agents, their students, and commission structures"
         actions={
           isAdmin ? (
             <>
