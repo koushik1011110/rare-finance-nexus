@@ -105,11 +105,10 @@ const DirectStudents = () => {
     try {
       setLoading(true);
       
-      // Build query to exclude agent students and apply country restrictions for staff
+      // Build query to fetch all students (both direct and agent students)
       let studentsQuery = supabase
         .from('students')
-        .select('*')
-        .is('agent_id', null); // Exclude agent students
+        .select('*');
       
       // For non-admin users, the RLS policies will automatically filter by country
       // No additional filtering needed here as it's handled at the database level
@@ -416,16 +415,16 @@ const DirectStudents = () => {
     <MainLayout>
       <PageHeader
         title="All Students"
-        description="Direct admission students (excludes agent students)"
+        description="All enrolled students in the system"
       />
       
       <Card>
         <CardHeader>
           <div className="flex justify-between items-center gap-3">
             <div>
-              <CardTitle>Direct Students</CardTitle>
+              <CardTitle>All Students</CardTitle>
               <CardDescription>
-                Students with direct admissions (excludes agent students)
+                All enrolled students in the system
               </CardDescription>
             </div>
             <div className="flex items-center gap-2">
