@@ -33,17 +33,6 @@ export const agentProfileAPI = {
       const totalStudents = studentsData?.length || 0;
       const activeStudents = studentsData?.filter(s => s.status === 'active').length || 0;
 
-      // Get agent's commission rate
-      const { data: agent, error: agentError2 } = await supabase
-        .from('agents')
-        .select('commission_rate')
-        .eq('id', agentData.id)
-        .single();
-
-      if (agentError2 || !agent) {
-        throw new Error('Failed to fetch agent commission rate');
-      }
-
       // Get fee payments data for receivable calculations
       const { data: paymentsData, error: paymentsError } = await supabase
         .from('fee_payments')
@@ -51,10 +40,9 @@ export const agentProfileAPI = {
           amount_due,
           amount_paid,
           payment_status,
-          students!inner(agent_id, status)
+          students!inner(agent_id)
         `)
-        .eq('students.agent_id', agentData.id)
-        .eq('students.status', 'active'); // Only consider active students
+        .eq('students.agent_id', agentData.id);
 
       if (paymentsError) throw paymentsError;
 
@@ -65,15 +53,10 @@ export const agentProfileAPI = {
       paymentsData?.forEach(payment => {
         const due = Number(payment.amount_due) || 0;
         const paid = Number(payment.amount_paid) || 0;
-        const commissionRate = agent.commission_rate || 0;
         
-        // Calculate commission amounts
-        const commissionDue = (due * commissionRate) / 100;
-        const commissionPaid = (paid * commissionRate) / 100;
-        
-        totalReceivable += commissionDue;
-        paidAmount += commissionPaid;
-        pendingAmount += (commissionDue - commissionPaid);
+        totalReceivable += due;
+        paidAmount += paid;
+        pendingAmount += (due - paid);
       });
 
       return {

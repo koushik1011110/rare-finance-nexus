@@ -4,7 +4,7 @@ import MainLayout from "@/components/layout/MainLayout";
 import PageHeader from "@/components/shared/PageHeader";
 import DataTable from "@/components/ui/DataTable";
 import { Button } from "@/components/ui/button";
-import { Plus, Download, Upload, Eye, Edit, DollarSign, RotateCcw, Eye as EyeIcon, EyeOff } from "lucide-react";
+import { Plus, Download, Upload, Eye, Edit, DollarSign } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
 import DetailViewModal from "@/components/shared/DetailViewModal";
@@ -13,8 +13,7 @@ import AgentForm, { AgentFormData } from "@/components/forms/AgentForm";
 
 import { agentsAPI, Agent } from "@/lib/agents-api";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
-import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import AgentProfile from "./AgentProfile";
 
 const AgentManagement = () => {
   const { user, isAdmin } = useAuth();
@@ -29,9 +28,6 @@ const AgentManagement = () => {
   
   const [currentAgent, setCurrentAgent] = useState<Agent | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  // Password dialog state
-  const [pwdDialog, setPwdDialog] = useState<{open: boolean; newPassword: string; agentName: string}>({ open: false, newPassword: '', agentName: '' });
-  const [showPassword, setShowPassword] = useState(true);
 
   // Load agents data
   useEffect(() => {
@@ -61,36 +57,6 @@ const AgentManagement = () => {
       });
     } finally {
       setLoading(false);
-    }
-  };
-
-  // Reset password: find user by agent email in users table, call RPC to reset, show dialog
-  const handleResetPassword = async (agent: Agent) => {
-    try {
-      // Lookup user by email
-      const { data: userRow, error: userErr } = await supabase
-        .from('users')
-        .select('id, first_name, last_name')
-        .eq('email', agent.email)
-        .single();
-
-      if (userErr || !userRow) {
-        throw userErr || new Error('User not found for this agent email');
-      }
-
-      const { data: newPassword, error } = await supabase.rpc('reset_staff_password', {
-        staff_id_param: userRow.id
-      });
-
-      if (error) throw error;
-
-      setShowPassword(true);
-      setPwdDialog({ open: true, newPassword: newPassword as string, agentName: agent.name });
-
-      toast({ title: 'Password Reset', description: `Password has been reset for ${agent.name}.` });
-    } catch (err) {
-      console.error('Error resetting agent password:', err);
-      toast({ title: 'Error', description: 'Failed to reset agent password', variant: 'destructive' });
     }
   };
 
@@ -253,12 +219,6 @@ const AgentManagement = () => {
               Edit
             </Button>
           )}
-          {isAdmin && (
-            <Button variant="outline" size="sm" onClick={() => handleResetPassword(row)}>
-              <RotateCcw className="mr-2 h-4 w-4" />
-              Reset Password
-            </Button>
-          )}
         </div>
       ),
     },
@@ -274,15 +234,16 @@ const AgentManagement = () => {
     );
   }
 
+  // If user is an agent, redirect to profile page
+  if (user?.role === 'agent') {
+    return <AgentProfile />;
+  }
+
   return (
     <MainLayout>
       <PageHeader
-        title={user?.role === 'agent' ? "My Agent Profile" : "Agent Management"}
-        description={
-          user?.role === 'agent' 
-            ? "View and manage your agent profile and students" 
-            : "Manage all education agents, their students, and commission structures"
-        }
+        title="Agent Management"
+        description="Manage all education agents, their students, and commission structures"
         actions={
           isAdmin ? (
             <>
@@ -424,36 +385,6 @@ const AgentManagement = () => {
         </EditModal>
       )}
 
-      {/* Password Reset Dialog */}
-      <AlertDialog 
-        open={pwdDialog.open}
-        onOpenChange={(open) => setPwdDialog(prev => ({ ...prev, open }))}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Password Reset Successful</AlertDialogTitle>
-            <AlertDialogDescription>
-              A new password has been generated for {pwdDialog.agentName}. Use the Show/Hide button to view it.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <div className="my-4 p-4 bg-muted rounded-lg">
-            <p className="text-sm font-medium mb-2">New Password:</p>
-            <div className="flex items-center gap-2">
-              <code className="text-lg font-mono bg-background px-3 py-2 rounded border">
-                {showPassword ? pwdDialog.newPassword : '•'.repeat(pwdDialog.newPassword.length || 8)}
-              </code>
-              <Button variant="outline" size="icon" onClick={() => setShowPassword(!showPassword)}>
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <EyeIcon className="h-4 w-4" />}
-              </Button>
-            </div>
-          </div>
-          <AlertDialogFooter>
-            <AlertDialogAction onClick={() => setPwdDialog({ open: false, newPassword: '', agentName: '' })}>
-              Done
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </MainLayout>
   );
 };

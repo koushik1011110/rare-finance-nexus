@@ -259,7 +259,7 @@ const AgentProfile = () => {
         </Card>
 
         {/* Statistics Cards */}
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <StatCard
             title="Total Students"
             value={stats.totalStudents.toString()}
@@ -271,6 +271,18 @@ const AgentProfile = () => {
             value={stats.activeStudents.toString()}
             icon={<Users className="h-4 w-4" />}
             variant="income"
+          />
+          <StatCard
+            title="Total Receivable"
+            value={`$${stats.totalReceivable.toFixed(2)}`}
+            icon={<DollarSign className="h-4 w-4" />}
+            variant="receivable"
+          />
+          <StatCard
+            title="Pending Amount"
+            value={`$${stats.pendingAmount.toFixed(2)}`}
+            icon={<DollarSign className="h-4 w-4" />}
+            variant="due"
           />
         </div>
 

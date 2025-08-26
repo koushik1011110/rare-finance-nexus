@@ -59,110 +59,13 @@ const allNavItems: NavItem[] = [
     icon: BarChart3
   },
   { 
-    title: "Leads", 
+    title: "Lead", 
     href: "/lead", 
     icon: UserSearch,
     subItems: [
       { title: "Lead Enquiry", href: "/lead/enquiry" },
       { title: "Add Lead", href: "/lead/add" },
     ]
-  },
-  {
-    title: "Applicants",
-    href: "/students/application",
-    icon: FileText,
-  },
-  { 
-    title: "Students", 
-    href: "/students", 
-    icon: GraduationCap,
-    subItems: [
-      { title: "All Students", href: "/students/direct", allowedRoles: ['admin', 'finance', 'staff', 'hostel_team'] },
-      { title: "Add Students", href: "/students/add", allowedRoles: ['admin', 'finance'] },
-      { title: "Agent Students", href: "/students/agent" },
-      { title: "Admission Letter Upload", href: "/students/admission-letters" },
-      { title: "Character", href: "/students/character" },
-    ]
-  },
-  { 
-    title: "Agents",
-    href: "/agents",
-    icon: Users,
-    subItems: [
-      { title: "All Agents", href: "/agents" },
-      { title: "Add Agent", href: "/agents/add" },
-      { title: "Payout", href: "/agents/payout" },
-    ],
-  },
-  { 
-    title: "Invoice", 
-    href: "#", 
-    icon: Receipt,
-    subItems: [
-      { title: "All Invoices", href: "/invoices" },
-      { title: "Make Invoice", href: "/invoices/create" }
-    ]
-  },
-  { 
-    title: "Office Expenses", 
-    href: "/office-expenses", 
-    icon: FileText,
-    allowedRoles: ['admin', 'finance', 'office', 'office_guwahati', 'office_delhi', 'office_mumbai', 'office_bangalore', 'office_kolkata'],
-    subItems: [
-      { title: "Office Management", href: "/office-expenses/management", allowedRoles: ['admin', 'finance'] },
-      { title: "Expenses", href: "/office-expenses", allowedRoles: ['admin', 'finance', 'office', 'office_guwahati', 'office_delhi', 'office_mumbai', 'office_bangalore', 'office_kolkata'] },
-    ]
-  },
-  { 
-    title: "Hostel & Mess", 
-    href: "/hostel-mess", 
-    icon: Home,
-    allowedRoles: ['admin', 'hostel_team'],
-    subItems: [
-      { title: "Hostel Management", href: "/hostels/management" },
-      { title: "Hostel Expenses", href: "/hostels/expenses" },
-      { title: "Mess Management", href: "/mess/management" },
-      { title: "Add Students", href: "/hostels/add-students" },
-      { title: "Student Requests", href: "/hostels/requests" },
-    ]
-  },
-  { 
-    title: "Accounts", 
-    href: "/accounts", 
-    icon: CreditCard,
-    allowedRoles: ['admin', 'finance'],
-    subItems: [
-  { title: "Students", href: "/accounts/students" },
-  { title: "Staff Accounts", href: "/staff/my" },
-  { title: "Agent Accounts", href: "/accounts/agents" },
-    ]
-  },
-  { 
-    title: "Document Management", 
-    href: "/documents", 
-    icon: BookOpen,
-    allowedRoles: ['admin', 'finance', 'hostel_team']
-  },
-  { 
-    title: "Visa", 
-    href: "/students/visa", 
-    icon: MapPin,
-    allowedRoles: ['admin', 'finance']
-  },
-  { 
-    title: "Staff",
-    href: "/staff",
-    icon: UserPlus,
-    subItems: [
-      { title: "My Staff", href: "/staff/my" },
-      { title: "Add Staff", href: "/staff/add" },
-      { title: "Attendance", href: "/staff/attendance" },
-      { title: "Leave", href: "/staff/leave" },
-      { title: "Payroll", href: "/staff/payroll" },
-      { title: "Payout", href: "/staff/payout" },
-    ],
-    // Visible to administrative users by default; further role restrictions may be added as needed
-    allowedRoles: ['admin']
   },
   { 
     title: "Fees Collection", 
@@ -177,29 +80,70 @@ const allNavItems: NavItem[] = [
       { title: "Payment History", href: "/fees/payment-history", allowedRoles: ['admin', 'finance'] },
     ]
   },
-  
+  { 
+    title: "Students", 
+    href: "/students", 
+    icon: GraduationCap,
+    subItems: [
+      { title: "All Applicants", href: "/students/direct", allowedRoles: ['admin', 'finance'] },
+      { title: "Agent Students", href: "/students/agent" },
+      { title: "Pending Application", href: "/students/application" },
+      { title: "Admission Letter Upload", href: "/students/admission-letters" },
+      { title: "Character", href: "/students/character" },
+      { title: "Visa", href: "/students/visa" },
+      { title: "Invoice", href: "/students/invoice" },
+    ]
+  },
+  { 
+    title: "Profile", 
+    href: "/agents", 
+    icon: Users
+  },
   { 
     title: "Universities", 
     href: "/universities", 
     icon: Building2,
     allowedRoles: ['admin']
   },
-  
+  { 
+    title: "Hostels", 
+    href: "/hostels", 
+    icon: Home,
+    allowedRoles: ['admin', 'hostel_team'],
+    subItems: [
+      { title: "Hostel Management", href: "/hostels/management" },
+      { title: "Hostel Expenses", href: "/hostels/expenses" },
+    ]
+  },
+  { 
+    title: "Mess", 
+    href: "/mess", 
+    icon: Utensils,
+    allowedRoles: ['admin', 'hostel_team'],
+    subItems: [
+      { title: "Mess Management", href: "/mess/management" },
+    ]
+  },
+  { 
+    title: "Office Expenses", 
+    href: "/office-expenses", 
+    icon: FileText,
+    allowedRoles: ['admin', 'finance', 'office', 'office_guwahati', 'office_delhi', 'office_mumbai', 'office_bangalore', 'office_kolkata'],
+    subItems: [
+      { title: "Office Management", href: "/office-expenses/management", allowedRoles: ['admin', 'finance'] },
+      { title: "Expenses", href: "/office-expenses", allowedRoles: ['admin', 'finance', 'office', 'office_guwahati', 'office_delhi', 'office_mumbai', 'office_bangalore', 'office_kolkata'] },
+    ]
+  },
   { title: "Salary Management", href: "/salary", icon: Receipt, allowedRoles: ['admin', 'finance'] },
   { title: "Personal Expenses", href: "/personal-expenses", icon: Calculator, allowedRoles: ['admin', 'finance'] },
   { title: "Reports", href: "/reports", icon: BarChart3, allowedRoles: ['admin', 'finance'] },
-  { 
-    title: "Profile", 
-    href: "/profile", 
-    icon: User,
-    allowedRoles: ['agent'] // Only show for agents
-  },
   { 
     title: "Settings", 
     href: "/settings", 
     icon: Settings,
     allowedRoles: ['admin', 'finance', 'hostel_team']
   },
+  { title: "Staff", href: "/staff", icon: UserPlus, allowedRoles: ['admin'] },
 ];
 
 interface MainLayoutProps {
@@ -213,14 +157,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
     return saved !== null ? JSON.parse(saved) : true;
   });
   
-  const [expandedItems, setExpandedItems] = useState<string[]>(() => {
-    try {
-      const saved = localStorage.getItem('expandedItems');
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
+  const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const location = useLocation();
   
   const { user, logout, isOfficeUser, isOffice, getUserOfficeLocation } = useAuth();
@@ -236,29 +173,18 @@ export default function MainLayout({ children }: MainLayoutProps) {
     
     // For hostel_team role, only show Dashboard, Hostel and Mess menus
     if (user.role === 'hostel_team') {
-      return item.title === 'Dashboard' || item.title === 'Hostel & Mess';
+      return item.title === 'Dashboard' || item.title === 'Hostels' || item.title === 'Mess';
     }
     
-    // For other roles, check allowedRoles
-    // If item has allowedRoles, user's role must be in the list
-    // If no allowedRoles, show to all except where explicitly hidden
-    if (item.allowedRoles) {
-      return item.allowedRoles.includes(user.role);
-    }
-    return true;
+    // For other roles, check allowedRoles or show to all if no restriction
+    if (!item.allowedRoles) return true;
+    return user.role === 'admin' || item.allowedRoles.includes(user.role);
   });
   
   // Save sidebar state to localStorage whenever it changes
   useEffect(() => {
     localStorage.setItem('sidebarOpen', JSON.stringify(sidebarOpen));
   }, [sidebarOpen]);
-  
-  // Persist expanded submenu state to avoid auto-collapse on navigation/remount
-  useEffect(() => {
-    try {
-      localStorage.setItem('expandedItems', JSON.stringify(expandedItems));
-    } catch {}
-  }, [expandedItems]);
   
   const toggleExpand = (title: string) => {
     setExpandedItems(prev => 
@@ -316,11 +242,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                       onClick={() => toggleExpand(item.title)}
                       className={cn(
                         "flex w-full items-center rounded-md px-3 py-2 text-sm font-medium hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-                        (expandedItems.includes(item.title) || 
-                         (item.subItems && item.subItems.some(sub => 
-                           location.pathname === sub.href || 
-                           location.pathname.startsWith(sub.href + '/')
-                         )))
+                        expandedItems.includes(item.title) || location.pathname.startsWith(item.href)
                           ? "bg-sidebar-primary text-sidebar-primary-foreground"
                           : "text-sidebar-foreground",
                         !sidebarOpen && "justify-center px-1"
@@ -344,7 +266,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                         </>
                       )}
                     </button>
-                    {(sidebarOpen && expandedItems.includes(item.title)) && (
+                    {(sidebarOpen && (expandedItems.includes(item.title) || location.pathname.startsWith(item.href))) && (
                       <ul className="ml-6 mt-1 space-y-1">
                         {item.subItems
                           .filter(subItem => {
@@ -364,7 +286,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                               )}
                              >
                                {subItem.href === "/students/agent" && user?.role === 'agent' 
-                                 ? "All Students" 
+                                 ? "All Applicants" 
                                  : subItem.title}
                              </Link>
                           </li>
@@ -377,11 +299,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                     to={item.href}
                     className={cn(
                       "flex items-center rounded-md px-3 py-2 text-sm font-medium hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-                      location.pathname === item.href || 
-                      (item.subItems && item.subItems.some(subItem => 
-                        location.pathname === subItem.href || 
-                        location.pathname.startsWith(subItem.href + '/')
-                      ))
+                      location.pathname === item.href
                         ? "bg-sidebar-primary text-sidebar-primary-foreground"
                         : "text-sidebar-foreground",
                       !sidebarOpen && "justify-center px-1"

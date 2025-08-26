@@ -21,9 +21,6 @@ export default function StudentProfileModal({
   showAgentInfo = false,
 }: StudentProfileModalProps) {
   const [credentials, setCredentials] = useState<{ username: string; password: string } | null>(null);
-  const [feePayments, setFeePayments] = useState<any[]>([]);
-  const [loadingFees, setLoadingFees] = useState(false);
-  const [feeSummary, setFeeSummary] = useState({ totalDue: 0, totalPaid: 0, balance: 0 });
 
   useEffect(() => {
     const fetchCredentials = async () => {
@@ -41,42 +38,6 @@ export default function StudentProfileModal({
     };
 
     fetchCredentials();
-  }, [student?.id, isOpen]);
-
-  useEffect(() => {
-    const fetchFees = async () => {
-      if (!student?.id || !isOpen) return;
-      setLoadingFees(true);
-      try {
-        const { data, error } = await supabase
-          .from('fee_payments')
-          .select(`
-            *,
-            fee_structure_components (
-              fee_types (name),
-              fee_structures (name),
-              amount,
-              frequency
-            )
-          `)
-          .eq('student_id', student.id)
-          .order('created_at', { ascending: false });
-        if (error) throw error;
-        const payments = data || [];
-        setFeePayments(payments);
-        const totalDue = payments.reduce((sum: number, p: any) => sum + (p.amount_due || 0), 0);
-        const totalPaid = payments.reduce((sum: number, p: any) => sum + (p.amount_paid || 0), 0);
-        setFeeSummary({ totalDue, totalPaid, balance: totalDue - totalPaid });
-      } catch (e) {
-        // Silently fail in modal, optionally could use a toast
-        setFeePayments([]);
-        setFeeSummary({ totalDue: 0, totalPaid: 0, balance: 0 });
-      } finally {
-        setLoadingFees(false);
-      }
-    };
-
-    fetchFees();
   }, [student?.id, isOpen]);
 
   if (!student) return null;
@@ -288,96 +249,6 @@ export default function StudentProfileModal({
                 <p className="text-sm">{student.passport_number || 'N/A'}</p>
               </div>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Financial Summary */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <CreditCard className="mr-2 h-5 w-5" />
-              Financial Summary
-            </CardTitle>
-            <CardDescription>Overall fee status for this student</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {loadingFees ? (
-              <p className="text-sm text-muted-foreground">Loading fee details...</p>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="p-4 rounded-lg bg-gray-50">
-                  <p className="text-sm text-muted-foreground">Total Due</p>
-                  <p className="text-2xl font-bold">${feeSummary.totalDue.toLocaleString()}</p>
-                </div>
-                <div className="p-4 rounded-lg bg-gray-50">
-                  <p className="text-sm text-muted-foreground">Total Paid</p>
-                  <p className="text-2xl font-bold text-green-600">${feeSummary.totalPaid.toLocaleString()}</p>
-                </div>
-                <div className="p-4 rounded-lg bg-gray-50">
-                  <p className="text-sm text-muted-foreground">Pending Balance</p>
-                  <p className={`text-2xl font-bold ${feeSummary.balance > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                    ${feeSummary.balance.toLocaleString()}
-                  </p>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Fee Payment Details */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <CreditCard className="mr-2 h-5 w-5" />
-              Fee Payment Details
-            </CardTitle>
-            <CardDescription>Component-wise dues and payment status</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {loadingFees ? (
-              <p className="text-sm text-muted-foreground">Loading fee details...</p>
-            ) : feePayments.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No fee records found for this student.</p>
-            ) : (
-              <div className="space-y-3">
-                {feePayments.map((payment: any) => {
-                  const balance = (payment.amount_due || 0) - (payment.amount_paid || 0);
-                  const status = payment.payment_status as 'pending' | 'partial' | 'paid';
-                  return (
-                    <Card key={payment.id} className="p-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 items-center">
-                        <div className="col-span-2">
-                          <p className="text-sm text-muted-foreground">Fee Type</p>
-                          <p className="font-medium">
-                            {payment.fee_structure_components?.fee_types?.name || 'N/A'}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {payment.fee_structure_components?.fee_structures?.name || ''}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-muted-foreground">Total Due</p>
-                          <p className="font-medium">${(payment.amount_due || 0).toLocaleString()}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-muted-foreground">Paid</p>
-                          <p className="font-medium text-green-600">${(payment.amount_paid || 0).toLocaleString()}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-muted-foreground">Balance</p>
-                          <p className={`font-medium ${balance > 0 ? 'text-red-600' : 'text-green-600'}`}>${balance.toLocaleString()}</p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Badge variant={status === 'paid' ? 'default' : status === 'partial' ? 'secondary' : 'destructive'}>
-                            {status.charAt(0).toUpperCase() + status.slice(1)}
-                          </Badge>
-                        </div>
-                      </div>
-                    </Card>
-                  );
-                })}
-              </div>
-            )}
           </CardContent>
         </Card>
 

@@ -6,32 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import DataTable, { Column } from "@/components/ui/DataTable";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { useNavigate } from 'react-router-dom';
+import StudentProfileModal from "@/components/students/StudentProfileModal";
 import EditModal from "@/components/shared/EditModal";
 import ComprehensiveStudentForm, { ComprehensiveStudentFormData } from "@/components/forms/ComprehensiveStudentForm";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Edit, Trash, Search } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-} from '@/components/ui/dropdown-menu';
-import {
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogAction,
-  AlertDialogCancel,
-} from '@/components/ui/alert-dialog';
-import DocumentsUploadModal from '@/components/students/DocumentsUploadModal';
+import { Plus, Edit, Trash, Eye } from "lucide-react";
 import { universitiesAPI, coursesAPI, academicSessionsAPI, University, Course, AcademicSession } from "@/lib/supabase-database";
 import { supabase } from "@/integrations/supabase/client";
-import { buildStudentInsertPayload } from '@/lib/student-utils';
 import { useAuth } from "@/contexts/AuthContext";
 
 interface Student {
@@ -78,8 +59,7 @@ interface Student {
 }
 
 const DirectStudents = () => {
-  const { user, isAdmin } = useAuth();
-  const navigate = useNavigate();
+  const { isAdmin } = useAuth();
   const [students, setStudents] = useState<Student[]>([]);
   const [universities, setUniversities] = useState<University[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
@@ -87,35 +67,20 @@ const DirectStudents = () => {
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isDocModalOpen, setIsDocModalOpen] = useState(false);
-  const [docStudentId, setDocStudentId] = useState<number | null>(null);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [studentToDeleteId, setStudentToDeleteId] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
-    if (user && ['admin', 'finance', 'staff', 'hostel_team'].includes(user.role)) {
+    if (isAdmin) {
       loadData();
     }
-  }, [user]);
+  }, [isAdmin]);
 
   const loadData = async () => {
     try {
       setLoading(true);
-      
-      // Build query to exclude agent students and apply country restrictions for staff
-      let studentsQuery = supabase
-        .from('students')
-        .select('*')
-        .is('agent_id', null); // Exclude agent students
-      
-      // For non-admin users, the RLS policies will automatically filter by country
-      // No additional filtering needed here as it's handled at the database level
-      
       const [studentsData, universitiesData, coursesData, sessionsData] = await Promise.all([
-        studentsQuery,
+        supabase.from('students').select('*'),
         universitiesAPI.getAll(),
         coursesAPI.getAll(),
         academicSessionsAPI.getAll(),
@@ -139,21 +104,6 @@ const DirectStudents = () => {
     }
   };
 
-  const normalized = (v?: string) => (v || "").toLowerCase();
-  const filteredStudents = students.filter((s) => {
-    const name = `${normalized(s.first_name)} ${normalized(s.last_name)}`;
-    const phone = normalized(s.phone_number);
-    const email = normalized(s.email);
-    const admission = normalized(s.admission_number);
-    const q = normalized(searchTerm);
-    return (
-      name.includes(q) ||
-      phone.includes(q) ||
-      email.includes(q) ||
-      admission.includes(q)
-    );
-  });
-
   const handleAddStudent = async (studentData: ComprehensiveStudentFormData) => {
     try {
       setIsSubmitting(true);
@@ -161,12 +111,20 @@ const DirectStudents = () => {
       // Get default course and session IDs
       const defaultCourse = courses.find(c => c.name === 'MBBS');
       const defaultSession = academicSessions.find(s => s.session_name === '2025-26');
-  // Build safe payload for insertion
-  const dataToInsert = buildStudentInsertPayload(studentData, { defaultCourseId: defaultCourse?.id, defaultSessionId: defaultSession?.id, forceStatus: 'active' });
+      
+      const dataToInsert = {
+        ...studentData,
+        university_id: studentData.university_id || undefined,
+        course_id: studentData.course_id || defaultCourse?.id || undefined,
+        academic_session_id: studentData.academic_session_id || defaultSession?.id || undefined,
+        status: 'active', // Always set to active for new students
+        // Ensure agent_id is null for direct students instead of 0
+        agent_id: studentData.agent_id && studentData.agent_id !== 0 ? studentData.agent_id : null
+      };
 
       const { data: newStudent, error } = await supabase
         .from('students')
-        .insert([dataToInsert as any])
+        .insert(dataToInsert)
         .select()
         .single();
 
@@ -181,14 +139,11 @@ const DirectStudents = () => {
       
       // Reload data to ensure we have the latest information
       await loadData();
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error adding student:', error);
-      const message = error?.message || error?.msg || 'Failed to add student.';
-      const details = error?.details ? ` - ${error.details}` : '';
-
       toast({
         title: "Error",
-        description: `${message}${details}`,
+        description: "Failed to add student.",
         variant: "destructive",
       });
     } finally {
@@ -266,8 +221,8 @@ const DirectStudents = () => {
   };
 
   const handleViewDetails = (student: Student) => {
-  // Navigate to full page student profile instead of opening modal
-  navigate(`/students/${student.id}`);
+    setSelectedStudent(student);
+    setIsDetailModalOpen(true);
   };
 
   const handleEditClick = (student: Student) => {
@@ -313,14 +268,7 @@ const DirectStudents = () => {
     { 
       header: "Name", 
       accessorKey: "first_name",
-      cell: (student: Student) => (
-        <button
-          className="text-primary underline text-sm"
-          onClick={() => navigate(`/students/${student.id}`)}
-        >
-          {`${student.first_name} ${student.last_name}`}
-        </button>
-      )
+      cell: (student: Student) => `${student.first_name} ${student.last_name}`
     },
     { 
       header: "Father's Name", 
@@ -345,31 +293,14 @@ const DirectStudents = () => {
       header: "Actions",
       accessorKey: "actions",
       cell: (student: Student) => (
-        <div className="flex items-center space-x-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                className="px-2 py-1 rounded hover:bg-muted"
-                title="More actions"
-              >
-                ⋮
-              </button>
-            </DropdownMenuTrigger>
-
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem
-                onClick={() => { navigate(`/students/admission-letters?studentId=${student.id}`); }}
-              >
-                Upload Admission Letter
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => { setDocStudentId(student.id); setIsDocModalOpen(true); }}
-              >
-                Upload Other Documents
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-
+        <div className="flex space-x-2">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => handleViewDetails(student)}
+          >
+            <Eye className="h-4 w-4" />
+          </Button>
           <Button
             size="sm"
             variant="outline"
@@ -380,7 +311,7 @@ const DirectStudents = () => {
           <Button
             size="sm"
             variant="destructive"
-            onClick={() => { setStudentToDeleteId(student.id); setDeleteDialogOpen(true); }}
+            onClick={() => handleDeleteStudent(student.id)}
           >
             <Trash className="h-4 w-4" />
           </Button>
@@ -389,7 +320,7 @@ const DirectStudents = () => {
     },
   ];
 
-  if (!user || !['admin', 'finance', 'staff', 'hostel_team'].includes(user.role)) {
+  if (!isAdmin) {
     return (
       <MainLayout>
         <PageHeader
@@ -416,46 +347,42 @@ const DirectStudents = () => {
     <MainLayout>
       <PageHeader
         title="All Students"
-        description="Direct admission students (excludes agent students)"
+        description="Manage enrolled students"
       />
       
       <Card>
         <CardHeader>
-          <div className="flex justify-between items-center gap-3">
+          <div className="flex justify-between items-center">
             <div>
-              <CardTitle>Direct Students</CardTitle>
+              <CardTitle>Student List</CardTitle>
               <CardDescription>
-                Students with direct admissions (excludes agent students)
+                All enrolled students in the system
               </CardDescription>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="relative">
-                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search by name, phone, email or admission no."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-8 w-64"
-                />
-              </div>
-              {(isAdmin || user?.role === 'finance') && (
-                <Button onClick={() => {
-                  setSelectedStudent(null);
-                  setIsEditModalOpen(true);
-                }}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add New Student
-                </Button>
-              )}
-            </div>
+            <Button onClick={() => {
+              setSelectedStudent(null);
+              setIsEditModalOpen(true);
+            }}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add New Student
+            </Button>
           </div>
         </CardHeader>
         <CardContent>
-          <DataTable columns={columns} data={filteredStudents} />
+          <DataTable columns={columns} data={students} />
         </CardContent>
       </Card>
 
-  {/* Student profile now opens as a full page route */}
+      <StudentProfileModal
+        student={selectedStudent ? {
+          ...selectedStudent,
+          university_name: getUniversityName(selectedStudent.university_id),
+          course_name: getCourseName(selectedStudent.course_id),
+          session_name: getSessionName(selectedStudent.academic_session_id)
+        } : null}
+        isOpen={isDetailModalOpen}
+        onClose={() => setIsDetailModalOpen(false)}
+      />
 
       <EditModal
         title={selectedStudent ? "Edit Student" : "Add New Student"}
@@ -507,44 +434,7 @@ const DirectStudents = () => {
           onSubmit={selectedStudent ? handleEditStudent : handleAddStudent}
           isSubmitting={isSubmitting}
         />
-
-        {/* ...existing code... */}
       </EditModal>
-
-      {/* Delete confirmation dialog (always mounted) */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={(open) => { if (!open) { setStudentToDeleteId(null); } setDeleteDialogOpen(open); }}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Student</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete this student? This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => { setDeleteDialogOpen(false); setStudentToDeleteId(null); }}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={async () => {
-              if (studentToDeleteId) {
-                await handleDeleteStudent(studentToDeleteId);
-              }
-              setDeleteDialogOpen(false);
-              setStudentToDeleteId(null);
-            }}>
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Documents upload modal (always mounted) */}
-      <DocumentsUploadModal
-        studentId={docStudentId}
-        isOpen={isDocModalOpen}
-        onClose={() => { setIsDocModalOpen(false); setDocStudentId(null); }}
-        onUploaded={async () => {
-          // Refresh list after upload
-          await loadData();
-        }}
-      />
     </MainLayout>
   );
 };

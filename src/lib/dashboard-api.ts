@@ -5,7 +5,6 @@ export interface DashboardStats {
   totalStudents: number;
   totalUniversities: number;
   activeApplications: number;
-  totalApplicants: number;
   totalRevenue: number;
   pendingTasks: number;
   totalAgents: number;
@@ -17,18 +16,14 @@ export const getDashboardStatistics = async (): Promise<DashboardStats> => {
     const [
       studentsResult,
       universitiesResult,
-  applicationsTotalResult,
-  applicationsPendingResult,
+      applicationsResult,
       revenueResult,
       tasksResult,
       agentsResult
     ] = await Promise.all([
       supabase.from('students').select('id', { count: 'exact' }),
       supabase.from('universities').select('id', { count: 'exact' }),
-  // total applicants
-  supabase.from('apply_students').select('id', { count: 'exact' }),
-  // pending applicants
-  supabase.from('apply_students').select('id', { count: 'exact' }).eq('status', 'pending'),
+      supabase.from('apply_students').select('id', { count: 'exact' }).eq('status', 'pending'),
       supabase.from('fee_collections').select('amount_paid'),
       supabase.from('todo_tasks').select('id', { count: 'exact' }).eq('status', 'pending'),
       supabase.from('agents').select('id', { count: 'exact' })
@@ -40,10 +35,7 @@ export const getDashboardStatistics = async (): Promise<DashboardStats> => {
     return {
       totalStudents: studentsResult.count || 0,
       totalUniversities: universitiesResult.count || 0,
-      // pending applications (activeApplications kept for compatibility)
-      activeApplications: applicationsPendingResult.count || 0,
-      // total applicants
-      totalApplicants: applicationsTotalResult.count || 0,
+      activeApplications: applicationsResult.count || 0,
       totalRevenue,
       pendingTasks: tasksResult.count || 0,
       totalAgents: agentsResult.count || 0,
