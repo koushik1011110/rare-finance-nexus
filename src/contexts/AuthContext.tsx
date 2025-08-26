@@ -72,6 +72,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           isActive: userData.is_active,
           officeLocation: userData.office_location,
           office_location: userData.office_location,
+          country_id: userData.country_id,
         });
       }
     } catch (error) {
@@ -121,6 +122,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isActive: userData.is_active,
         officeLocation: userData.office_location,
         office_location: userData.office_location,
+        country_id: userData.country_id,
       };
       setUser(newUser);
 

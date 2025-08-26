@@ -2277,6 +2277,7 @@ export type Database = {
       validate_session: {
         Args: { token_param: string }
         Returns: {
+          country_id: number
           email: string
           first_name: string
           is_active: boolean
