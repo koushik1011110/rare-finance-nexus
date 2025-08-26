@@ -64,6 +64,7 @@ import Reports from "./pages/reports/Reports";
 
 // Settings
 import Settings from "./pages/settings/Settings";
+import CountryManagement from "./pages/settings/CountryManagement";
 
 // Auth
 import Login from "./pages/auth/Login";
@@ -83,9 +84,9 @@ import StaffAccounts from "./pages/accounts/StaffAccounts";
 import LeadEnquiry from "./pages/lead/LeadEnquiry";
 import AddLead from "./pages/lead/AddLead";
 
-// Invoice
-import Invoice from "./pages/invoices/invoice";
-import AllInvoices from "./pages/invoices/index";
+// Invoice - temporarily disabled
+// import Invoice from "./pages/invoices/invoice";
+// import AllInvoices from "./pages/invoices/index";
 
 const queryClient = new QueryClient();
 
@@ -120,8 +121,8 @@ const App = () => (
             <Route path="/students/admission-letters" element={<ProtectedRoute><AdmissionLetters /></ProtectedRoute>} />
             <Route path="/students/character" element={<ProtectedRoute><Character /></ProtectedRoute>} />
             <Route path="/students/visa" element={<ProtectedRoute><Visa /></ProtectedRoute>} />
-            <Route path="/invoices" element={<ProtectedRoute><AllInvoices /></ProtectedRoute>} />
-            <Route path="/invoices/create" element={<ProtectedRoute><Invoice /></ProtectedRoute>} />
+            {/* <Route path="/invoices" element={<ProtectedRoute><AllInvoices /></ProtectedRoute>} />
+            <Route path="/invoices/create" element={<ProtectedRoute><Invoice /></ProtectedRoute>} /> */}
 
             {/* Accounts > Students (reuses All Applicants list) */}
             <Route path="/accounts/students" element={<ProtectedRoute allowedRoles={['admin','finance']}><DirectStudents /></ProtectedRoute>} />
@@ -171,6 +172,7 @@ const App = () => (
             
             {/* Settings */}
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+            <Route path="/settings/countries" element={<ProtectedRoute><CountryManagement /></ProtectedRoute>} />
             
             {/* Staff Management - Admin only */}
             <Route path="/staff" element={<ProtectedRoute requiredRole="admin"><StaffManagement /></ProtectedRoute>} />

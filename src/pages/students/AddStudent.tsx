@@ -25,6 +25,8 @@ interface StudentDB {
   university_id?: number | null;
   course_id?: number | null;
   academic_session_id?: number | null;
+  semester?: string;
+  country_id?: number | null;
   status: string;
   agent_id?: number | null;
   admission_number?: string;
@@ -66,6 +68,7 @@ const AddStudent = () => {
     const courseId = Number(formData.course_id);
     const sessionId = Number(formData.academic_session_id);
     const agentField = formData.agent_id ? Number(formData.agent_id) : undefined;
+    const countryId = formData.country_id ? Number(formData.country_id) : undefined;
 
     return {
       first_name: formData.first_name,
@@ -79,6 +82,8 @@ const AddStudent = () => {
       university_id: universityId > 0 ? universityId : undefined,
       course_id: courseId > 0 ? courseId : undefined,
       academic_session_id: sessionId > 0 ? sessionId : undefined,
+      semester: formData.semester,
+      country_id: countryId,
       status: 'enrolled',
       agent_id: agentId ?? (agentField && agentField > 0 ? agentField : undefined),
       admission_number: formData.admission_number,

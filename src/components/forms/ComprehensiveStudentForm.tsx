@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { User, GraduationCap, Phone, Mail, Users, MapPin, CreditCard, FileText, Link } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { universitiesAPI, coursesAPI, academicSessionsAPI, University, Course, AcademicSession } from "@/lib/supabase-database";
+import { fetchCountries, Country } from "@/lib/countries-api";
 
 export interface ComprehensiveStudentFormData {
   id?: number;
@@ -27,6 +28,8 @@ export interface ComprehensiveStudentFormData {
   university_id: number;
   course_id: number;
   academic_session_id: number;
+  semester?: string;
+  country_id?: number;
   admission_number?: string;
   city?: string;
   country?: string;
@@ -68,6 +71,7 @@ const ComprehensiveStudentForm: React.FC<ComprehensiveStudentFormProps> = ({
   const [universities, setUniversities] = useState<University[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
   const [academicSessions, setAcademicSessions] = useState<AcademicSession[]>([]);
+  const [countries, setCountries] = useState<Country[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Set default values with proper defaults for course and session
@@ -115,15 +119,17 @@ const ComprehensiveStudentForm: React.FC<ComprehensiveStudentFormProps> = ({
   const loadDropdownData = async () => {
     try {
       setLoading(true);
-      const [universitiesData, coursesData, sessionsData] = await Promise.all([
+      const [universitiesData, coursesData, sessionsData, countriesData] = await Promise.all([
         universitiesAPI.getAll(),
         coursesAPI.getAll(),
         academicSessionsAPI.getAll(),
+        fetchCountries(),
       ]);
 
       setUniversities(universitiesData);
       setCourses(coursesData);
       setAcademicSessions(sessionsData);
+      setCountries(countriesData);
 
       // Set defaults only for new students (not editing)
       if (!initialData) {
@@ -263,6 +269,30 @@ const ComprehensiveStudentForm: React.FC<ComprehensiveStudentFormProps> = ({
                       {session.session_name}
                     </SelectItem>
                   ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="semester">Semester</Label>
+              <Select
+                value={formData.semester || ""}
+                onValueChange={(value) => handleSelectChange("semester", value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select semester" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">1st Semester</SelectItem>
+                  <SelectItem value="2">2nd Semester</SelectItem>
+                  <SelectItem value="3">3rd Semester</SelectItem>
+                  <SelectItem value="4">4th Semester</SelectItem>
+                  <SelectItem value="5">5th Semester</SelectItem>
+                  <SelectItem value="6">6th Semester</SelectItem>
+                  <SelectItem value="7">7th Semester</SelectItem>
+                  <SelectItem value="8">8th Semester</SelectItem>
+                  <SelectItem value="9">9th Semester</SelectItem>
+                  <SelectItem value="10">10th Semester</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -438,14 +468,22 @@ const ComprehensiveStudentForm: React.FC<ComprehensiveStudentFormProps> = ({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="country">Country</Label>
-              <Input
-                id="country"
-                name="country"
-                value={formData.country || ""}
-                onChange={handleChange}
-                placeholder="Enter country"
-              />
+              <Label htmlFor="country_id">Country</Label>
+              <Select
+                value={formData.country_id ? formData.country_id.toString() : ""}
+                onValueChange={(value) => handleSelectChange("country_id", value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select country" />
+                </SelectTrigger>
+                <SelectContent>
+                  {countries.map((country) => (
+                    <SelectItem key={country.id} value={country.id.toString()}>
+                      {country.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-2 md:col-span-2">

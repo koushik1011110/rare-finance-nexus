@@ -1,5 +1,6 @@
 
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
 import PageHeader from "@/components/shared/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -28,9 +29,12 @@ import {
   MessageSquare,
   Mail,
   Shield,
+  Globe,
 } from "lucide-react";
 
 const Settings = () => {
+  const navigate = useNavigate();
+  
   const handleSave = () => {
     toast({
       title: "Settings Saved",
@@ -46,8 +50,9 @@ const Settings = () => {
       />
 
       <Tabs defaultValue="general" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 lg:grid-cols-7">
+        <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 lg:grid-cols-8">
           <TabsTrigger value="general">General</TabsTrigger>
+          <TabsTrigger value="countries">Countries</TabsTrigger>
           <TabsTrigger value="users">Users</TabsTrigger>
           <TabsTrigger value="categories">Categories</TabsTrigger>
           <TabsTrigger value="backup">Data Backup</TabsTrigger>
@@ -84,6 +89,32 @@ const Settings = () => {
             <CardFooter>
               <Button onClick={handleSave}>Save Changes</Button>
             </CardFooter>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="countries" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Globe className="mr-2 h-5 w-5" />
+                Country Management
+              </CardTitle>
+              <CardDescription>
+                Manage countries available for student selection in forms
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Add, edit, or remove countries that students can select from in the application forms.
+                This helps maintain consistency and data quality across the system.
+              </p>
+              <div className="flex justify-end">
+                <Button onClick={() => navigate('/settings/countries')}>
+                  <Globe className="mr-2 h-4 w-4" />
+                  Manage Countries
+                </Button>
+              </div>
+            </CardContent>
           </Card>
         </TabsContent>
         
