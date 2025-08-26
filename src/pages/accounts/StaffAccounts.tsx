@@ -25,6 +25,7 @@ interface Staff {
   role: UserRole;
   isActive: boolean;
   createdAt: string;
+  countryId?: number | null;
 }
 
 const StaffAccounts: React.FC = () => {
@@ -58,7 +59,7 @@ const StaffAccounts: React.FC = () => {
         // Request explicit columns to avoid potential RLS/permission issues with select('*')
         const { data, error } = await supabase
           .from('users')
-          .select('id, email, first_name, last_name, role, is_active, created_at')
+          .select('id, email, first_name, last_name, role, is_active, created_at, country_id')
           .order('created_at', { ascending: false });
 
         if (error) throw error;
@@ -71,6 +72,7 @@ const StaffAccounts: React.FC = () => {
           role: user.role as UserRole,
           isActive: user.is_active,
           createdAt: user.created_at,
+          countryId: user.country_id ?? null,
         }));
 
         // Return all users (includes agents) as requested
@@ -132,7 +134,7 @@ const StaffAccounts: React.FC = () => {
       // reload list using explicit columns
       const { data: reloadData, error: reloadError } = await supabase
         .from('users')
-        .select('id, email, first_name, last_name, role, is_active, created_at')
+        .select('id, email, first_name, last_name, role, is_active, created_at, country_id')
         .order('created_at', { ascending: false });
       if (reloadError) throw reloadError;
       const mapped: Staff[] = (reloadData || []).map((user: any) => ({
@@ -143,6 +145,7 @@ const StaffAccounts: React.FC = () => {
         role: user.role as UserRole,
         isActive: user.is_active,
         createdAt: user.created_at,
+        countryId: user.country_id ?? null,
       }));
       setStaff(mapped);
     } catch (err) {
@@ -189,6 +192,28 @@ const StaffAccounts: React.FC = () => {
         title: 'Success',
         description: `Country assignment updated for ${countryAssignDialog.staffName}`,
       });
+
+      // reload staff list to reflect updated country assignment
+      try {
+        const { data: reloadData, error: reloadError } = await supabase
+          .from('users')
+          .select('id, email, first_name, last_name, role, is_active, created_at, country_id')
+          .order('created_at', { ascending: false });
+        if (reloadError) throw reloadError;
+        const mapped: Staff[] = (reloadData || []).map((user: any) => ({
+          id: (user.id || '').toString(),
+          email: user.email,
+          firstName: user.first_name,
+          lastName: user.last_name,
+          role: user.role as UserRole,
+          isActive: user.is_active,
+          createdAt: user.created_at,
+          countryId: user.country_id ?? null,
+        }));
+        setStaff(mapped);
+      } catch (err) {
+        console.error('Error reloading staff after country assign:', err);
+      }
 
       setCountryAssignDialog({ open: false, staffId: '', staffName: '', selectedCountryId: '' });
     } catch (error) {
@@ -265,7 +290,7 @@ const StaffAccounts: React.FC = () => {
                 open: true, 
                 staffId: row.id, 
                 staffName: `${row.firstName} ${row.lastName}`,
-                selectedCountryId: '' 
+                selectedCountryId: row.countryId ? String(row.countryId) : 'none'
               })}
             >
               Assign Country
