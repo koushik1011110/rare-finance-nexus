@@ -122,7 +122,7 @@ const StaffAccounts: React.FC = () => {
         agent_name_param: createForm.role === 'agent' ? createForm.agentName : null,
         agent_phone_param: createForm.role === 'agent' ? createForm.agentPhone : null,
         agent_location_param: createForm.role === 'agent' ? createForm.agentLocation : null,
-        country_id_param: createForm.countryId ? parseInt(createForm.countryId) : null,
+        country_id_param: createForm.countryId && createForm.countryId !== 'none' ? parseInt(createForm.countryId) : null,
       });
       if (error) throw error;
       toast({ title: 'Success', description: 'Staff member created successfully.' });
@@ -178,7 +178,7 @@ const StaffAccounts: React.FC = () => {
     try {
       const { error } = await supabase.rpc('assign_country_to_staff', {
         staff_id_param: parseInt(countryAssignDialog.staffId),
-        country_id_param: countryAssignDialog.selectedCountryId ? parseInt(countryAssignDialog.selectedCountryId) : null
+        country_id_param: countryAssignDialog.selectedCountryId && countryAssignDialog.selectedCountryId !== 'none' ? parseInt(countryAssignDialog.selectedCountryId) : null
       });
 
       if (error) throw error;
@@ -352,7 +352,7 @@ const StaffAccounts: React.FC = () => {
                       <SelectValue placeholder="Select a country" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">No Country Assignment</SelectItem>
+                      <SelectItem value="none">No Country Assignment</SelectItem>
                       {countries.map((country) => (
                         <SelectItem key={country.id} value={country.id.toString()}>
                           {country.name}
@@ -460,7 +460,7 @@ const StaffAccounts: React.FC = () => {
                   <SelectValue placeholder="Select a country" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Remove Country Assignment</SelectItem>
+                  <SelectItem value="none">Remove Country Assignment</SelectItem>
                   {countries.map((country) => (
                     <SelectItem key={country.id} value={country.id.toString()}>
                       {country.name}

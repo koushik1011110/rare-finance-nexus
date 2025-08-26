@@ -123,7 +123,7 @@ const StaffManagement = () => {
         agent_name_param: formData.role === 'agent' ? formData.agentName : null,
         agent_phone_param: formData.role === 'agent' ? formData.agentPhone : null,
         agent_location_param: formData.role === 'agent' ? formData.agentLocation : null,
-        country_id_param: formData.countryId ? parseInt(formData.countryId) : null,
+        country_id_param: formData.countryId && formData.countryId !== 'none' ? parseInt(formData.countryId) : null,
       });
 
       if (error) throw error;
@@ -371,7 +371,7 @@ const StaffManagement = () => {
                       <SelectValue placeholder="Select a country" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">No Country Assignment</SelectItem>
+                      <SelectItem value="none">No Country Assignment</SelectItem>
                       {countries.map((country) => (
                         <SelectItem key={country.id} value={country.id.toString()}>
                           {country.name}
