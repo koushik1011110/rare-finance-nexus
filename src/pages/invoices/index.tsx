@@ -87,7 +87,7 @@ const AllInvoices = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {invoices.map((inv: any) => (
+                  {(invoices as any[]).map((inv: any) => (
                     <tr key={inv.id} className="border-t">
                       <td className="px-4 py-2">{inv.invoice_number}</td>
                       <td className="px-4 py-2">{inv.students ? `${inv.students.first_name} ${inv.students.last_name}` : 'N/A'}</td>

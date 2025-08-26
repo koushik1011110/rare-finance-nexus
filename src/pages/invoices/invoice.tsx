@@ -12,7 +12,7 @@ import { toast } from "@/hooks/use-toast";
 import { Plus, Trash, FileText, Percent, Search } from "lucide-react";
 import { feeTypesAPI, type FeeType } from "@/lib/supabase-database";
 import { supabase } from "@/integrations/supabase/client";
-import { invoicesAPI } from '@/lib/invoices-api';
+import { invoicesAPI, type CreateInvoiceData } from '@/lib/invoices-api';
 import generateInvoiceHTML from '@/lib/invoice-template';
 import { useAuth } from '@/contexts/AuthContext';
 import { Textarea } from "@/components/ui/textarea";
@@ -231,20 +231,21 @@ const Invoice = () => {
 
     // Persist invoice to database
     try {
-      await invoicesAPI.create({
+      const invoiceData: CreateInvoiceData = {
         invoice_number: invoiceNumber,
         student_id: student.id,
         created_by: user ? `${user.firstName} ${user.lastName} <${user.email}>` : null,
         status,
         invoice_date: currentDate || new Date().toISOString().split('T')[0],
         due_date: dueDate || null,
-        subtotal: subtotal,
-        discount_amount: discountAmount,
-        gst_amount: gstAmount,
-        total_amount: total,
+        subtotal: calculateSubtotal(),
+        discount_amount: calculateDiscount(),
+        gst_amount: calculateGSTAmount(),
+        total_amount: calculateTotal(),
         items: items.map(i => ({ description: i.feeTypeName, quantity: i.quantity, unit_price: i.amount, amount: i.amount * i.quantity })),
         terms,
-      });
+      };
+      await invoicesAPI.create(invoiceData);
     } catch (err) {
       console.error('Failed to save invoice:', err);
       toast({ title: 'Error', description: 'Failed to save invoice to database', variant: 'destructive' });
@@ -296,20 +297,21 @@ const Invoice = () => {
 
     setIsSaving(true);
     try {
-      await invoicesAPI.create({
+      const invoiceData: CreateInvoiceData = {
         invoice_number: invoiceNumber,
         student_id: student.id,
         created_by: user ? `${user.firstName} ${user.lastName} <${user.email}>` : null,
         status,
         invoice_date: currentDate || new Date().toISOString().split('T')[0],
         due_date: dueDate || null,
-        subtotal: subtotal,
-        discount_amount: discountAmount,
+        subtotal: calculateSubtotal(),
+        discount_amount: calculateDiscount(),
         gst_amount: calculateGSTAmount(),
-        total_amount: total,
+        total_amount: calculateTotal(),
         items: items.map(i => ({ description: i.feeTypeName, quantity: i.quantity, unit_price: i.amount, amount: i.amount * i.quantity })),
         terms,
-      });
+      };
+      await invoicesAPI.create(invoiceData);
 
       toast({ title: 'Saved', description: `Invoice ${invoiceNumber} saved to database.` });
     } catch (err) {
