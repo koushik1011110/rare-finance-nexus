@@ -77,7 +77,7 @@ const allNavItems: NavItem[] = [
     href: "/students", 
     icon: GraduationCap,
     subItems: [
-      { title: "All Students", href: "/students/direct", allowedRoles: ['admin', 'finance'] },
+      { title: "All Students", href: "/students/direct", allowedRoles: ['admin', 'finance', 'staff', 'hostel_team'] },
       { title: "Add Students", href: "/students/add", allowedRoles: ['admin', 'finance'] },
       { title: "Agent Students", href: "/students/agent" },
       { title: "Admission Letter Upload", href: "/students/admission-letters" },
