@@ -2002,6 +2002,7 @@ export type Database = {
       }
       users: {
         Row: {
+          country_id: number | null
           created_at: string | null
           email: string
           first_name: string
@@ -2014,6 +2015,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          country_id?: number | null
           created_at?: string | null
           email: string
           first_name: string
@@ -2026,6 +2028,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          country_id?: number | null
           created_at?: string | null
           email?: string
           first_name?: string
@@ -2037,7 +2040,15 @@ export type Database = {
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "users_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
@@ -2090,6 +2101,10 @@ export type Database = {
         Args: { application_id: number }
         Returns: undefined
       }
+      assign_country_to_staff: {
+        Args: { country_id_param: number; staff_id_param: number }
+        Returns: undefined
+      }
       assign_fee_structure_to_students: {
         Args: { structure_id: number }
         Returns: number
@@ -2123,16 +2138,28 @@ export type Database = {
         Returns: number
       }
       create_staff_member: {
-        Args: {
-          agent_location_param?: string
-          agent_name_param?: string
-          agent_phone_param?: string
-          email_param: string
-          first_name_param: string
-          last_name_param: string
-          password_param: string
-          role_param: Database["public"]["Enums"]["user_role"]
-        }
+        Args:
+          | {
+              agent_location_param?: string
+              agent_name_param?: string
+              agent_phone_param?: string
+              country_id_param?: number
+              email_param: string
+              first_name_param: string
+              last_name_param: string
+              password_param: string
+              role_param: Database["public"]["Enums"]["user_role"]
+            }
+          | {
+              agent_location_param?: string
+              agent_name_param?: string
+              agent_phone_param?: string
+              email_param: string
+              first_name_param: string
+              last_name_param: string
+              password_param: string
+              role_param: Database["public"]["Enums"]["user_role"]
+            }
         Returns: number
       }
       create_student_credentials: {
