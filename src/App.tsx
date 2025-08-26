@@ -12,14 +12,21 @@ import NotFound from "./pages/NotFound";
 // Student Module
 import DirectStudents from "./pages/students/DirectStudents";
 import AgentStudents from "./pages/students/AgentStudents";
+import StudentProfilePage from "./pages/students/StudentProfile";
 import StudentAdmission from "./pages/students/StudentAdmission";
 import Application from "./pages/students/Application";
 import Character from "./pages/students/Character";
 import Visa from "./pages/students/Visa";
 import AdmissionLetters from "./pages/students/AdmissionLetters";
+import AddStudent from "./pages/students/AddStudent";
 
 // Agent Management
 import AgentManagement from "./pages/agents/AgentManagement";
+import AgentProfile from "./pages/agents/AgentProfile";
+import Agents from "./pages/agents/Agents";
+import AgentDetail from "./pages/agents/AgentDetail";
+import AddAgent from "./pages/agents/AddAgent";
+import Payouts from "./pages/agents/Payouts";
 
 // University Section
 import Universities from "./pages/universities/Universities";
@@ -28,6 +35,8 @@ import UniversityDetail from "./pages/universities/UniversityDetail";
 // Hostel Expenses
 import HostelExpenses from "./pages/hostels/HostelExpenses";
 import HostelManagement from "./pages/hostels/HostelManagement";
+import AddStudents from "./pages/hostels/AddStudents";
+import HostelRequests from "./pages/hostels/HostelRequests";
 
 // Mess Management
 import MessManagement from "./pages/mess/MessManagement";
@@ -55,19 +64,29 @@ import Reports from "./pages/reports/Reports";
 
 // Settings
 import Settings from "./pages/settings/Settings";
+import CountryManagement from "./pages/settings/CountryManagement";
 
 // Auth
 import Login from "./pages/auth/Login";
 
 // Staff Management
 import StaffManagement from "./pages/staff/StaffManagement";
+import MyStaff from "./pages/staff/MyStaff";
+import AddStaff from "./pages/staff/AddStaff";
+import Attendance from "./pages/staff/Attendance";
+import Leave from "./pages/staff/Leave";
+import Payroll from "./pages/staff/Payroll";
+import Payout from "./pages/staff/Payout";
+// Accounts > Staff Accounts (non-agents)
+import StaffAccounts from "./pages/accounts/StaffAccounts";
 
 // Lead Management
 import LeadEnquiry from "./pages/lead/LeadEnquiry";
 import AddLead from "./pages/lead/AddLead";
 
-// Invoice
-import Invoice from "./pages/students/Invoice";
+// Invoice pages
+import CreateInvoice from "./pages/invoices/CreateInvoice";
+import AllInvoices from "./pages/invoices/AllInvoices";
 
 const queryClient = new QueryClient();
 
@@ -91,16 +110,31 @@ const App = () => (
             
             {/* Student Module */}
             <Route path="/students/direct" element={<ProtectedRoute><DirectStudents /></ProtectedRoute>} />
+            <Route path="/students/add" element={<ProtectedRoute><AddStudent /></ProtectedRoute>} />
             <Route path="/students/agent" element={<ProtectedRoute><AgentStudents /></ProtectedRoute>} />
+            <Route path="/students/:id" element={<ProtectedRoute><StudentProfilePage /></ProtectedRoute>} />
+            
+            {/* Profile */}
+            <Route path="/profile" element={<ProtectedRoute><AgentProfile /></ProtectedRoute>} />
             <Route path="/students/admission" element={<ProtectedRoute><StudentAdmission /></ProtectedRoute>} />
             <Route path="/students/application" element={<ProtectedRoute><Application /></ProtectedRoute>} />
             <Route path="/students/admission-letters" element={<ProtectedRoute><AdmissionLetters /></ProtectedRoute>} />
             <Route path="/students/character" element={<ProtectedRoute><Character /></ProtectedRoute>} />
             <Route path="/students/visa" element={<ProtectedRoute><Visa /></ProtectedRoute>} />
-            <Route path="/students/invoice" element={<ProtectedRoute><Invoice /></ProtectedRoute>} />
+            <Route path="/invoices" element={<ProtectedRoute><AllInvoices /></ProtectedRoute>} />
+            <Route path="/invoices/create" element={<ProtectedRoute><CreateInvoice /></ProtectedRoute>} />
+
+            {/* Accounts > Students (reuses All Applicants list) */}
+            <Route path="/accounts/students" element={<ProtectedRoute allowedRoles={['admin','finance']}><DirectStudents /></ProtectedRoute>} />
+            {/* Accounts > Staff (exclude agents) */}
+            <Route path="/accounts/staff" element={<ProtectedRoute allowedRoles={['admin','finance']}><StaffAccounts /></ProtectedRoute>} />
             
-            {/* Agent Management */}
-            <Route path="/agents" element={<ProtectedRoute><AgentManagement /></ProtectedRoute>} />
+            {/* Agent Management & Pages */}
+            <Route path="/agents" element={<ProtectedRoute><Agents /></ProtectedRoute>} />
+            <Route path="/agents/add" element={<ProtectedRoute><AddAgent /></ProtectedRoute>} />
+            <Route path="/agents/payout" element={<ProtectedRoute><Payouts /></ProtectedRoute>} />
+            <Route path="/agents/:id" element={<ProtectedRoute><AgentDetail /></ProtectedRoute>} />
+            <Route path="/accounts/agents" element={<ProtectedRoute allowedRoles={['admin','finance']}><Agents /></ProtectedRoute>} />
             
             {/* University Section */}
             <Route path="/universities" element={<ProtectedRoute><Universities /></ProtectedRoute>} />
@@ -109,6 +143,8 @@ const App = () => (
             {/* Hostel Expenses */}
             <Route path="/hostels/management" element={<ProtectedRoute allowedRoles={['admin', 'hostel_team']}><HostelManagement /></ProtectedRoute>} />
             <Route path="/hostels/expenses" element={<ProtectedRoute allowedRoles={['admin', 'hostel_team']}><HostelExpenses /></ProtectedRoute>} />
+            <Route path="/hostels/add-students" element={<ProtectedRoute allowedRoles={['admin', 'hostel_team']}><AddStudents /></ProtectedRoute>} />
+            <Route path="/hostels/requests" element={<ProtectedRoute allowedRoles={['admin', 'hostel_team']}><HostelRequests /></ProtectedRoute>} />
             
             {/* Mess Management */}
             <Route path="/mess/management" element={<ProtectedRoute allowedRoles={['admin', 'hostel_team']}><MessManagement /></ProtectedRoute>} />
@@ -136,9 +172,16 @@ const App = () => (
             
             {/* Settings */}
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+            <Route path="/settings/countries" element={<ProtectedRoute><CountryManagement /></ProtectedRoute>} />
             
             {/* Staff Management - Admin only */}
             <Route path="/staff" element={<ProtectedRoute requiredRole="admin"><StaffManagement /></ProtectedRoute>} />
+            <Route path="/staff/my" element={<ProtectedRoute><MyStaff /></ProtectedRoute>} />
+            <Route path="/staff/add" element={<ProtectedRoute requiredRole="admin"><AddStaff /></ProtectedRoute>} />
+            <Route path="/staff/attendance" element={<ProtectedRoute requiredRole="admin"><Attendance /></ProtectedRoute>} />
+            <Route path="/staff/leave" element={<ProtectedRoute requiredRole="admin"><Leave /></ProtectedRoute>} />
+            <Route path="/staff/payroll" element={<ProtectedRoute requiredRole="admin"><Payroll /></ProtectedRoute>} />
+            <Route path="/staff/payout" element={<ProtectedRoute requiredRole="admin"><Payout /></ProtectedRoute>} />
             
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

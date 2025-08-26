@@ -35,22 +35,23 @@ const HostelManagement = () => {
   const loadHostels = async () => {
     try {
       setLoading(true);
-      const [hostelsData, studentsCount, hostelAssignments, universityStudents] = await Promise.all([
+      const [hostelsData, studentsCount, latestRegistrations, universityStudents] = await Promise.all([
         hostelsAPI.getAll(),
         supabase.from('students').select('id', { count: 'exact' }),
-        supabase
-          .from('student_hostel_assignments')
-          .select('hostel_id')
-          .eq('status', 'Active'),
+        // Count current occupancy per hostel from latest approved registrations
+        (supabase as any)
+          .from('v_latest_hostel_registration')
+          .select('hostel_id, status')
+          .eq('status', 'approved'),
         supabase
           .from('students')
           .select('university_id')
       ]);
       
-      // Count students per hostel
+      // Count students per hostel (approved latest registrations)
       const studentCounts: Record<number, number> = {};
-      hostelAssignments.data?.forEach(assignment => {
-        const hostelId = assignment.hostel_id;
+      latestRegistrations.data?.forEach((row: any) => {
+        const hostelId = row.hostel_id as number;
         studentCounts[hostelId] = (studentCounts[hostelId] || 0) + 1;
       });
 
@@ -143,12 +144,12 @@ const HostelManagement = () => {
       header: "Occupancy", 
       accessorKey: "current_occupancy" as keyof Hostel,
       cell: (row: Hostel) => {
-        const universityStudentCount = row.university_id ? (universityStudentCounts[row.university_id] || 0) : 0;
+        const hostelCount = hostelStudentCounts[row.id] || 0;
         return (
           <div className="flex items-center space-x-2">
             <Users className="h-4 w-4 text-blue-600" />
-            <span className="font-medium">{universityStudentCount}</span>
-            <span className="text-muted-foreground">total students</span>
+            <span className="font-medium">{hostelCount}</span>
+            <span className="text-muted-foreground">students</span>
           </div>
         );
       }
@@ -254,7 +255,7 @@ const HostelManagement = () => {
             <CardTitle className="text-sm font-medium text-muted-foreground">Total Students</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalStudents}</div>
+            <div className="text-2xl font-bold">{totalActualOccupancy}</div>
           </CardContent>
         </Card>
       </div>

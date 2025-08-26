@@ -10,6 +10,7 @@ import { Upload, Eye, Download } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLocation } from 'react-router-dom';
 
 interface Student {
   id: number;
@@ -23,6 +24,7 @@ interface Student {
 
 const AdmissionLetters = () => {
   const { user, isAdmin } = useAuth();
+  const location = useLocation();
   const [students, setStudents] = useState<Student[]>([]);
   const [selectedStudent, setSelectedStudent] = useState<string>("");
   const [uploading, setUploading] = useState(false);
@@ -32,6 +34,15 @@ const AdmissionLetters = () => {
   useEffect(() => {
     loadStudents();
   }, [user]);
+
+  // Preselect student if studentId is provided in query params
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const sid = params.get('studentId');
+    if (sid) {
+      setSelectedStudent(sid);
+    }
+  }, [location.search]);
 
   const loadStudents = async () => {
     if (!user) return;
@@ -169,8 +180,10 @@ const AdmissionLetters = () => {
       // Refresh students list
       await loadStudents();
       
-      // Reset form
-      setSelectedStudent("");
+      // Reset form only when not preselected via query param
+      if (!new URLSearchParams(location.search).get('studentId')) {
+        setSelectedStudent("");
+      }
       setFile(null);
       
       // Reset file input
@@ -246,22 +259,25 @@ const AdmissionLetters = () => {
               <CardTitle>Upload Admission Letter</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="student-select">Select Student</Label>
-                <Select value={selectedStudent} onValueChange={setSelectedStudent}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choose a student" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {students.map((student) => (
-                      <SelectItem key={student.id} value={student.id.toString()}>
-                        {student.first_name} {student.last_name} 
-                        {student.admission_number && ` (${student.admission_number})`}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              {/* If studentId is provided via query param, skip the selector */}
+              {!new URLSearchParams(location.search).get('studentId') && (
+                <div>
+                  <Label htmlFor="student-select">Select Student</Label>
+                  <Select value={selectedStudent} onValueChange={setSelectedStudent}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choose a student" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {students.map((student) => (
+                        <SelectItem key={student.id} value={student.id.toString()}>
+                          {student.first_name} {student.last_name} 
+                          {student.admission_number && ` (${student.admission_number})`}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
 
               <div>
                 <Label htmlFor="file-input">Admission Letter (PDF only)</Label>

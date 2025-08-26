@@ -470,6 +470,33 @@ export type Database = {
           },
         ]
       }
+      countries: {
+        Row: {
+          code: string | null
+          created_at: string | null
+          id: number
+          is_active: boolean | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          code?: string | null
+          created_at?: string | null
+          id?: number
+          is_active?: boolean | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          code?: string | null
+          created_at?: string | null
+          id?: number
+          is_active?: boolean | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       courses: {
         Row: {
           created_at: string | null
@@ -902,6 +929,71 @@ export type Database = {
             columns: ["university_id"]
             isOneToOne: false
             referencedRelation: "universities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invoices: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          discount_amount: number | null
+          due_date: string | null
+          gst_amount: number | null
+          id: number
+          invoice_date: string | null
+          invoice_number: string
+          items: Json | null
+          notes: string | null
+          status: string
+          student_id: number | null
+          subtotal: number | null
+          terms: string | null
+          total_amount: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          discount_amount?: number | null
+          due_date?: string | null
+          gst_amount?: number | null
+          id?: never
+          invoice_date?: string | null
+          invoice_number: string
+          items?: Json | null
+          notes?: string | null
+          status?: string
+          student_id?: number | null
+          subtotal?: number | null
+          terms?: string | null
+          total_amount?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          discount_amount?: number | null
+          due_date?: string | null
+          gst_amount?: number | null
+          id?: never
+          invoice_date?: string | null
+          invoice_number?: string
+          items?: Json | null
+          notes?: string | null
+          status?: string
+          student_id?: number | null
+          subtotal?: number | null
+          terms?: string | null
+          total_amount?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
             referencedColumns: ["id"]
           },
         ]
@@ -1612,6 +1704,7 @@ export type Database = {
           agent_id: number | null
           city: string | null
           country: string | null
+          country_id: number | null
           course_id: number | null
           created_at: string | null
           date_of_birth: string
@@ -1633,6 +1726,7 @@ export type Database = {
           qualification_status: string | null
           scores: string | null
           seat_number: string | null
+          semester: string | null
           status: string | null
           tenth_marksheet_number: string | null
           tenth_marksheet_url: string | null
@@ -1655,6 +1749,7 @@ export type Database = {
           agent_id?: number | null
           city?: string | null
           country?: string | null
+          country_id?: number | null
           course_id?: number | null
           created_at?: string | null
           date_of_birth: string
@@ -1676,6 +1771,7 @@ export type Database = {
           qualification_status?: string | null
           scores?: string | null
           seat_number?: string | null
+          semester?: string | null
           status?: string | null
           tenth_marksheet_number?: string | null
           tenth_marksheet_url?: string | null
@@ -1698,6 +1794,7 @@ export type Database = {
           agent_id?: number | null
           city?: string | null
           country?: string | null
+          country_id?: number | null
           course_id?: number | null
           created_at?: string | null
           date_of_birth?: string
@@ -1719,6 +1816,7 @@ export type Database = {
           qualification_status?: string | null
           scores?: string | null
           seat_number?: string | null
+          semester?: string | null
           status?: string | null
           tenth_marksheet_number?: string | null
           tenth_marksheet_url?: string | null
@@ -1742,6 +1840,13 @@ export type Database = {
             columns: ["agent_id"]
             isOneToOne: false
             referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "students_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
             referencedColumns: ["id"]
           },
           {
@@ -1897,6 +2002,7 @@ export type Database = {
       }
       users: {
         Row: {
+          country_id: number | null
           created_at: string | null
           email: string
           first_name: string
@@ -1909,6 +2015,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          country_id?: number | null
           created_at?: string | null
           email: string
           first_name: string
@@ -1921,6 +2028,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          country_id?: number | null
           created_at?: string | null
           email?: string
           first_name?: string
@@ -1932,7 +2040,15 @@ export type Database = {
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "users_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
@@ -1985,6 +2101,10 @@ export type Database = {
         Args: { application_id: number }
         Returns: undefined
       }
+      assign_country_to_staff: {
+        Args: { country_id_param: number; staff_id_param: number }
+        Returns: undefined
+      }
       assign_fee_structure_to_students: {
         Args: { structure_id: number }
         Returns: number
@@ -2001,6 +2121,10 @@ export type Database = {
           user_id: number
         }[]
       }
+      change_password: {
+        Args: { current_password: string; new_password: string }
+        Returns: undefined
+      }
       cleanup_expired_sessions: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -2014,16 +2138,28 @@ export type Database = {
         Returns: number
       }
       create_staff_member: {
-        Args: {
-          agent_location_param?: string
-          agent_name_param?: string
-          agent_phone_param?: string
-          email_param: string
-          first_name_param: string
-          last_name_param: string
-          password_param: string
-          role_param: Database["public"]["Enums"]["user_role"]
-        }
+        Args:
+          | {
+              agent_location_param?: string
+              agent_name_param?: string
+              agent_phone_param?: string
+              country_id_param?: number
+              email_param: string
+              first_name_param: string
+              last_name_param: string
+              password_param: string
+              role_param: Database["public"]["Enums"]["user_role"]
+            }
+          | {
+              agent_location_param?: string
+              agent_name_param?: string
+              agent_phone_param?: string
+              email_param: string
+              first_name_param: string
+              last_name_param: string
+              password_param: string
+              role_param: Database["public"]["Enums"]["user_role"]
+            }
         Returns: number
       }
       create_student_credentials: {
@@ -2057,6 +2193,20 @@ export type Database = {
       generate_username: {
         Args: { first_name: string; last_name: string; student_id: number }
         Returns: string
+      }
+      get_agent_profile: {
+        Args: { agent_id_param: number }
+        Returns: {
+          created_at: string
+          email: string
+          id: number
+          location: string
+          name: string
+          phone: string
+          status: string
+          total_receivable: number
+          total_students: number
+        }[]
       }
       get_student_financial_summary: {
         Args: { input_student_id: number }
