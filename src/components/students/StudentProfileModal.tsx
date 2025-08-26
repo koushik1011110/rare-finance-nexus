@@ -24,7 +24,6 @@ export default function StudentProfileModal({
   const [feePayments, setFeePayments] = useState<any[]>([]);
   const [loadingFees, setLoadingFees] = useState(false);
   const [feeSummary, setFeeSummary] = useState({ totalDue: 0, totalPaid: 0, balance: 0 });
-  const [countryName, setCountryName] = useState<string>('N/A');
 
   useEffect(() => {
     const fetchCredentials = async () => {
@@ -41,23 +40,8 @@ export default function StudentProfileModal({
       }
     };
 
-    const fetchCountryName = async () => {
-      if (student?.country_id && isOpen) {
-        const { data, error } = await supabase
-          .from('countries')
-          .select('name')
-          .eq('id', student.country_id)
-          .single();
-        
-        if (!error && data) {
-          setCountryName(data.name);
-        }
-      }
-    };
-
     fetchCredentials();
-    fetchCountryName();
-  }, [student?.id, student?.country_id, isOpen]);
+  }, [student?.id, isOpen]);
 
   useEffect(() => {
     const fetchFees = async () => {
@@ -213,7 +197,7 @@ export default function StudentProfileModal({
               </div>
               <div>
                 <label className="text-sm font-medium text-muted-foreground">Country</label>
-                <p className="text-sm">{countryName}</p>
+                <p className="text-sm">{student.country || 'N/A'}</p>
               </div>
               <div className="md:col-span-2">
                 <label className="text-sm font-medium text-muted-foreground">Full Address</label>

@@ -31,6 +31,7 @@ interface StudentDB {
   agent_id?: number | null;
   admission_number?: string;
   city?: string;
+  country?: string;
   address?: string;
   aadhaar_number?: string;
   passport_number?: string;
@@ -87,6 +88,7 @@ const AddStudent = () => {
       agent_id: agentId ?? (agentField && agentField > 0 ? agentField : undefined),
       admission_number: formData.admission_number,
       city: formData.city,
+      country: formData.country,
       address: formData.address,
       aadhaar_number: formData.aadhaar_number,
       passport_number: formData.passport_number,
