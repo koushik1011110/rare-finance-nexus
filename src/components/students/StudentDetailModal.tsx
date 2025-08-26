@@ -60,6 +60,7 @@ export default function StudentDetailModal({ student, isOpen, onClose }: Student
   const [universityName, setUniversityName] = useState<string>("");
   const [courseName, setCourseName] = useState<string>("");
   const [sessionName, setSessionName] = useState<string>("");
+  const [countryName, setCountryName] = useState<string>("");
 
   useEffect(() => {
     if (student) {
@@ -99,6 +100,17 @@ export default function StudentDetailModal({ student, isOpen, onClose }: Student
           .eq('id', student.academic_session_id)
           .single();
         if (session) setSessionName(session.session_name);
+      }
+
+      // Load country name based on the country field (legacy data)
+      if (student.country) {
+        const { data: country } = await supabase
+          .from('countries')
+          .select('name')
+          .eq('name', student.country)
+          .single();
+        if (country) setCountryName(country.name);
+        else setCountryName(student.country);
       }
     } catch (error) {
       console.error('Error loading academic data:', error);
@@ -271,7 +283,7 @@ export default function StudentDetailModal({ student, isOpen, onClose }: Student
                       <p className="text-sm font-medium">
                         {student.address || "Not provided"}
                         {student.city && `, ${student.city}`}
-                        {student.country && `, ${student.country}`}
+                        {countryName && `, ${countryName}`}
                       </p>
                     </div>
                   </div>

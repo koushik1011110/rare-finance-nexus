@@ -31,7 +31,7 @@ interface AgentStudent {
   status: string;
   admission_number?: string;
   city?: string;
-  country?: string;
+  country_id?: number;
   address?: string;
   aadhaar_number?: string;
   passport_number?: string;
@@ -239,7 +239,7 @@ const AgentStudents = () => {
         academic_session_id: formData.academic_session_id,
         status: 'pending',
         city: formData.city || null,
-        country: formData.country || null,
+        country_id: formData.country_id || null,
         address: formData.address || null,
         aadhaar_number: formData.aadhaar_number || null,
         passport_number: formData.passport_number || null,
@@ -528,7 +528,7 @@ const AgentStudents = () => {
               course_id: currentStudent.course_id,
               academic_session_id: currentStudent.academic_session_id,
               city: currentStudent.city,
-              country: currentStudent.country,
+              country_id: currentStudent.country_id,
               address: currentStudent.address,
               aadhaar_number: currentStudent.aadhaar_number,
               passport_number: currentStudent.passport_number,

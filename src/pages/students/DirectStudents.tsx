@@ -49,7 +49,7 @@ interface Student {
   status: string;
   admission_number?: string;
   city?: string;
-  country?: string;
+  country_id?: number;
   address?: string;
   aadhaar_number?: string;
   passport_number?: string;
@@ -78,7 +78,7 @@ interface Student {
 }
 
 const DirectStudents = () => {
-  const { isAdmin } = useAuth();
+  const { user, isAdmin } = useAuth();
   const navigate = useNavigate();
   const [students, setStudents] = useState<Student[]>([]);
   const [universities, setUniversities] = useState<University[]>([]);
@@ -96,16 +96,26 @@ const DirectStudents = () => {
   const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
-    if (isAdmin) {
+    if (user && ['admin', 'finance', 'staff', 'hostel_team'].includes(user.role)) {
       loadData();
     }
-  }, [isAdmin]);
+  }, [user]);
 
   const loadData = async () => {
     try {
       setLoading(true);
+      
+      // Build query to exclude agent students and apply country restrictions for staff
+      let studentsQuery = supabase
+        .from('students')
+        .select('*')
+        .is('agent_id', null); // Exclude agent students
+      
+      // For non-admin users, the RLS policies will automatically filter by country
+      // No additional filtering needed here as it's handled at the database level
+      
       const [studentsData, universitiesData, coursesData, sessionsData] = await Promise.all([
-        supabase.from('students').select('*'),
+        studentsQuery,
         universitiesAPI.getAll(),
         coursesAPI.getAll(),
         academicSessionsAPI.getAll(),
@@ -379,7 +389,7 @@ const DirectStudents = () => {
     },
   ];
 
-  if (!isAdmin) {
+  if (!user || !['admin', 'finance', 'staff', 'hostel_team'].includes(user.role)) {
     return (
       <MainLayout>
         <PageHeader
@@ -406,16 +416,16 @@ const DirectStudents = () => {
     <MainLayout>
       <PageHeader
         title="All Students"
-        description="Manage enrolled students"
+        description="Direct admission students (excludes agent students)"
       />
       
       <Card>
         <CardHeader>
           <div className="flex justify-between items-center gap-3">
             <div>
-              <CardTitle>Student List</CardTitle>
+              <CardTitle>Direct Students</CardTitle>
               <CardDescription>
-                All enrolled students in the system
+                Students with direct admissions (excludes agent students)
               </CardDescription>
             </div>
             <div className="flex items-center gap-2">
@@ -428,13 +438,15 @@ const DirectStudents = () => {
                   className="pl-8 w-64"
                 />
               </div>
-              <Button onClick={() => {
-                setSelectedStudent(null);
-                setIsEditModalOpen(true);
-              }}>
-                <Plus className="mr-2 h-4 w-4" />
-                Add New Student
-              </Button>
+              {(isAdmin || user?.role === 'finance') && (
+                <Button onClick={() => {
+                  setSelectedStudent(null);
+                  setIsEditModalOpen(true);
+                }}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add New Student
+                </Button>
+              )}
             </div>
           </div>
         </CardHeader>
@@ -468,7 +480,7 @@ const DirectStudents = () => {
             course_id: selectedStudent.course_id,
             academic_session_id: selectedStudent.academic_session_id,
             city: selectedStudent.city,
-            country: selectedStudent.country,
+            country_id: selectedStudent.country_id,
             address: selectedStudent.address,
             aadhaar_number: selectedStudent.aadhaar_number,
             passport_number: selectedStudent.passport_number,
