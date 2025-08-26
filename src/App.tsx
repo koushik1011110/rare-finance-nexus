@@ -85,8 +85,8 @@ import LeadEnquiry from "./pages/lead/LeadEnquiry";
 import AddLead from "./pages/lead/AddLead";
 
 // Invoice pages
-import CreateInvoice from "./pages/invoices/invoice";
-import AllInvoices from "./pages/invoices/index";
+import CreateInvoice from "./pages/invoices/CreateInvoice";
+import AllInvoices from "./pages/invoices/AllInvoices";
 
 const queryClient = new QueryClient();
 
