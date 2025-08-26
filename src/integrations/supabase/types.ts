@@ -2119,6 +2119,7 @@ export type Database = {
       authenticate_user: {
         Args: { email_param: string; password_param: string }
         Returns: {
+          country_id: number
           email: string
           first_name: string
           is_active: boolean
