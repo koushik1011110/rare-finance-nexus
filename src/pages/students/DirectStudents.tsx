@@ -49,7 +49,7 @@ interface Student {
   status: string;
   admission_number?: string;
   city?: string;
-  country?: string;
+  country_id?: number;
   address?: string;
   aadhaar_number?: string;
   passport_number?: string;
@@ -480,7 +480,7 @@ const DirectStudents = () => {
             course_id: selectedStudent.course_id,
             academic_session_id: selectedStudent.academic_session_id,
             city: selectedStudent.city,
-            country: selectedStudent.country,
+            country_id: selectedStudent.country_id,
             address: selectedStudent.address,
             aadhaar_number: selectedStudent.aadhaar_number,
             passport_number: selectedStudent.passport_number,

@@ -32,7 +32,6 @@ export interface ComprehensiveStudentFormData {
   country_id?: number;
   admission_number?: string;
   city?: string;
-  country?: string;
   address?: string;
   aadhaar_number?: string;
   passport_number?: string;
@@ -94,7 +93,6 @@ const ComprehensiveStudentForm: React.FC<ComprehensiveStudentFormProps> = ({
       academic_session_id: 0, // Will be set to 2025-26 ID after loading
       admission_number: "",
       city: "",
-      country: "",
       address: "",
       aadhaar_number: "",
       passport_number: "",
