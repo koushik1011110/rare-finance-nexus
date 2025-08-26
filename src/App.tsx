@@ -84,9 +84,9 @@ import StaffAccounts from "./pages/accounts/StaffAccounts";
 import LeadEnquiry from "./pages/lead/LeadEnquiry";
 import AddLead from "./pages/lead/AddLead";
 
-// Invoice - temporarily disabled
-// import Invoice from "./pages/invoices/invoice";
-// import AllInvoices from "./pages/invoices/index";
+// Invoice pages
+import CreateInvoice from "./pages/invoices/CreateInvoice";
+import AllInvoices from "./pages/invoices/AllInvoices";
 
 const queryClient = new QueryClient();
 
@@ -121,8 +121,8 @@ const App = () => (
             <Route path="/students/admission-letters" element={<ProtectedRoute><AdmissionLetters /></ProtectedRoute>} />
             <Route path="/students/character" element={<ProtectedRoute><Character /></ProtectedRoute>} />
             <Route path="/students/visa" element={<ProtectedRoute><Visa /></ProtectedRoute>} />
-            {/* <Route path="/invoices" element={<ProtectedRoute><AllInvoices /></ProtectedRoute>} />
-            <Route path="/invoices/create" element={<ProtectedRoute><Invoice /></ProtectedRoute>} /> */}
+            <Route path="/invoices" element={<ProtectedRoute><AllInvoices /></ProtectedRoute>} />
+            <Route path="/invoices/create" element={<ProtectedRoute><CreateInvoice /></ProtectedRoute>} />
 
             {/* Accounts > Students (reuses All Applicants list) */}
             <Route path="/accounts/students" element={<ProtectedRoute allowedRoles={['admin','finance']}><DirectStudents /></ProtectedRoute>} />

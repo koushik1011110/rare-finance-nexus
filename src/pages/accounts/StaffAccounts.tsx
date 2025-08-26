@@ -15,6 +15,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { UserRole } from '@/contexts/AuthContext';
+import { fetchCountries, Country } from '@/lib/countries-api';
 
 interface Staff {
   id: string;
@@ -28,6 +29,7 @@ interface Staff {
 
 const StaffAccounts: React.FC = () => {
   const [staff, setStaff] = useState<Staff[]>([]);
+  const [countries, setCountries] = useState<Country[]>([]);
   const [loading, setLoading] = useState(true);
   const [resetPasswordDialog, setResetPasswordDialog] = useState({ open: false, newPassword: '', staffName: '' });
   const [showPassword, setShowPassword] = useState(true);
@@ -45,8 +47,10 @@ const StaffAccounts: React.FC = () => {
     agentName: '',
     agentPhone: '',
     agentLocation: '',
+    countryId: '',
   });
   const [showCreatePwd, setShowCreatePwd] = useState(false);
+  const [countryAssignDialog, setCountryAssignDialog] = useState({ open: false, staffId: '', staffName: '', selectedCountryId: '' });
 
   useEffect(() => {
     const fetchStaff = async () => {
@@ -82,7 +86,17 @@ const StaffAccounts: React.FC = () => {
       }
     };
 
+    const loadCountries = async () => {
+      try {
+        const countriesData = await fetchCountries();
+        setCountries(countriesData);
+      } catch (error) {
+        console.error('Error loading countries:', error);
+      }
+    };
+
     fetchStaff();
+    loadCountries();
   }, []);
 
   const generatePassword = () => {
@@ -108,11 +122,12 @@ const StaffAccounts: React.FC = () => {
         agent_name_param: createForm.role === 'agent' ? createForm.agentName : null,
         agent_phone_param: createForm.role === 'agent' ? createForm.agentPhone : null,
         agent_location_param: createForm.role === 'agent' ? createForm.agentLocation : null,
+        country_id_param: createForm.countryId ? parseInt(createForm.countryId) : null,
       });
       if (error) throw error;
       toast({ title: 'Success', description: 'Staff member created successfully.' });
       setIsDialogOpen(false);
-      setCreateForm({ email: '', password: '', firstName: '', lastName: '', role: '' as UserRole, agentName: '', agentPhone: '', agentLocation: '' });
+      setCreateForm({ email: '', password: '', firstName: '', lastName: '', role: '' as UserRole, agentName: '', agentPhone: '', agentLocation: '', countryId: '' });
       // reload list (will exclude agent if created as agent)
       const { data } = await supabase
         .from('users')
@@ -156,6 +171,27 @@ const StaffAccounts: React.FC = () => {
     } catch (error) {
       console.error('Error resetting password:', error);
       toast({ title: 'Error', description: 'Failed to reset password', variant: 'destructive' });
+    }
+  };
+
+  const handleCountryAssign = async () => {
+    try {
+      const { error } = await supabase.rpc('assign_country_to_staff', {
+        staff_id_param: parseInt(countryAssignDialog.staffId),
+        country_id_param: countryAssignDialog.selectedCountryId ? parseInt(countryAssignDialog.selectedCountryId) : null
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: `Country assignment updated for ${countryAssignDialog.staffName}`,
+      });
+
+      setCountryAssignDialog({ open: false, staffId: '', staffName: '', selectedCountryId: '' });
+    } catch (error) {
+      console.error('Error assigning country:', error);
+      toast({ title: 'Error', description: 'Failed to assign country', variant: 'destructive' });
     }
   };
 
@@ -214,10 +250,26 @@ const StaffAccounts: React.FC = () => {
       accessorKey: 'actions' as 'actions',
       header: 'Actions',
       cell: (row: Staff) => (
-        <Button variant="outline" size="sm" onClick={() => handleResetPassword(row)}>
-          <RotateCcw className="mr-2 h-4 w-4" />
-          Reset Password
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => handleResetPassword(row)}>
+            <RotateCcw className="mr-2 h-4 w-4" />
+            Reset Password
+          </Button>
+          {isAdmin && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setCountryAssignDialog({ 
+                open: true, 
+                staffId: row.id, 
+                staffName: `${row.firstName} ${row.lastName}`,
+                selectedCountryId: '' 
+              })}
+            >
+              Assign Country
+            </Button>
+          )}
+        </div>
       ),
     },
   ];
@@ -289,6 +341,23 @@ const StaffAccounts: React.FC = () => {
                       <SelectItem value="hostel_team">Hostel Team</SelectItem>
                       <SelectItem value="finance">Finance</SelectItem>
                       <SelectItem value="staff">Staff</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="countryId">Assigned Country (Optional)</Label>
+                  <Select value={createForm.countryId} onValueChange={(value) => setCreateForm(p => ({ ...p, countryId: value }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a country" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">No Country Assignment</SelectItem>
+                      {countries.map((country) => (
+                        <SelectItem key={country.id} value={country.id.toString()}>
+                          {country.name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -369,6 +438,49 @@ const StaffAccounts: React.FC = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Country Assignment Dialog */}
+      <Dialog open={countryAssignDialog.open} onOpenChange={(open) => setCountryAssignDialog(prev => ({ ...prev, open }))}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Assign Country</DialogTitle>
+            <DialogDescription>
+              Assign a country to {countryAssignDialog.staffName}. Staff will only be able to view students from their assigned country.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="countrySelect">Select Country</Label>
+              <Select 
+                value={countryAssignDialog.selectedCountryId} 
+                onValueChange={(value) => setCountryAssignDialog(prev => ({ ...prev, selectedCountryId: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a country" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Remove Country Assignment</SelectItem>
+                  {countries.map((country) => (
+                    <SelectItem key={country.id} value={country.id.toString()}>
+                      {country.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-4">
+            <Button type="button" variant="outline" onClick={() => setCountryAssignDialog({ open: false, staffId: '', staffName: '', selectedCountryId: '' })}>
+              Cancel
+            </Button>
+            <Button onClick={handleCountryAssign}>
+              Assign Country
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </MainLayout>
   );
 };

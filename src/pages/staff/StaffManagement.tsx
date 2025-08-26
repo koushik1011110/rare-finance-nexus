@@ -14,6 +14,7 @@ import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth, UserRole } from '@/contexts/AuthContext';
 import { Plus, Users, Eye, EyeOff, RotateCcw } from 'lucide-react';
+import { fetchCountries, Country } from '@/lib/countries-api';
 
 interface Staff {
   id: string;
@@ -27,6 +28,7 @@ interface Staff {
 
 const StaffManagement = () => {
   const [staff, setStaff] = useState<Staff[]>([]);
+  const [countries, setCountries] = useState<Country[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
@@ -38,6 +40,7 @@ const StaffManagement = () => {
     agentName: '',
     agentPhone: '',
     agentLocation: '',
+    countryId: '',
   });
   const [showPassword, setShowPassword] = useState(false);
   const [resetPasswordDialog, setResetPasswordDialog] = useState({ open: false, newPassword: '', staffName: '' });
@@ -46,8 +49,18 @@ const StaffManagement = () => {
   useEffect(() => {
     if (isAdmin) {
       fetchStaff();
+      loadCountries();
     }
   }, [isAdmin]);
+
+  const loadCountries = async () => {
+    try {
+      const countriesData = await fetchCountries();
+      setCountries(countriesData);
+    } catch (error) {
+      console.error('Error loading countries:', error);
+    }
+  };
 
   const fetchStaff = async () => {
     try {
@@ -110,6 +123,7 @@ const StaffManagement = () => {
         agent_name_param: formData.role === 'agent' ? formData.agentName : null,
         agent_phone_param: formData.role === 'agent' ? formData.agentPhone : null,
         agent_location_param: formData.role === 'agent' ? formData.agentLocation : null,
+        country_id_param: formData.countryId ? parseInt(formData.countryId) : null,
       });
 
       if (error) throw error;
@@ -129,6 +143,7 @@ const StaffManagement = () => {
         agentName: '',
         agentPhone: '',
         agentLocation: '',
+        countryId: '',
       });
       fetchStaff();
     } catch (error) {
@@ -345,6 +360,23 @@ const StaffManagement = () => {
                       <SelectItem value="hostel_team">Hostel Team</SelectItem>
                       <SelectItem value="finance">Finance</SelectItem>
                       <SelectItem value="staff">Staff</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="countryId">Assigned Country (Optional)</Label>
+                  <Select value={formData.countryId} onValueChange={(value) => setFormData(prev => ({ ...prev, countryId: value }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a country" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">No Country Assignment</SelectItem>
+                      {countries.map((country) => (
+                        <SelectItem key={country.id} value={country.id.toString()}>
+                          {country.name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
