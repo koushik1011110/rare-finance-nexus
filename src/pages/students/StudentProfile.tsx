@@ -1,51 +1,88 @@
-
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import MainLayout from "@/components/layout/MainLayout";
+import PageHeader from "@/components/shared/PageHeader";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { User, Mail, Phone, MapPin, GraduationCap, Calendar, CreditCard, Users, Key } from "lucide-react";
-import DetailViewModal from "@/components/shared/DetailViewModal";
 import StudentDocuments from "@/components/students/StudentDocuments";
 import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
 
-interface StudentProfileModalProps {
-  student: any;
-  isOpen: boolean;
-  onClose: () => void;
-  showAgentInfo?: boolean;
-}
-
-export default function StudentProfileModal({
-  student,
-  isOpen,
-  onClose,
-  showAgentInfo = false,
-}: StudentProfileModalProps) {
+export default function StudentProfilePage() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const [student, setStudent] = useState<any | null>(null);
   const [credentials, setCredentials] = useState<{ username: string; password: string } | null>(null);
+  const [visaInfo, setVisaInfo] = useState<any | null>(null);
+
+  // Helper: determine if visa steps are all completed
+  const isVisaCompleted = (visa: any | null) => {
+    if (!visa) return false;
+    // Consider these fields required for visa completion
+    return !!(visa.application_submitted && visa.visa_interview && visa.visa_approved && visa.residency_registration);
+  };
+
+  // Helper: required document keys for admission/visa flows
+  const requiredDocumentKeys = [
+    'photo_url',
+    'passport_copy_url',
+    'aadhaar_copy_url',
+    'twelfth_certificate_url',
+    'admission_letter_url'
+  ];
+
+  const areRequiredDocsPresent = (s: any | null) => {
+    if (!s) return false;
+    return requiredDocumentKeys.every((k) => !!s[k]);
+  };
   const [feePayments, setFeePayments] = useState<any[]>([]);
   const [loadingFees, setLoadingFees] = useState(false);
   const [feeSummary, setFeeSummary] = useState({ totalDue: 0, totalPaid: 0, balance: 0 });
 
   useEffect(() => {
+    if (!id) return;
+    const load = async () => {
+      const { data, error } = await supabase.from('students').select('*').eq('id', Number(id)).single();
+      if (!error && data) setStudent(data);
+    };
+    load();
+  }, [id]);
+
+  useEffect(() => {
+    const loadVisa = async () => {
+      if (!student?.id) return;
+      try {
+        const { data, error } = await supabase
+          .from('student_visa')
+          .select('*')
+          .eq('student_id', student.id)
+          .single();
+        if (!error) setVisaInfo(data || null);
+      } catch (e) {
+        setVisaInfo(null);
+      }
+    };
+    loadVisa();
+  }, [student?.id]);
+
+  useEffect(() => {
     const fetchCredentials = async () => {
-      if (student?.id && isOpen) {
+      if (student?.id) {
         const { data, error } = await supabase
           .from('student_credentials')
           .select('username, password')
           .eq('student_id', student.id)
           .single();
-        
-        if (!error && data) {
-          setCredentials(data);
-        }
+        if (!error && data) setCredentials(data);
       }
     };
-
     fetchCredentials();
-  }, [student?.id, isOpen]);
+  }, [student?.id]);
 
   useEffect(() => {
     const fetchFees = async () => {
-      if (!student?.id || !isOpen) return;
+      if (!student?.id) return;
       setLoadingFees(true);
       try {
         const { data, error } = await supabase
@@ -68,27 +105,35 @@ export default function StudentProfileModal({
         const totalPaid = payments.reduce((sum: number, p: any) => sum + (p.amount_paid || 0), 0);
         setFeeSummary({ totalDue, totalPaid, balance: totalDue - totalPaid });
       } catch (e) {
-        // Silently fail in modal, optionally could use a toast
         setFeePayments([]);
         setFeeSummary({ totalDue: 0, totalPaid: 0, balance: 0 });
       } finally {
         setLoadingFees(false);
       }
     };
-
     fetchFees();
-  }, [student?.id, isOpen]);
+  }, [student?.id]);
 
-  if (!student) return null;
+  if (!student) {
+    return (
+      <MainLayout>
+        <PageHeader title="Student Profile" description="Loading student..." />
+        <div>Loading...</div>
+      </MainLayout>
+    );
+  }
 
   return (
-    <DetailViewModal
-      title={`Student Profile: ${student.first_name} ${student.last_name}`}
-      isOpen={isOpen}
-      onClose={onClose}
-      fullScreen={true}
-    >
+    <MainLayout>
+      <PageHeader title={`Student Profile: ${student.first_name} ${student.last_name}`} description="Full page student profile" />
       <div className="space-y-6">
+        <div className="flex justify-between">
+          <div />
+          <div>
+            <Button variant="outline" onClick={() => navigate(-1)}>Back</Button>
+          </div>
+        </div>
+
         {/* Personal Information */}
         <Card>
           <CardHeader>
@@ -245,26 +290,6 @@ export default function StudentProfileModal({
                 <label className="text-sm font-medium text-muted-foreground">PCB Average</label>
                 <p className="text-sm">{student.pcb_average ? `${student.pcb_average}%` : 'N/A'}</p>
               </div>
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">NEET Roll Number</label>
-                <p className="text-sm">{student.neet_roll_number || 'N/A'}</p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Passing Year of Class 12</label>
-                <p className="text-sm">{student.twelfth_passing_year || 'N/A'}</p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Passing Year of Class 10</label>
-                <p className="text-sm">{student.tenth_passing_year || 'N/A'}</p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Passing Year of NEET</label>
-                <p className="text-sm">{student.neet_passing_year || 'N/A'}</p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Class 10 Marksheet Number</label>
-                <p className="text-sm">{student.tenth_marksheet_number || 'N/A'}</p>
-              </div>
             </div>
           </CardContent>
         </Card>
@@ -405,27 +430,8 @@ export default function StudentProfileModal({
           </Card>
         )}
 
-        {showAgentInfo && student.agent_name && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <User className="mr-2 h-5 w-5" />
-                Agent Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Agent</label>
-                <p className="text-sm">{student.agent_name}</p>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Student Documents */}
         <StudentDocuments student={student} />
 
-        {/* Additional Information */}
         {student.scores && (
           <Card>
             <CardHeader>
@@ -436,7 +442,35 @@ export default function StudentProfileModal({
             </CardContent>
           </Card>
         )}
+
+        {/* Visa + Documents Status - moved to the bottom */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">Status</CardTitle>
+            <CardDescription>Visa and document completion status</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <p className="text-sm text-muted-foreground">Visa Status</p>
+                <div className="mt-2">
+                  <Badge variant={isVisaCompleted(visaInfo) ? 'default' : 'secondary'}>
+                    {isVisaCompleted(visaInfo) ? 'Completed' : 'Pending'}
+                  </Badge>
+                </div>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Documents Pending Status</p>
+                <div className="mt-2">
+                  <Badge variant={areRequiredDocsPresent(student) ? 'default' : 'destructive'}>
+                    {areRequiredDocsPresent(student) ? 'Completed' : 'Pending'}
+                  </Badge>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
-    </DetailViewModal>
+    </MainLayout>
   );
 }

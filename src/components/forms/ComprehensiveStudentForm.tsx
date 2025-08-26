@@ -168,7 +168,29 @@ const ComprehensiveStudentForm: React.FC<ComprehensiveStudentFormProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    // Basic client-side validation to prevent invalid inserts
+    const validationError = validateForm();
+    if (validationError) {
+      toast({
+        title: 'Validation Error',
+        description: validationError,
+        variant: 'destructive',
+      });
+      return;
+    }
+
     onSubmit(formData);
+  };
+
+  const validateForm = () => {
+    if (!formData.first_name || !formData.last_name) return 'First name and last name are required.';
+    if (!formData.father_name || !formData.mother_name) return 'Parents\' names are required.';
+    if (!formData.date_of_birth) return 'Date of birth is required.';
+    // Ensure university, course and academic session are selected (non-zero)
+    if (!formData.university_id || Number(formData.university_id) <= 0) return 'Please select a university.';
+    if (!formData.course_id || Number(formData.course_id) <= 0) return 'Please select a course.';
+    if (!formData.academic_session_id || Number(formData.academic_session_id) <= 0) return 'Please select an academic session.';
+    return null;
   };
 
   if (loading) {
