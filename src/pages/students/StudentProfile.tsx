@@ -43,8 +43,28 @@ export default function StudentProfilePage() {
   useEffect(() => {
     if (!id) return;
     const load = async () => {
+      // Fetch student record first
       const { data, error } = await supabase.from('students').select('*').eq('id', Number(id)).single();
-      if (!error && data) setStudent(data);
+      if (!error && data) {
+        // If students table now uses country_id as FK, fetch the country name explicitly
+        try {
+          if (data.country_id) {
+            const { data: countryData, error: countryError } = await supabase
+              .from('countries')
+              .select('name')
+              .eq('id', data.country_id)
+              .single();
+            if (!countryError && countryData) data.country = countryData.name;
+            else data.country = data.country ?? null;
+          } else {
+            data.country = data.country ?? null;
+          }
+        } catch (e) {
+          data.country = data.country ?? null;
+        }
+
+        setStudent(data);
+      }
     };
     load();
   }, [id]);
