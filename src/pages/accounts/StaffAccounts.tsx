@@ -16,6 +16,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { UserRole } from '@/contexts/AuthContext';
 import { fetchCountries, Country } from '@/lib/countries-api';
+import { useNavigate } from 'react-router-dom';
 
 interface Staff {
   id: string;
@@ -36,6 +37,7 @@ const StaffAccounts: React.FC = () => {
   const [showPassword, setShowPassword] = useState(true);
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
+  const navigate = useNavigate();
 
   // Add Staff dialog state
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -415,6 +417,12 @@ const StaffAccounts: React.FC = () => {
               </form>
             </DialogContent>
           </Dialog>
+        )}
+        {isAdmin && (
+          <div className="flex space-x-2">
+            <Button variant="ghost" onClick={() => navigate('/staff/payroll')}>Payroll</Button>
+            <Button variant="ghost" onClick={() => navigate('/staff/payout')}>Payout</Button>
+          </div>
         )}
       </div>
 

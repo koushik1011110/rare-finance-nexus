@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
+import { useLocation } from 'react-router-dom';
 import MainLayout from "@/components/layout/MainLayout";
 import PageHeader from "@/components/shared/PageHeader";
-import DataTable from "@/components/ui/DataTable";
+import DataTable, { Column } from "@/components/ui/DataTable";
 import { Button } from "@/components/ui/button";
 import { Plus, Download, Eye, Trash2, Loader2, DollarSign, Users, TrendingUp, Calendar } from "lucide-react";
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
 import {
@@ -30,6 +32,9 @@ import SalaryForm from "@/components/forms/SalaryForm";
 import { salaryAPI, type StaffSalary, type SalaryFormData } from "@/lib/salary-api";
 
 const SalaryManagement = () => {
+  const location = useLocation();
+  const staffIdFromQuery = new URLSearchParams(location.search).get('staffId');
+
   const [salaries, setSalaries] = useState<StaffSalary[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -42,6 +47,7 @@ const SalaryManagement = () => {
   const [selectedSalary, setSelectedSalary] = useState<StaffSalary | null>(null);
   const [salaryToDelete, setSalaryToDelete] = useState<StaffSalary | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
 
   useEffect(() => {
     loadSalaries();
@@ -65,6 +71,9 @@ const SalaryManagement = () => {
   };
 
   const filteredData = salaries.filter((salary) => {
+  // If the URL contains ?staffId=, filter to only that staff's records
+  const matchesStaff = !staffIdFromQuery || String(salary.staff_id) === String(staffIdFromQuery);
+  if (!matchesStaff) return false;
     const matchesSearch = 
       salary.users?.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       salary.users?.last_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -77,6 +86,41 @@ const SalaryManagement = () => {
     
     return matchesSearch && matchesStatus && matchesMonth;
   });
+
+  const allVisibleSelected = filteredData.length > 0 && filteredData.every(s => selectedIds.includes(s.id));
+  const someVisibleSelected = filteredData.some(s => selectedIds.includes(s.id));
+
+  const toggleSelectAllVisible = (checked: boolean) => {
+    if (checked) {
+      setSelectedIds(filteredData.map(s => s.id));
+    } else {
+      // remove only visible ones
+      const idsToRemove = new Set(filteredData.map(s => s.id));
+      setSelectedIds(prev => prev.filter(id => !idsToRemove.has(id)));
+    }
+  };
+
+  const toggleSelectOne = (id: number, checked: boolean) => {
+    if (checked) setSelectedIds(prev => Array.from(new Set([...prev, id])));
+    else setSelectedIds(prev => prev.filter(i => i !== id));
+  };
+
+  const bulkUpdateStatus = async (status: StaffSalary['payment_status']) => {
+    if (selectedIds.length === 0) return;
+    setIsSubmitting(true);
+    try {
+  const dateStr: string | null = status === 'paid' ? new Date().toISOString().split('T')[0] : (status === 'pending' ? '' : null);
+  await Promise.all(selectedIds.map(id => salaryAPI.updateSalary(id, { payment_status: status, payment_date: dateStr })));
+      toast({ title: 'Success', description: `Updated ${selectedIds.length} records to ${status}.` });
+      await loadSalaries();
+      setSelectedIds([]);
+    } catch (err) {
+      console.error('Bulk update error', err);
+      toast({ title: 'Error', description: 'Failed to update selected records', variant: 'destructive' });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const handleViewSalary = (salary: StaffSalary) => {
     setSelectedSalary(salary);
@@ -206,7 +250,7 @@ const SalaryManagement = () => {
     return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
   };
 
-  const columns = [
+  const baseColumns = [
     { 
       header: "Staff Name", 
       accessorKey: "users" as keyof StaffSalary,
@@ -263,7 +307,7 @@ const SalaryManagement = () => {
     },
     {
       header: "Actions",
-      accessorKey: "actions" as "actions",
+      accessorKey: "actions" as const,
       cell: (row: StaffSalary) => (
         <div className="flex space-x-2">
           <Button 
@@ -288,6 +332,27 @@ const SalaryManagement = () => {
     },
   ];
 
+  // prepend selection column
+  const selectionColumn: Column<StaffSalary> = {
+    header: (
+      <Checkbox
+        checked={allVisibleSelected}
+        onCheckedChange={(val) => toggleSelectAllVisible(val === true)}
+        aria-label="Select all"
+      />
+    ),
+    accessorKey: 'actions',
+    cell: (row: StaffSalary) => (
+      <Checkbox
+        checked={selectedIds.includes(row.id)}
+        onCheckedChange={(val) => toggleSelectOne(row.id, val === true)}
+        aria-label={`Select ${row.users?.first_name} ${row.users?.last_name}`}
+      />
+    )
+  };
+
+  const columns = [selectionColumn, ...baseColumns];
+
   if (loading) {
     return (
       <MainLayout>
@@ -306,14 +371,28 @@ const SalaryManagement = () => {
         description="Manage staff salaries, track payments, and generate payroll reports"
         actions={
           <>
-            <Button variant="outline" size="sm" onClick={handleExport}>
-              <Download className="mr-2 h-4 w-4" />
-              Export
-            </Button>
-            <Button variant="default" size="sm" onClick={handleAddSalary}>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Salary
-            </Button>
+            <div className="flex items-center space-x-2">
+              <Button variant="outline" size="sm" onClick={handleExport}>
+                <Download className="mr-2 h-4 w-4" />
+                Export
+              </Button>
+
+              <Button variant="default" size="sm" onClick={handleAddSalary}>
+                <Plus className="mr-2 h-4 w-4" />
+                Add Salary
+              </Button>
+
+              {/* Bulk actions */}
+              <Button size="sm" variant="outline" disabled={selectedIds.length === 0 || isSubmitting} onClick={() => bulkUpdateStatus('paid')}>
+                Mark Paid ({selectedIds.length})
+              </Button>
+              <Button size="sm" variant="outline" disabled={selectedIds.length === 0 || isSubmitting} onClick={() => bulkUpdateStatus('pending')}>
+                Mark Pending ({selectedIds.length})
+              </Button>
+              <Button size="sm" variant="outline" disabled={selectedIds.length === 0 || isSubmitting} onClick={() => bulkUpdateStatus('cancelled')}>
+                Mark Cancelled ({selectedIds.length})
+              </Button>
+            </div>
           </>
         }
       />
@@ -422,6 +501,8 @@ const SalaryManagement = () => {
         onClose={() => setAddModalOpen(false)}
       >
         <SalaryForm 
+          // If staffId is provided in the URL, preselect that staff in the form
+          defaultValues={{ staff_id: staffIdFromQuery || '' }}
           onSubmit={handleSaveSalary}
           isSubmitting={isSubmitting}
         />
@@ -565,6 +646,65 @@ const SalaryManagement = () => {
                       Mark as Pending
                     </Button>
                   )}
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      // Print a payout slip in a new window
+                      try {
+                        const doc = window.open('', '_blank');
+                        if (!doc) throw new Error('Unable to open print window');
+                        const html = `
+                          <html>
+                            <head>
+                              <title>Payout Slip - ${selectedSalary.users?.first_name} ${selectedSalary.users?.last_name}</title>
+                              <style>
+                                body { font-family: Arial, sans-serif; padding: 20px; }
+                                .header { display:flex; justify-content:space-between; align-items:center; }
+                                .box { border:1px solid #ddd; padding:12px; margin-top:12px; }
+                                .muted { color:#666; }
+                                .total { font-size:20px; font-weight:700; }
+                              </style>
+                            </head>
+                            <body>
+                              <div class="header">
+                                <div>
+                                  <h2>Organization</h2>
+                                  <div class="muted">Payout Receipt</div>
+                                </div>
+                                <div style="text-align:right">
+                                  <div>${new Date().toLocaleDateString()}</div>
+                                </div>
+                              </div>
+                              <div class="box">
+                                <h3>${selectedSalary.users?.first_name} ${selectedSalary.users?.last_name}</h3>
+                                <div class="muted">Role: ${selectedSalary.users?.role || 'N/A'}</div>
+                                <div class="muted">Month: ${new Date(selectedSalary.salary_month).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</div>
+                              </div>
+                              <div class="box">
+                                <p>Basic Salary: $${selectedSalary.basic_salary.toFixed(2)}</p>
+                                <p>Allowances: $${selectedSalary.allowances.toFixed(2)}</p>
+                                <p>Deductions: -$${selectedSalary.deductions.toFixed(2)}</p>
+                                <hr />
+                                <p class="total">Net Paid: $${selectedSalary.net_salary.toFixed(2)}</p>
+                                <p class="muted">Payment Method: ${selectedSalary.payment_method.replace('_', ' ').toUpperCase()}</p>
+                                <p class="muted">Payment Date: ${selectedSalary.payment_date ? new Date(selectedSalary.payment_date).toLocaleDateString() : 'N/A'}</p>
+                                ${selectedSalary.notes ? `<p class='muted'>Notes: ${selectedSalary.notes}</p>` : ''}
+                              </div>
+                              <script>window.print();</script>
+                            </body>
+                          </html>
+                        `;
+                        doc.document.open();
+                        doc.document.write(html);
+                        doc.document.close();
+                      } catch (err) {
+                        toast({ title: 'Error', description: 'Unable to open print window', variant: 'destructive' });
+                      }
+                    }}
+                  >
+                    Print Slip
+                  </Button>
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

@@ -3,7 +3,7 @@ import React from "react";
 import { cn } from "@/lib/utils";
 
 export interface Column<T> {
-  header: string;
+  header: React.ReactNode;
   accessorKey: keyof T | 'actions';
   cell?: (row: T) => React.ReactNode;
 }
@@ -25,9 +25,9 @@ export default function DataTable<T>({
         <table className="w-full">
           <thead>
             <tr className="border-b bg-muted/50">
-              {columns.map((column) => (
+              {columns.map((column, colIndex) => (
                 <th
-                  key={column.header}
+                  key={`${String(column.header)}-${colIndex}`}
                   className="px-4 py-3 text-left text-sm font-medium text-muted-foreground"
                 >
                   {column.header}
