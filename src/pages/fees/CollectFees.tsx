@@ -62,6 +62,9 @@ const CollectFees = () => {
   const [paymentData, setPaymentData] = useState<PaymentData[]>([]);
   const [paymentMethod, setPaymentMethod] = useState<string>("cash");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [gstEnabled, setGstEnabled] = useState<boolean>(false);
+  const [gstPercent, setGstPercent] = useState<number>(18);
+  const [discount, setDiscount] = useState<number>(0);
 
   const { data: studentsWithFees = [], refetch, isLoading } = useQuery({
     queryKey: ['studentsWithFeeStructures', user?.role, user?.email],
@@ -176,6 +179,20 @@ const CollectFees = () => {
 
   const getTotalAmount = () => {
     return paymentData.reduce((sum, payment) => sum + payment.amount, 0);
+  };
+
+  const getGSTAmount = () => {
+    const subtotal = getTotalAmount();
+    if (!gstEnabled) return 0;
+    return +(subtotal * (gstPercent / 100));
+  };
+
+  const getFinalTotal = () => {
+    const subtotal = getTotalAmount();
+    const gst = getGSTAmount();
+    const disc = Math.max(0, discount || 0);
+    const total = subtotal + gst - disc;
+    return total > 0 ? total : 0;
   };
 
   const columns: Column<StudentWithFees>[] = [
@@ -467,35 +484,7 @@ const CollectFees = () => {
                               </div>
                             )}
                           </div>
-                          <div>
-                            {paymentItem && paymentItem.amount > 0 && !(isAgent && isOneTimeFee) && (
-                              <InvoiceGenerator
-                                invoiceData={{
-                                  student: {
-                                    id: selectedStudent!.id,
-                                    first_name: selectedStudent!.first_name,
-                                    last_name: selectedStudent!.last_name,
-                                    phone_number: selectedStudent!.phone_number,
-                                    universities: selectedStudent!.universities,
-                                    courses: selectedStudent!.courses,
-                                    academic_sessions: selectedStudent!.academic_sessions
-                                  },
-                                  payment: {
-                                    id: feePayment.id,
-                                    amount_paid: paymentItem.amount,
-                                    fee_structure_components: feePayment.fee_structure_components
-                                  },
-                                  receiptNumber: `REC-${Date.now()}-${feePayment.id}`
-                                }}
-                                onGenerateInvoice={() => {
-                                  toast({
-                                    title: "Invoice Generated",
-                                    description: "Invoice has been generated successfully.",
-                                  });
-                                }}
-                              />
-                            )}
-                          </div>
+                          <div />
                         </div>
                       </Card>
                     );
@@ -521,7 +510,7 @@ const CollectFees = () => {
               {/* Payment Summary */}
               <Card className="p-4 bg-blue-50">
                 <h3 className="text-lg font-medium mb-4">Payment Summary</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <p className="text-sm text-muted-foreground">Total Collecting</p>
                     <p className="text-xl font-bold text-green-600">${getTotalAmount().toLocaleString()}</p>
@@ -534,6 +523,89 @@ const CollectFees = () => {
                     <p className="text-sm text-muted-foreground">Student</p>
                     <p className="font-medium">{selectedStudent?.first_name} {selectedStudent?.last_name}</p>
                   </div>
+                </div>
+                <div className="mt-4 space-y-3">
+                  <div className="flex items-center space-x-4">
+                    <label className="flex items-center space-x-2">
+                      <input type="checkbox" checked={gstEnabled} onChange={(e) => setGstEnabled(e.target.checked)} />
+                      <span className="text-sm">Apply GST</span>
+                    </label>
+                    {gstEnabled && (
+                      <div className="flex items-center space-x-2">
+                        <label className="text-sm">GST %</label>
+                        <input
+                          type="number"
+                          value={gstPercent}
+                          min={0}
+                          max={100}
+                          onChange={(e) => setGstPercent(parseFloat(e.target.value) || 0)}
+                          className="w-20 p-1 border rounded"
+                        />
+                      </div>
+                    )}
+                    <div className="flex items-center space-x-2">
+                      <label className="text-sm">Discount</label>
+                      <input
+                        type="number"
+                        value={discount}
+                        min={0}
+                        onChange={(e) => setDiscount(parseFloat(e.target.value) || 0)}
+                        className="w-32 p-1 border rounded"
+                        placeholder="0"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="p-3 bg-white rounded border">
+                    <div className="flex justify-between">
+                      <span>Subtotal</span>
+                      <span>${getTotalAmount().toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>GST ({gstEnabled ? `${gstPercent}%` : '0%'})</span>
+                      <span>${getGSTAmount().toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Discount</span>
+                      <span>-${Math.max(0, discount).toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between font-bold text-lg mt-2">
+                      <span>Final Total</span>
+                      <span>${getFinalTotal().toLocaleString()}</span>
+                    </div>
+                  </div>
+
+                  {getTotalAmount() > 0 && (
+                    <div>
+                      <InvoiceGenerator
+                        invoiceData={{
+                          student: {
+                            id: selectedStudent!.id,
+                            first_name: selectedStudent!.first_name,
+                            last_name: selectedStudent!.last_name,
+                            phone_number: selectedStudent!.phone_number,
+                            email: (selectedStudent as any)?.email,
+                            universities: selectedStudent!.universities,
+                            courses: selectedStudent!.courses,
+                            academic_sessions: selectedStudent!.academic_sessions,
+                          },
+                          payments: paymentData
+                            .filter(p => p.amount > 0)
+                            .map(p => ({
+                              id: p.feePaymentId,
+                              amount_paid: p.amount,
+                              fee_structure_components: selectedStudent!.fee_payments.find(fp => fp.id === p.feePaymentId)!.fee_structure_components
+                            })),
+                          receiptNumber: `REC-${Date.now()}-${selectedStudent!.id}`,
+                          gstAmount: getGSTAmount(),
+                          discountAmount: Math.max(0, discount || 0),
+                        }}
+                        onGenerateInvoice={() => {
+                          toast({ title: 'Invoice Generated', description: 'Invoice has been generated successfully.' });
+                        }}
+                      />
+                    </div>
+                  )}
                 </div>
               </Card>
             </div>

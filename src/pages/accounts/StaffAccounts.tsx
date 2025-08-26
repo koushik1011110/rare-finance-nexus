@@ -55,15 +55,16 @@ const StaffAccounts: React.FC = () => {
   useEffect(() => {
     const fetchStaff = async () => {
       try {
+        // Request explicit columns to avoid potential RLS/permission issues with select('*')
         const { data, error } = await supabase
           .from('users')
-          .select('*')
+          .select('id, email, first_name, last_name, role, is_active, created_at')
           .order('created_at', { ascending: false });
 
         if (error) throw error;
 
         const mapped: Staff[] = (data || []).map((user: any) => ({
-          id: user.id.toString(),
+          id: (user.id || '').toString(),
           email: user.email,
           firstName: user.first_name,
           lastName: user.last_name,
@@ -72,13 +73,13 @@ const StaffAccounts: React.FC = () => {
           createdAt: user.created_at,
         }));
 
-        // Exclude agents
-        setStaff(mapped.filter((u) => u.role !== 'agent'));
-      } catch (err) {
+        // Return all users (includes agents) as requested
+        setStaff(mapped);
+      } catch (err: any) {
         console.error('Error fetching staff accounts:', err);
         toast({
           title: 'Error',
-          description: 'Failed to fetch staff accounts',
+          description: err?.message ? `Failed to fetch staff accounts: ${err.message}` : 'Failed to fetch staff accounts',
           variant: 'destructive',
         });
       } finally {
@@ -128,13 +129,14 @@ const StaffAccounts: React.FC = () => {
       toast({ title: 'Success', description: 'Staff member created successfully.' });
       setIsDialogOpen(false);
       setCreateForm({ email: '', password: '', firstName: '', lastName: '', role: '' as UserRole, agentName: '', agentPhone: '', agentLocation: '', countryId: '' });
-      // reload list (will exclude agent if created as agent)
-      const { data } = await supabase
+      // reload list using explicit columns
+      const { data: reloadData, error: reloadError } = await supabase
         .from('users')
-        .select('*')
+        .select('id, email, first_name, last_name, role, is_active, created_at')
         .order('created_at', { ascending: false });
-      const mapped: Staff[] = (data || []).map((user: any) => ({
-        id: user.id.toString(),
+      if (reloadError) throw reloadError;
+      const mapped: Staff[] = (reloadData || []).map((user: any) => ({
+        id: (user.id || '').toString(),
         email: user.email,
         firstName: user.first_name,
         lastName: user.last_name,
@@ -142,7 +144,7 @@ const StaffAccounts: React.FC = () => {
         isActive: user.is_active,
         createdAt: user.created_at,
       }));
-      setStaff(mapped.filter((u) => u.role !== 'agent'));
+      setStaff(mapped);
     } catch (err) {
       console.error('Error creating staff member:', err);
       toast({ title: 'Error', description: 'Failed to create staff member', variant: 'destructive' });

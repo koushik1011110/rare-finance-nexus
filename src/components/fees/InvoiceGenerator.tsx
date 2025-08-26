@@ -14,15 +14,18 @@ interface InvoiceData {
     courses?: { name: string };
     academic_sessions?: { session_name: string };
   };
-  payment: {
+  // support multiple payments for a single total receipt
+  payments: Array<{
     id: number;
     amount_paid: number;
     fee_structure_components: {
       fee_types: { name: string };
       fee_structures: { name: string };
     };
-  };
+  }>;
   receiptNumber: string;
+  gstAmount?: number;
+  discountAmount?: number;
 }
 
 interface InvoiceGeneratorProps {
@@ -35,7 +38,7 @@ const InvoiceGenerator: React.FC<InvoiceGeneratorProps> = ({
   onGenerateInvoice
 }) => {
   const generateInvoicePDF = () => {
-    const { student, payment, receiptNumber } = invoiceData;
+    const { student, payments, receiptNumber, gstAmount = 0, discountAmount = 0 } = invoiceData;
     
     // Create a new window for the invoice
     const invoiceWindow = window.open('', '_blank');
@@ -167,16 +170,21 @@ const InvoiceGenerator: React.FC<InvoiceGeneratorProps> = ({
               </tr>
             </thead>
             <tbody>
-              <tr>
-                <td>${payment.fee_structure_components.fee_types.name}</td>
-                <td>${payment.fee_structure_components.fee_structures.name}</td>
-                <td>$${payment.amount_paid.toLocaleString()}</td>
-              </tr>
+              ${payments.map(p => `
+                <tr>
+                  <td>${p.fee_structure_components.fee_types.name}</td>
+                  <td>${p.fee_structure_components.fee_structures.name}</td>
+                  <td>$${p.amount_paid.toLocaleString()}</td>
+                </tr>
+              `).join('')}
             </tbody>
           </table>
           
           <div class="total-section">
-            <p>Total Amount Paid: <span class="total-amount">$${payment.amount_paid.toLocaleString()}</span></p>
+            <p>Subtotal: <span class="total-amount">$${payments.reduce((s, p) => s + (p.amount_paid || 0), 0).toLocaleString()}</span></p>
+            <p>GST: <span class="total-amount">$${(gstAmount || 0).toLocaleString()}</span></p>
+            <p>Discount: <span class="total-amount">-$${(discountAmount || 0).toLocaleString()}</span></p>
+            <p style="margin-top:10px;">Final Total: <span class="total-amount">$${(payments.reduce((s, p) => s + (p.amount_paid || 0), 0) + (gstAmount || 0) - (discountAmount || 0)).toLocaleString()}</span></p>
           </div>
           
           <div class="footer">

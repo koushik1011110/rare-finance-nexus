@@ -44,11 +44,17 @@ BEGIN
     session_token := encode(gen_random_bytes(32), 'hex');
     
     -- Insert session
-    INSERT INTO user_sessions (user_id, token, expires_at)
+    -- Ensure user_sessions has a role column to avoid querying users inside RLS policies
+    ALTER TABLE public.user_sessions
+    ADD COLUMN IF NOT EXISTS role user_role;
+
+    -- Insert session and store the user's role to allow RLS policies to check session.role
+    INSERT INTO user_sessions (user_id, token, expires_at, role)
     VALUES (
-        user_id_param, 
-        session_token, 
-        NOW() + INTERVAL '24 hours'
+        user_id_param,
+        session_token,
+        NOW() + INTERVAL '24 hours',
+        (SELECT role FROM users WHERE id = user_id_param)
     );
     
     RETURN session_token;
@@ -153,12 +159,12 @@ CREATE POLICY "Admins can view all users"
 ON public.users 
 FOR SELECT 
 USING (
+    -- Check the session record for admin role without selecting from users to avoid recursion
     EXISTS (
-        SELECT 1 FROM users u 
-        INNER JOIN user_sessions s ON u.id = s.user_id 
-        WHERE s.token = current_setting('app.session_token', true) 
-          AND s.expires_at > NOW() 
-          AND u.role = 'admin'
+        SELECT 1 FROM user_sessions s
+        WHERE s.token = current_setting('app.session_token', true)
+          AND s.expires_at > NOW()
+          AND s.role = 'admin'
     )
 );
 
@@ -167,11 +173,10 @@ ON public.users
 FOR INSERT 
 WITH CHECK (
     EXISTS (
-        SELECT 1 FROM users u 
-        INNER JOIN user_sessions s ON u.id = s.user_id 
-        WHERE s.token = current_setting('app.session_token', true) 
-          AND s.expires_at > NOW() 
-          AND u.role = 'admin'
+        SELECT 1 FROM user_sessions s
+        WHERE s.token = current_setting('app.session_token', true)
+          AND s.expires_at > NOW()
+          AND s.role = 'admin'
     )
 );
 
@@ -180,11 +185,10 @@ ON public.users
 FOR UPDATE 
 USING (
     EXISTS (
-        SELECT 1 FROM users u 
-        INNER JOIN user_sessions s ON u.id = s.user_id 
-        WHERE s.token = current_setting('app.session_token', true) 
-          AND s.expires_at > NOW() 
-          AND u.role = 'admin'
+        SELECT 1 FROM user_sessions s
+        WHERE s.token = current_setting('app.session_token', true)
+          AND s.expires_at > NOW()
+          AND s.role = 'admin'
     )
 );
 
