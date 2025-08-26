@@ -105,13 +105,16 @@ const DirectStudents = () => {
     try {
       setLoading(true);
       
-      // Build query to fetch all students (both direct and agent students)
+      // Build query based on user role
       let studentsQuery = supabase
         .from('students')
         .select('*');
       
-      // For non-admin users, the RLS policies will automatically filter by country
-      // No additional filtering needed here as it's handled at the database level
+      // If user is staff, filter by their assigned country_id
+      if (user?.role === 'staff' && user?.country_id) {
+        studentsQuery = studentsQuery.eq('country_id', user.country_id);
+      }
+      // Admin users see all students (no additional filtering needed)
       
       const [studentsData, universitiesData, coursesData, sessionsData] = await Promise.all([
         studentsQuery,

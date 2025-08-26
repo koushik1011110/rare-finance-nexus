@@ -12,6 +12,7 @@ export interface User {
   isActive: boolean;
   officeLocation?: string;
   office_location?: string;
+  country_id?: number;
 }
 
 interface AuthContextType {
