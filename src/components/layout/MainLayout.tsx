@@ -229,6 +229,9 @@ export default function MainLayout({ children }: MainLayoutProps) {
   const navItems = allNavItems.filter(item => {
     if (!user) return false;
     
+  // Agents should not see the Agents menu at all
+  if (user.role === 'agent' && item.title === 'Agents') return false;
+
     // For office users, only show Dashboard and Office Expenses
     if (isOfficeUser || isOffice) {
       return item.title === 'Dashboard' || item.title === 'Office Expenses';
@@ -257,8 +260,12 @@ export default function MainLayout({ children }: MainLayoutProps) {
   useEffect(() => {
     try {
       localStorage.setItem('expandedItems', JSON.stringify(expandedItems));
-    } catch {}
+    } catch (e) {
+      // ignore serialization errors
+      void e;
+    }
   }, [expandedItems]);
+
   
   const toggleExpand = (title: string) => {
     setExpandedItems(prev => 
