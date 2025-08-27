@@ -15,6 +15,7 @@ import { User, GraduationCap, Phone, Mail, Users, MapPin, CreditCard, FileText, 
 import { toast } from "@/hooks/use-toast";
 import { universitiesAPI, coursesAPI, academicSessionsAPI, University, Course, AcademicSession } from "@/lib/supabase-database";
 import { fetchCountries, Country } from "@/lib/countries-api";
+import { uploadStudentDocument } from "@/lib/fileUpload";
 
 export interface ComprehensiveStudentFormData {
   id?: number;
@@ -72,6 +73,7 @@ const ComprehensiveStudentForm: React.FC<ComprehensiveStudentFormProps> = ({
   const [academicSessions, setAcademicSessions] = useState<AcademicSession[]>([]);
   const [countries, setCountries] = useState<Country[]>([]);
   const [loading, setLoading] = useState(true);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
   // Set default values with proper defaults for course and session
   const [formData, setFormData] = useState<ComprehensiveStudentFormData>(() => {
@@ -699,14 +701,46 @@ const ComprehensiveStudentForm: React.FC<ComprehensiveStudentFormProps> = ({
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="photo_url">Student Photo URL</Label>
-              <Input
-                id="photo_url"
-                name="photo_url"
-                value={formData.photo_url || ""}
-                onChange={handleChange}
-                placeholder="https://example.com/photo.jpg"
-              />
+                <Label htmlFor="photo_url">Student Photo</Label>
+                <p className="text-xs text-muted-foreground mt-1">Photo must be less than 300 KB and have dimensions 225 x 300 (width x height).</p>
+
+                {/* File upload control - uploads immediately and sets formData.photo_url to public URL returned by Supabase */}
+                <div className="flex items-center space-x-3">
+                  <input
+                    id="photo_file"
+                    name="photo_file"
+                    type="file"
+                    accept="image/*"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      try {
+                        setUploadingPhoto(true);
+                        const { url, error } = await uploadStudentDocument(file, 'photo');
+                        if (error || !url) {
+                          toast({ title: 'Upload failed', description: error || 'Unknown error', variant: 'destructive' });
+                          return;
+                        }
+                        setFormData(prev => ({ ...prev, photo_url: url }));
+                        toast({ title: 'Uploaded', description: 'Photo uploaded successfully.' });
+                      } catch (err) {
+                        console.error('Photo upload error', err);
+                        toast({ title: 'Upload failed', description: 'Failed to upload photo', variant: 'destructive' });
+                      } finally {
+                        setUploadingPhoto(false);
+                        // clear the file input value so same file can be selected again if needed
+                        (e.target as HTMLInputElement).value = '';
+                      }
+                    }}
+                  />
+                </div>
+
+                {/* Preview */}
+                {formData.photo_url && (
+                  <div className="mt-2">
+                    <img src={formData.photo_url} alt="Student photo" className="h-24 w-24 object-cover rounded" />
+                  </div>
+                )}
             </div>
 
             <div className="space-y-2">

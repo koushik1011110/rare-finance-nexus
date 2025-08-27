@@ -164,6 +164,15 @@ export default function StudentProfilePage() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {student.photo_url && (
+                <div className="md:col-span-2 flex justify-end">
+                  <img
+                    src={student.photo_url}
+                    alt={`${student.first_name} ${student.last_name}`}
+                    className="h-24 w-24 object-cover rounded"
+                  />
+                </div>
+              )}
               <div>
                 <label className="text-sm font-medium text-muted-foreground">First Name</label>
                 <p className="text-sm">{student.first_name}</p>
