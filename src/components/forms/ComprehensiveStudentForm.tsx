@@ -702,7 +702,6 @@ const ComprehensiveStudentForm: React.FC<ComprehensiveStudentFormProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
                 <Label htmlFor="photo_url">Student Photo</Label>
-                <p className="text-xs text-muted-foreground mt-1">Photo must be less than 300 KB and have dimensions 225 x 300 (width x height).</p>
 
                 {/* File upload control - uploads immediately and sets formData.photo_url to public URL returned by Supabase */}
                 <div className="flex items-center space-x-3">
@@ -733,6 +732,25 @@ const ComprehensiveStudentForm: React.FC<ComprehensiveStudentFormProps> = ({
                       }
                     }}
                   />
+
+                  <div className="flex-1">
+                    <Input
+                      id="photo_url"
+                      name="photo_url"
+                      value={formData.photo_url || ''}
+                      onChange={handleChange}
+                      placeholder="https://example.com/photo.jpg or use file upload"
+                    />
+                  </div>
+
+                  <div>
+                    <Button type="button" disabled={uploadingPhoto} onClick={() => {
+                      // remove current photo URL
+                      setFormData(prev => ({ ...prev, photo_url: undefined }));
+                    }}>
+                      Remove
+                    </Button>
+                  </div>
                 </div>
 
                 {/* Preview */}
