@@ -147,6 +147,66 @@ export default function StudentProfilePage() {
     <MainLayout>
       <PageHeader title={`Student Profile: ${student.first_name} ${student.last_name}`} description="Full page student profile" />
       <div className="space-y-6">
+        {/* Top summary: photo + key info */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="col-span-1">
+            <Card>
+              <CardContent>
+                <div className="flex flex-col items-center text-center">
+                  <img
+                    src={student.photo_url || '/placeholder.svg'}
+                    alt={`${student.first_name} ${student.last_name}`}
+                    className="w-36 h-48 object-cover rounded border mb-4"
+                    onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/placeholder.svg'; }}
+                  />
+                  <h3 className="text-lg font-semibold">{student.first_name} {student.last_name}</h3>
+                  <p className="text-sm text-muted-foreground">{student.admission_number || 'No admission number'}</p>
+                  <div className="mt-3 flex gap-2">
+                    <Badge variant={student.status === 'active' ? 'default' : 'secondary'}>{student.status || 'unknown'}</Badge>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="col-span-2">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">Quick Info</CardTitle>
+                <CardDescription>Essential student details at a glance</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">University</label>
+                    <p className="text-sm">{student.university_name || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Course</label>
+                    <p className="text-sm">{student.course_name || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Session</label>
+                    <p className="text-sm">{student.session_name || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Seat Number</label>
+                    <p className="text-sm">{student.seat_number || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Phone</label>
+                    <p className="text-sm">{student.phone_number || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Email</label>
+                    <p className="text-sm">{student.email || 'N/A'}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
         <div className="flex justify-between">
           <div />
           <div>
@@ -163,16 +223,7 @@ export default function StudentProfilePage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {student.photo_url && (
-                <div className="md:col-span-2 flex justify-end">
-                  <img
-                    src={student.photo_url}
-                    alt={`${student.first_name} ${student.last_name}`}
-                    className="h-24 w-24 object-cover rounded"
-                  />
-                </div>
-              )}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium text-muted-foreground">First Name</label>
                 <p className="text-sm">{student.first_name}</p>

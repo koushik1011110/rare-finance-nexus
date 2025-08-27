@@ -66,34 +66,56 @@ export default function StudentDocuments({ student }: StudentDocumentsProps) {
           {availableDocuments.map((field) => {
             const url = student[field.key as keyof typeof student] as string;
             const IconComponent = field.icon;
-            
+
+            const filename = (() => {
+              try {
+                const parts = url.split('/');
+                return decodeURIComponent(parts[parts.length - 1] || url);
+              } catch {
+                return url;
+              }
+            })();
+
+            const isImage = /\.(jpe?g|png|gif|webp|bmp|svg)(\?.*)?$/i.test(url) || field.key === 'photo_url';
+
             return (
-              <div key={field.key} className="border rounded-lg p-4">
+              <div key={field.key} className="border rounded-lg p-4 flex flex-col">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center">
                     <IconComponent className="h-4 w-4 mr-2 text-primary" />
                     <span className="font-medium text-sm">{field.label}</span>
                   </div>
                 </div>
-                
-                {field.key === 'photo_url' && (
-                  <div className="mb-3">
-                    <img 
-                      src={url} 
-                      alt="Student" 
-                      className="w-20 h-20 object-cover rounded border"
+
+                {isImage ? (
+                  <div className="mb-3 flex items-center">
+                    <img
+                      src={url}
+                      alt={field.label}
+                      className="w-28 h-36 object-cover rounded border cursor-pointer"
+                      loading="lazy"
+                      onClick={() => handleViewDocument(url)}
                       onError={(e) => {
-                        e.currentTarget.style.display = 'none';
+                        // show a simple placeholder if image fails
+                        (e.currentTarget as HTMLImageElement).src = '/placeholder.svg';
                       }}
                     />
+                    <div className="ml-4">
+                      <p className="text-sm font-medium">{filename}</p>
+                      <p className="text-xs text-muted-foreground">Click image to open full size</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mb-3 flex items-center gap-3">
+                    <FileText className="h-8 w-8 text-muted-foreground" />
+                    <div>
+                      <p className="text-sm font-medium">{filename}</p>
+                      <p className="text-xs text-muted-foreground">{new URL(url).pathname.split('/').pop()}</p>
+                    </div>
                   </div>
                 )}
-                
-                <div className="mb-2">
-                  <p className="text-xs text-muted-foreground break-all">{url}</p>
-                </div>
-                
-                <div className="flex gap-2">
+
+                <div className="flex gap-2 mt-auto">
                   <Button
                     variant="outline"
                     size="sm"
@@ -101,7 +123,7 @@ export default function StudentDocuments({ student }: StudentDocumentsProps) {
                     className="flex items-center gap-1"
                   >
                     <ExternalLink className="h-3 w-3" />
-                    Open Link
+                    Open
                   </Button>
                 </div>
               </div>
