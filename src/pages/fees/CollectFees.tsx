@@ -304,6 +304,27 @@ const CollectFees = () => {
       <PageHeader
         title="Collect Fees"
         description="Process fee payments from students"
+        actions={
+          (user?.role === 'admin' || user?.role === 'finance' || user?.role === 'agent') && (
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                onClick={() => window.location.href = '/fees/reports'}
+                className="flex items-center gap-2"
+              >
+                Fees Report
+              </Button>
+
+              <Button
+                variant="outline"
+                onClick={() => window.location.href = '/fees/payment-history'}
+                className="flex items-center gap-2"
+              >
+                Payment History
+              </Button>
+            </div>
+          )
+        }
       />
       
       {/* Summary Cards */}

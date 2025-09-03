@@ -244,14 +244,26 @@ const FeesMaster = () => {
         description="View fee structures for universities and courses"
         actions={
           (user?.role === 'admin' || user?.role === 'finance') && (
-            <Button 
-              variant="outline" 
-              onClick={() => navigate('/fees/one-time-charges')}
-              className="flex items-center gap-2"
-            >
-              <Settings className="h-4 w-4" />
-              Customize One-Time Charges
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="outline" 
+                onClick={() => navigate('/fees/one-time-charges')}
+                className="flex items-center gap-2"
+              >
+                <Settings className="h-4 w-4" />
+                Customize One-Time Charges
+              </Button>
+
+              {/* New Fees Type button */}
+              <Button
+                variant="outline"
+                onClick={() => navigate('/fees/types')}
+                className="flex items-center gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                Fees Type
+              </Button>
+            </div>
           )
         }
       />

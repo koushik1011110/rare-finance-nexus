@@ -99,8 +99,10 @@ const allNavItems: NavItem[] = [
     href: "#", 
     icon: Receipt,
     subItems: [
-      { title: "All Invoices", href: "/invoices" },
-      { title: "Make Invoice", href: "/invoices/create" }
+  { title: "All Invoices", href: "/invoices" },
+  { title: "Make Invoice", href: "/invoices/create" },
+  { title: "Fees Master", href: "/fees/master", allowedRoles: ['admin', 'finance'] },
+  { title: "Collect Fees", href: "/fees/collect", allowedRoles: ['admin', 'finance'] }
     ]
   },
   { 
@@ -164,19 +166,7 @@ const allNavItems: NavItem[] = [
     // Visible to administrative users by default; further role restrictions may be added as needed
     allowedRoles: ['admin']
   },
-  { 
-    title: "Fees Collection", 
-    href: "/fees", 
-    icon: DollarSign,
-    allowedRoles: ['admin', 'finance'],
-    subItems: [
-      { title: "Fees Type", href: "/fees/types", allowedRoles: ['admin', 'finance'] },
-      { title: "Fees Master", href: "/fees/master", allowedRoles: ['admin', 'finance'] },
-      { title: "Collect Fees", href: "/fees/collect", allowedRoles: ['admin', 'finance'] },
-      { title: "Fees Report", href: "/fees/reports", allowedRoles: ['admin', 'finance'] },
-      { title: "Payment History", href: "/fees/payment-history", allowedRoles: ['admin', 'finance'] },
-    ]
-  },
+  
   
   { 
     title: "Universities", 
