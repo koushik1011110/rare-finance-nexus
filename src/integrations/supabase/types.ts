@@ -180,6 +180,7 @@ export type Database = {
           city: string | null
           col_letter_generated: boolean | null
           country: string | null
+          country_id: number | null
           course_id: number | null
           created_at: string | null
           date_of_birth: string
@@ -225,6 +226,7 @@ export type Database = {
           city?: string | null
           col_letter_generated?: boolean | null
           country?: string | null
+          country_id?: number | null
           course_id?: number | null
           created_at?: string | null
           date_of_birth: string
@@ -270,6 +272,7 @@ export type Database = {
           city?: string | null
           col_letter_generated?: boolean | null
           country?: string | null
+          country_id?: number | null
           course_id?: number | null
           created_at?: string | null
           date_of_birth?: string
@@ -329,6 +332,13 @@ export type Database = {
             columns: ["university_id"]
             isOneToOne: false
             referencedRelation: "universities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_apply_students_country"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
             referencedColumns: ["id"]
           },
         ]
@@ -1973,6 +1983,7 @@ export type Database = {
           created_at: string | null
           expires_at: string
           id: number
+          role: Database["public"]["Enums"]["user_role"] | null
           token: string
           user_id: number
         }
@@ -1980,6 +1991,7 @@ export type Database = {
           created_at?: string | null
           expires_at: string
           id?: number
+          role?: Database["public"]["Enums"]["user_role"] | null
           token: string
           user_id: number
         }
@@ -1987,6 +1999,7 @@ export type Database = {
           created_at?: string | null
           expires_at?: string
           id?: number
+          role?: Database["public"]["Enums"]["user_role"] | null
           token?: string
           user_id?: number
         }
