@@ -213,12 +213,20 @@ export default function MainLayout({ children }: MainLayoutProps) {
     return saved !== null ? JSON.parse(saved) : true;
   });
   
-  const [expandedItems, setExpandedItems] = useState<string[]>(() => {
+  // Track a single expanded menu title. When a new menu is opened,
+  // the previous one closes. Backwards-compat: read old array value
+  // from `expandedItems` if present and convert to a single item.
+  const [expandedItem, setExpandedItem] = useState<string | null>(() => {
     try {
-      const saved = localStorage.getItem('expandedItems');
-      return saved ? JSON.parse(saved) : [];
+      const saved = localStorage.getItem('expandedItem') || localStorage.getItem('expandedItems');
+      if (!saved) return null;
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed)) {
+        return parsed.length > 0 ? String(parsed[0]) : null;
+      }
+      return typeof parsed === 'string' ? parsed : null;
     } catch {
-      return [];
+      return null;
     }
   });
   const location = useLocation();
@@ -256,23 +264,21 @@ export default function MainLayout({ children }: MainLayoutProps) {
     localStorage.setItem('sidebarOpen', JSON.stringify(sidebarOpen));
   }, [sidebarOpen]);
   
-  // Persist expanded submenu state to avoid auto-collapse on navigation/remount
+  // Persist single expanded submenu title
   useEffect(() => {
     try {
-      localStorage.setItem('expandedItems', JSON.stringify(expandedItems));
+      localStorage.setItem('expandedItem', JSON.stringify(expandedItem));
     } catch (e) {
       // ignore serialization errors
       void e;
     }
-  }, [expandedItems]);
+  }, [expandedItem]);
 
   
+  // Toggle a single expanded menu. Opening a menu closes any previously
+  // opened menu; clicking the already-open one will close it.
   const toggleExpand = (title: string) => {
-    setExpandedItems(prev => 
-      prev.includes(title) 
-        ? prev.filter(item => item !== title) 
-        : [...prev, title]
-    );
+    setExpandedItem(prev => (prev === title ? null : title));
   };
 
   const toggleSidebar = () => {
@@ -323,7 +329,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                       onClick={() => toggleExpand(item.title)}
                       className={cn(
                         "flex w-full items-center rounded-md px-3 py-2 text-sm font-medium hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-                        (expandedItems.includes(item.title) || 
+                        (expandedItem === item.title || 
                          (item.subItems && item.subItems.some(sub => 
                            location.pathname === sub.href || 
                            location.pathname.startsWith(sub.href + '/')
@@ -338,7 +344,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                         <>
                           {item.title}
                           <span className="ml-auto">
-                            {expandedItems.includes(item.title) ? (
+                            {expandedItem === item.title ? (
                               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M18 15l-6-6-6 6"/>
                               </svg>
@@ -351,7 +357,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                         </>
                       )}
                     </button>
-                    {(sidebarOpen && expandedItems.includes(item.title)) && (
+                    {(sidebarOpen && expandedItem === item.title) && (
                       <ul className="ml-6 mt-1 space-y-1">
                         {item.subItems
                           .filter(subItem => {
