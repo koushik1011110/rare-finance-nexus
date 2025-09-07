@@ -63,8 +63,9 @@ import OneTimeChargesCustomization from "./pages/fees/OneTimeChargesCustomizatio
 import Reports from "./pages/reports/Reports";
 
 // Settings
-import Settings from "./pages/settings/Settings";
-import CountryManagement from "./pages/settings/CountryManagement";
+import Settings from '@/pages/settings/Settings';
+import CountryManagement from '@/pages/settings/CountryManagement';
+import RoleBasedAccessControl from '@/pages/settings/RoleBasedAccessControl';
 
 // Auth
 import Login from "./pages/auth/Login";
@@ -170,9 +171,10 @@ const App = () => (
             {/* Reports Section */}
             <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
             
-            {/* Settings */}
-            <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-            <Route path="/settings/countries" element={<ProtectedRoute><CountryManagement /></ProtectedRoute>} />
+        {/* Settings */}
+        <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+        <Route path="/settings/countries" element={<ProtectedRoute><CountryManagement /></ProtectedRoute>} />
+        <Route path="/settings/rbac" element={<ProtectedRoute requiredRole="admin"><RoleBasedAccessControl /></ProtectedRoute>} />
             
             {/* Staff Management - Admin only */}
             <Route path="/staff" element={<ProtectedRoute requiredRole="admin"><StaffManagement /></ProtectedRoute>} />

@@ -188,7 +188,12 @@ const allNavItems: NavItem[] = [
     title: "Settings", 
     href: "/settings", 
     icon: Settings,
-    allowedRoles: ['admin', 'finance', 'hostel_team']
+    allowedRoles: ['admin', 'finance', 'hostel_team'],
+    subItems: [
+      { title: "General Settings", href: "/settings" },
+      { title: "Country Management", href: "/settings/countries" },
+      { title: "Role Management", href: "/settings/rbac", allowedRoles: ['admin'] }
+    ]
   },
 ];
 
