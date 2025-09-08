@@ -8,28 +8,21 @@ import {
   Users,
   GraduationCap,
   Building2,
-  DollarSign,
   FileText,
   Settings,
   BookOpen,
-  UserCheck,
-  Calendar,
   BarChart3,
-  Utensils,
   Calculator,
   CreditCard,
   MapPin,
   User,
   Receipt,
-  Building,
-  ChevronDown,
-  LogOut,
-  UserPlus,
   ChevronLeft,
   ChevronRight,
   Download,
   UserSearch,
-  Plus,
+  UserPlus,
+  LogOut,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import {
@@ -42,160 +35,10 @@ import {
 import ThemeToggle from "@/components/theme/ThemeToggle";
 import NotificationBell from "@/components/notifications/NotificationBell";
 import { useAuth } from "@/contexts/AuthContext";
+import { useRolePermissions } from "@/hooks/useRolePermissions";
 
 
-type NavItem = {
-  title: string;
-  href: string;
-  icon: React.ElementType;
-  subItems?: { title: string; href: string; allowedRoles?: string[] }[];
-  allowedRoles?: string[];
-};
-
-const allNavItems: NavItem[] = [
-  { 
-    title: "Dashboard", 
-    href: "/", 
-    icon: BarChart3
-  },
-  { 
-    title: "Leads", 
-    href: "/lead", 
-    icon: UserSearch,
-    subItems: [
-      { title: "Lead Enquiry", href: "/lead/enquiry" },
-      { title: "Add Lead", href: "/lead/add" },
-    ]
-  },
-  {
-    title: "Applicants",
-    href: "/students/application",
-    icon: FileText,
-  },
-  { 
-    title: "Students", 
-    href: "/students", 
-    icon: GraduationCap,
-    subItems: [
-      { title: "All Students", href: "/students/direct", allowedRoles: ['admin', 'finance', 'staff', 'hostel_team'] },
-      { title: "Add Students", href: "/students/add", allowedRoles: ['admin', 'finance'] },
-      { title: "Agent Students", href: "/students/agent" },
-      { title: "Admission Letter Upload", href: "/students/admission-letters" },
-      { title: "Character", href: "/students/character" },
-    ]
-  },
-  { 
-    title: "Agents",
-    href: "/agents",
-    icon: Users,
-    subItems: [
-      { title: "All Agents", href: "/agents" },
-      { title: "Add Agent", href: "/agents/add" },
-      { title: "Payout", href: "/agents/payout" },
-    ],
-  },
-  { 
-    title: "Invoice", 
-    href: "#", 
-    icon: Receipt,
-    subItems: [
-  { title: "All Invoices", href: "/invoices" },
-  { title: "Make Invoice", href: "/invoices/create" },
-  { title: "Fees Master", href: "/fees/master", allowedRoles: ['admin', 'finance'] },
-  { title: "Collect Fees", href: "/fees/collect", allowedRoles: ['admin', 'finance'] }
-    ]
-  },
-  { 
-    title: "Office Expenses", 
-    href: "/office-expenses", 
-    icon: FileText,
-    allowedRoles: ['admin', 'finance', 'office', 'office_guwahati', 'office_delhi', 'office_mumbai', 'office_bangalore', 'office_kolkata'],
-    subItems: [
-      { title: "Office Management", href: "/office-expenses/management", allowedRoles: ['admin', 'finance'] },
-      { title: "Expenses", href: "/office-expenses", allowedRoles: ['admin', 'finance', 'office', 'office_guwahati', 'office_delhi', 'office_mumbai', 'office_bangalore', 'office_kolkata'] },
-    ]
-  },
-  { 
-    title: "Hostel & Mess", 
-    href: "/hostel-mess", 
-    icon: Home,
-    allowedRoles: ['admin', 'hostel_team'],
-    subItems: [
-      { title: "Hostel Management", href: "/hostels/management" },
-      { title: "Hostel Expenses", href: "/hostels/expenses" },
-      { title: "Mess Management", href: "/mess/management" },
-      { title: "Add Students", href: "/hostels/add-students" },
-      { title: "Student Requests", href: "/hostels/requests" },
-    ]
-  },
-  { 
-    title: "Accounts", 
-    href: "/accounts", 
-    icon: CreditCard,
-    allowedRoles: ['admin', 'finance'],
-    subItems: [
-  { title: "Students", href: "/accounts/students" },
-  { title: "Staff Accounts", href: "/staff/my" },
-  { title: "Agent Accounts", href: "/accounts/agents" },
-    ]
-  },
-  { 
-    title: "Document Management", 
-    href: "/documents", 
-    icon: BookOpen,
-    allowedRoles: ['admin', 'finance', 'hostel_team']
-  },
-  { 
-    title: "Visa", 
-    href: "/students/visa", 
-    icon: MapPin,
-    allowedRoles: ['admin', 'finance']
-  },
-  { 
-    title: "Staff",
-    href: "/staff",
-    icon: UserPlus,
-    subItems: [
-      { title: "My Staff", href: "/staff/my" },
-      { title: "Add Staff", href: "/staff/add" },
-      { title: "Attendance", href: "/staff/attendance" },
-      { title: "Leave", href: "/staff/leave" },
-      { title: "Payroll", href: "/staff/payroll" },
-      { title: "Payout", href: "/staff/payout" },
-    ],
-    // Visible to administrative users by default; further role restrictions may be added as needed
-    allowedRoles: ['admin']
-  },
-  
-  
-  { 
-    title: "Universities", 
-    href: "/universities", 
-    icon: Building2,
-    allowedRoles: ['admin']
-  },
-  
-  { title: "Salary Management", href: "/salary", icon: Receipt, allowedRoles: ['admin', 'finance'] },
-  { title: "Personal Expenses", href: "/personal-expenses", icon: Calculator, allowedRoles: ['admin', 'finance'] },
-  { title: "Reports", href: "/reports", icon: BarChart3, allowedRoles: ['admin', 'finance'] },
-  { 
-    title: "Profile", 
-    href: "/profile", 
-    icon: User,
-    allowedRoles: ['agent'] // Only show for agents
-  },
-  { 
-    title: "Settings", 
-    href: "/settings", 
-    icon: Settings,
-    allowedRoles: ['admin', 'finance', 'hostel_team'],
-    subItems: [
-      { title: "General Settings", href: "/settings" },
-      { title: "Country Management", href: "/settings/countries" },
-      { title: "Role Management", href: "/settings/rbac", allowedRoles: ['admin'] }
-    ]
-  },
-];
+import { allNavItems } from '@/config/navigation';
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -228,30 +71,38 @@ export default function MainLayout({ children }: MainLayoutProps) {
   
   const { user, logout, isOfficeUser, isOffice, getUserOfficeLocation } = useAuth();
 
-  // Filter navigation items based on user role
-  const navItems = allNavItems.filter(item => {
+  // RBAC: derive base nav by role, then apply permissions for non-admin RBAC roles
+  const baseNavItems = allNavItems.filter(item => {
     if (!user) return false;
-    
-  // Agents should not see the Agents menu at all
-  if (user.role === 'agent' && item.title === 'Agents') return false;
+
+    // Agents should not see the Agents menu at all
+    if (user.role === 'agent' && item.title === 'Agents') return false;
 
     // For office users, only show Dashboard and Office Expenses
     if (isOfficeUser || isOffice) {
       return item.title === 'Dashboard' || item.title === 'Office Expenses';
     }
-    
+
     // For hostel_team role, only show Dashboard, Hostel and Mess menus
     if (user.role === 'hostel_team') {
       return item.title === 'Dashboard' || item.title === 'Hostel & Mess';
     }
-    
+
     // For other roles, check allowedRoles
-    // If item has allowedRoles, user's role must be in the list
-    // If no allowedRoles, show to all except where explicitly hidden
     if (item.allowedRoles) {
       return item.allowedRoles.includes(user.role);
     }
     return true;
+  });
+
+  const { hasPermission } = useRolePermissions(user?.role);
+  const RBAC_ROLES = new Set(['agent','staff','finance','hostel_team']);
+  const slugify = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+
+  const navItems = baseNavItems.filter(item => {
+    if (!user) return false;
+    if (user.role === 'admin' || !RBAC_ROLES.has(user.role)) return true;
+    return hasPermission(slugify(item.title));
   });
   
   // Save sidebar state to localStorage whenever it changes

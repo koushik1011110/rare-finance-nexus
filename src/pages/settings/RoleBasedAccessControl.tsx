@@ -11,21 +11,14 @@ import PageHeader from '@/components/shared/PageHeader';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { UserRole } from '@/contexts/AuthContext';
 import { getAllRolePermissions, updateRolePermissions, RolePermission } from '@/lib/rbac-api';
+import { allNavItems } from '@/config/navigation';
 
-const MENU_ITEMS = [
-  { key: 'dashboard', label: 'Dashboard', description: 'Main dashboard and overview' },
-  { key: 'students', label: 'Students', description: 'Student management and records' },
-  { key: 'agents', label: 'Agents', description: 'Agent management and commissions' },
-  { key: 'universities', label: 'Universities', description: 'University and course management' },
-  { key: 'invoices', label: 'Invoices', description: 'Invoice generation and management' },
-  { key: 'hostels', label: 'Hostels', description: 'Hostel management and expenses' },
-  { key: 'mess', label: 'Mess Management', description: 'Mess budget and expenses' },
-  { key: 'office', label: 'Office Management', description: 'Office expenses and operations' },
-  { key: 'staff', label: 'Staff Management', description: 'Staff and payroll management' },
-  { key: 'reports', label: 'Reports', description: 'Analytics and reporting' },
-  { key: 'settings', label: 'Settings', description: 'System configuration' },
-  { key: 'rbac', label: 'Role Management', description: 'Role-based access control' },
-];
+const slugify = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+const MENU_ITEMS = allNavItems.map((item) => ({
+  key: slugify(item.title),
+  label: item.title,
+  description: `${item.title} main menu access`,
+}));
 
 const ROLES: { key: UserRole; label: string; description: string; color: string }[] = [
   { key: 'admin', label: 'Administrator', description: 'Full system access', color: 'bg-red-500' },
@@ -59,14 +52,16 @@ export default function RoleBasedAccessControl() {
   };
 
   const handlePermissionChange = (role: string, menuItem: string, enabled: boolean) => {
-    setPermissions(prev => ({
-      ...prev,
-      [role]: prev[role]?.map(p => 
-        p.menu_item === menuItem 
-          ? { ...p, is_enabled: enabled }
-          : p
-      ) || []
-    }));
+    setPermissions(prev => {
+      const current = prev[role] || [];
+      const idx = current.findIndex(p => p.menu_item === menuItem);
+      if (idx >= 0) {
+        const updated = [...current];
+        updated[idx] = { ...updated[idx], is_enabled: enabled };
+        return { ...prev, [role]: updated };
+      }
+      return { ...prev, [role]: [...current, { menu_item: menuItem, is_enabled: enabled }] };
+    });
   };
 
   const savePermissions = async (role: string) => {
@@ -114,7 +109,7 @@ export default function RoleBasedAccessControl() {
 
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
           {ROLES.map((role) => (
-            <Card key={role.key} className="cursor-pointer hover:shadow-md transition-shadow">
+            <Card key={role.key} onClick={() => setSelectedRole(role.key)} className={`cursor-pointer hover:shadow-md transition-shadow ${selectedRole === role.key ? 'ring-2 ring-primary' : ''}`}>
               <CardContent className="p-4">
                 <div className="flex items-center space-x-3">
                   <div className={`w-3 h-3 rounded-full ${role.color}`} />
@@ -153,11 +148,11 @@ export default function RoleBasedAccessControl() {
                 </div>
                 <Button 
                   onClick={() => savePermissions(role.key)}
-                  disabled={saving}
+                  disabled={saving || selectedRole !== role.key}
                   className="flex items-center gap-2"
                 >
                   <Save className="w-4 h-4" />
-                  {saving ? 'Saving...' : 'Save Changes'}
+                  {saving && selectedRole === role.key ? 'Saving...' : 'Save Changes'}
                 </Button>
               </div>
 
