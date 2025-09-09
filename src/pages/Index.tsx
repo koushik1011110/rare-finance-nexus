@@ -267,7 +267,7 @@ const Index = () => {
         <ChartCard
           title="Monthly Revenue Trend"
           description="Revenue vs Expenses"
-          type="line"
+          type="bar"
           data={cashFlowData}
         />
         <ChartCard
