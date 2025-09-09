@@ -1261,33 +1261,6 @@ export type Database = {
           },
         ]
       }
-      role_permissions: {
-        Row: {
-          created_at: string | null
-          id: number
-          is_enabled: boolean
-          menu_item: string
-          role: Database["public"]["Enums"]["user_role"]
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          id?: number
-          is_enabled?: boolean
-          menu_item: string
-          role: Database["public"]["Enums"]["user_role"]
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          id?: number
-          is_enabled?: boolean
-          menu_item?: string
-          role?: Database["public"]["Enums"]["user_role"]
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
       staff_salaries: {
         Row: {
           allowances: number
@@ -2256,13 +2229,6 @@ export type Database = {
           total_students: number
         }[]
       }
-      get_role_permissions: {
-        Args: { user_role_param: Database["public"]["Enums"]["user_role"] }
-        Returns: {
-          is_enabled: boolean
-          menu_item: string
-        }[]
-      }
       get_student_financial_summary: {
         Args: { input_student_id: number }
         Returns: {
@@ -2321,14 +2287,6 @@ export type Database = {
           id: number
           status: string
         }[]
-      }
-      update_role_permission: {
-        Args: {
-          is_enabled_param: boolean
-          menu_item_param: string
-          user_role_param: Database["public"]["Enums"]["user_role"]
-        }
-        Returns: undefined
       }
       validate_session: {
         Args: { token_param: string }
