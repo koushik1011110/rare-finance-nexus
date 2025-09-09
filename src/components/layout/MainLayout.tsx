@@ -69,11 +69,11 @@ export default function MainLayout({ children }: MainLayoutProps) {
   });
   const location = useLocation();
   
-  const { user, logout, isOfficeUser, isOffice, getUserOfficeLocation } = useAuth();
+  const { user, logout, isOfficeUser, isOffice, getUserOfficeLocation, loading: authLoading } = useAuth();
 
   // RBAC: derive base nav by role, then apply permissions for non-admin RBAC roles
   const baseNavItems = allNavItems.filter(item => {
-    if (!user) return false;
+    if (!user) return authLoading ? true : false;
 
     // Agents should not see the Agents menu at all
     if (user.role === 'agent' && item.title === 'Agents') return false;
@@ -95,7 +95,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
     return true;
   });
 
-  const { hasPermission, loading: permissionsLoading } = useRolePermissions(user?.role);
+  const { hasPermission, loading: permissionsLoading, permissions } = useRolePermissions(user?.role);
   
   // Debug logging
   console.log('User role:', user?.role);
@@ -104,7 +104,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
   const slugify = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
 
   const navItems = baseNavItems.filter(item => {
-    if (!user) return false;
+    if (!user) return authLoading ? true : false;
     
     // For admin, show all items
     if (user.role === 'admin') return true;
@@ -113,6 +113,11 @@ export default function MainLayout({ children }: MainLayoutProps) {
     if (RBAC_ROLES.has(user.role)) {
       // If permissions are still loading, don't filter yet
       if (permissionsLoading) return true;
+      // Fallback: if role has no permissions configured yet, use legacy allowedRoles rules
+      if (!permissions || permissions.length === 0) {
+        if (item.allowedRoles) return item.allowedRoles.includes(user.role);
+        return true;
+      }
       return hasPermission(slugify(item.title));
     }
     
@@ -120,7 +125,9 @@ export default function MainLayout({ children }: MainLayoutProps) {
     return true;
   });
   
-  // Save sidebar state to localStorage whenever it changes
+  // Final safety: if filtering results in no items (e.g., misconfigured permissions),
+  // fall back to baseNavItems so users always see something
+  const renderedNavItems = navItems.length ? navItems : baseNavItems;
   useEffect(() => {
     localStorage.setItem('sidebarOpen', JSON.stringify(sidebarOpen));
   }, [sidebarOpen]);
@@ -182,7 +189,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
         </div>
         <nav className={cn("flex-1 overflow-y-auto p-2", !sidebarOpen && "w-full")}>
           <ul className="space-y-1">
-            {navItems.map((item) => (
+            {renderedNavItems.map((item) => (
               <li key={item.title}>
                 {item.subItems ? (
                   <>
