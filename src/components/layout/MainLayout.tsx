@@ -128,17 +128,7 @@ const allNavItems: NavItem[] = [
       { title: "Student Requests", href: "/hostels/requests" },
     ]
   },
-  { 
-    title: "Accounts", 
-    href: "/accounts", 
-    icon: CreditCard,
-    allowedRoles: ['admin', 'finance'],
-    subItems: [
-  { title: "Students", href: "/accounts/students" },
-  { title: "Staff Accounts", href: "/staff/my" },
-  { title: "Agent Accounts", href: "/accounts/agents" },
-    ]
-  },
+  
   { 
     title: "Document Management", 
     href: "/documents", 
