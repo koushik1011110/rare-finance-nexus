@@ -95,14 +95,29 @@ export default function MainLayout({ children }: MainLayoutProps) {
     return true;
   });
 
-  const { hasPermission } = useRolePermissions(user?.role);
+  const { hasPermission, loading: permissionsLoading } = useRolePermissions(user?.role);
+  
+  // Debug logging
+  console.log('User role:', user?.role);
+  console.log('Permissions loading:', permissionsLoading);
   const RBAC_ROLES = new Set(['agent','staff','finance','hostel_team']);
   const slugify = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
 
   const navItems = baseNavItems.filter(item => {
     if (!user) return false;
-    if (user.role === 'admin' || !RBAC_ROLES.has(user.role)) return true;
-    return hasPermission(slugify(item.title));
+    
+    // For admin, show all items
+    if (user.role === 'admin') return true;
+    
+    // For RBAC roles, use permission system
+    if (RBAC_ROLES.has(user.role)) {
+      // If permissions are still loading, don't filter yet
+      if (permissionsLoading) return true;
+      return hasPermission(slugify(item.title));
+    }
+    
+    // For non-RBAC roles, use legacy allowedRoles system
+    return true;
   });
   
   // Save sidebar state to localStorage whenever it changes
