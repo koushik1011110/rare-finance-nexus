@@ -10,7 +10,7 @@ import { Shield, Users, Settings, Save } from 'lucide-react';
 import PageHeader from '@/components/shared/PageHeader';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { UserRole } from '@/contexts/AuthContext';
-import { getAllRolePermissions, updateRolePermissions, updateRolePermission, RolePermission } from '@/lib/rbac-api';
+import { getAllRolePermissions, updateRolePermissions, RolePermission } from '@/lib/rbac-api';
 import { allNavItems } from '@/config/navigation';
 
 const slugify = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
@@ -19,28 +19,6 @@ const MENU_ITEMS = allNavItems.map((item) => ({
   label: item.title,
   description: `${item.title} main menu access`,
 }));
-
-// Initialize missing permissions when component loads
-const initializeMissingPermissions = async (allPermissions: Record<string, RolePermission[]>) => {
-  const updates: Promise<void>[] = [];
-  
-  ROLES.forEach(role => {
-    const rolePermissions = allPermissions[role.key] || [];
-    const existingMenuItems = new Set(rolePermissions.map(p => p.menu_item));
-    
-    MENU_ITEMS.forEach(menuItem => {
-      if (!existingMenuItems.has(menuItem.key)) {
-        // Add missing permission with default value
-        const defaultEnabled = role.key === 'admin'; // Admin gets all by default
-        updates.push(updateRolePermission(role.key, menuItem.key, defaultEnabled));
-      }
-    });
-  });
-  
-  if (updates.length > 0) {
-    await Promise.all(updates);
-  }
-};
 
 const ROLES: { key: UserRole; label: string; description: string; color: string }[] = [
   { key: 'admin', label: 'Administrator', description: 'Full system access', color: 'bg-red-500' },
@@ -64,13 +42,7 @@ export default function RoleBasedAccessControl() {
     try {
       setLoading(true);
       const data = await getAllRolePermissions();
-      
-      // Initialize missing permissions
-      await initializeMissingPermissions(data);
-      
-      // Reload after initialization
-      const updatedData = await getAllRolePermissions();
-      setPermissions(updatedData);
+      setPermissions(data);
     } catch (error) {
       console.error('Failed to load permissions:', error);
       toast.error('Failed to load permissions');
