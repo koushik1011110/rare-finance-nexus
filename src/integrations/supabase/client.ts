@@ -8,10 +8,31 @@ const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
+// Custom fetch to ensure the API key is always sent, both as header and URL param
+const withApiKeyFetch: typeof fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+  let url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : (input as Request).url;
+  const u = new URL(url);
+  // Append apikey as a URL param as an extra safeguard
+  if (!u.searchParams.has('apikey')) {
+    u.searchParams.set('apikey', SUPABASE_PUBLISHABLE_KEY);
+  }
+  const headers = new Headers(init?.headers || (typeof input !== 'string' && !(input instanceof URL) ? (input as Request).headers : undefined));
+  if (!headers.has('apikey')) headers.set('apikey', SUPABASE_PUBLISHABLE_KEY);
+  if (!headers.has('Authorization')) headers.set('Authorization', `Bearer ${SUPABASE_PUBLISHABLE_KEY}`);
+  return fetch(u.toString(), { ...init, headers });
+};
+
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
     storage: localStorage,
     persistSession: true,
     autoRefreshToken: true,
-  }
+  },
+  global: {
+    headers: {
+      apikey: SUPABASE_PUBLISHABLE_KEY,
+      Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
+    },
+    fetch: withApiKeyFetch,
+  },
 });

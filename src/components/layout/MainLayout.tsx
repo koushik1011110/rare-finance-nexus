@@ -1,35 +1,26 @@
 import React, { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import {
   Menu,
   Home,
   Users,
   GraduationCap,
   Building2,
-  DollarSign,
   FileText,
   Settings,
   BookOpen,
   UserCheck,
-  Calendar,
   BarChart3,
-  Utensils,
   Calculator,
-  CreditCard,
   MapPin,
   User,
   Receipt,
-  Building,
-  ChevronDown,
   LogOut,
   UserPlus,
   ChevronLeft,
   ChevronRight,
   Download,
-  UserSearch,
-  Plus,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import {
@@ -57,15 +48,6 @@ const allNavItems: NavItem[] = [
     title: "Dashboard", 
     href: "/", 
     icon: BarChart3
-  },
-  { 
-    title: "Leads", 
-    href: "/lead", 
-    icon: UserSearch,
-    subItems: [
-      { title: "Lead Enquiry", href: "/lead/enquiry" },
-      { title: "Add Lead", href: "/lead/add" },
-    ]
   },
   {
     title: "Applicants",
@@ -180,6 +162,12 @@ const allNavItems: NavItem[] = [
     icon: Settings,
     allowedRoles: ['admin', 'finance', 'hostel_team']
   },
+  {
+    title: 'Roles',
+    href: '/settings/roles',
+    icon: UserCheck,
+    allowedRoles: ['admin']
+  }
 ];
 
 interface MainLayoutProps {
@@ -211,28 +199,38 @@ export default function MainLayout({ children }: MainLayoutProps) {
   });
   const location = useLocation();
   
-  const { user, logout, isOfficeUser, isOffice, getUserOfficeLocation } = useAuth();
+  const { user, logout, isOfficeUser, isOffice, getUserOfficeLocation, permissions, hasPermission } = useAuth();
 
   // Filter navigation items based on user role
+  // Prefer permissions from DB when available. If no permissions configured, fall back to static allowedRoles.
   const navItems = allNavItems.filter(item => {
     if (!user) return false;
-    
-  // Agents should not see the Agents menu at all
-  if (user.role === 'agent' && item.title === 'Agents') return false;
 
-    // For office users, only show Dashboard and Office Expenses
+    // Agents should not see the Agents menu at all
+    if (user.role === 'agent' && item.title === 'Agents') return false;
+
+    // If permissions are present (non-empty), use them to decide visibility per menu
+    if (permissions && permissions.length > 0) {
+      // Admin bypass
+      if (user.role === 'admin') return true;
+      // Allow Dashboard unless explicitly denied (commonly safe default)
+      if (item.title === 'Dashboard') return hasPermission('Dashboard', null);
+      // If parent is allowed, show it
+      if (hasPermission(item.title, null)) return true;
+      // Otherwise, show parent if any submenu is allowed
+      if (item.subItems && item.subItems.some(si => hasPermission(item.title, si.title))) return true;
+      return false;
+    }
+
+    // No dynamic permissions -> fallback to original logic
     if (isOfficeUser || isOffice) {
       return item.title === 'Dashboard' || item.title === 'Office Expenses';
     }
-    
-    // For hostel_team role, only show Dashboard, Hostel and Mess menus
+
     if (user.role === 'hostel_team') {
       return item.title === 'Dashboard' || item.title === 'Hostel & Mess';
     }
-    
-    // For other roles, check allowedRoles
-    // If item has allowedRoles, user's role must be in the list
-    // If no allowedRoles, show to all except where explicitly hidden
+
     if (item.allowedRoles) {
       return item.allowedRoles.includes(user.role);
     }
@@ -341,8 +339,16 @@ export default function MainLayout({ children }: MainLayoutProps) {
                       <ul className="ml-6 mt-1 space-y-1">
                         {item.subItems
                           .filter(subItem => {
-                            if (!subItem.allowedRoles) return true; // Show to all users if no role restriction
                             if (!user) return false;
+                            // If dynamic permissions are configured, use them
+                            if (permissions && permissions.length > 0) {
+                              if (user.role === 'admin') return true;
+                              // Ensure top-level menu is allowed and then check the sub feature
+                              if (!hasPermission(item.title, null)) return false;
+                              return hasPermission(item.title, subItem.title);
+                            }
+                            // Fallback to role-based restrictions if no dynamic permissions
+                            if (!subItem.allowedRoles) return true; // Show to all users if no role restriction
                             return user.role === 'admin' || subItem.allowedRoles.includes(user.role);
                           })
                           .map((subItem) => (

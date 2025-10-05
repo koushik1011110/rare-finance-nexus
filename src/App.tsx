@@ -65,6 +65,7 @@ import Reports from "./pages/reports/Reports";
 // Settings
 import Settings from "./pages/settings/Settings";
 import CountryManagement from "./pages/settings/CountryManagement";
+import RolesPage from './pages/settings/Roles';
 
 // Auth
 import Login from "./pages/auth/Login";
@@ -173,6 +174,7 @@ const App = () => (
             {/* Settings */}
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             <Route path="/settings/countries" element={<ProtectedRoute><CountryManagement /></ProtectedRoute>} />
+            <Route path="/settings/roles" element={<ProtectedRoute requiredRole={'admin'}><RolesPage /></ProtectedRoute>} />
             
             {/* Staff Management - Admin only */}
             <Route path="/staff" element={<ProtectedRoute requiredRole="admin"><StaffManagement /></ProtectedRoute>} />

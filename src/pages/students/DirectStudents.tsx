@@ -84,6 +84,7 @@ const DirectStudents = () => {
   const [universities, setUniversities] = useState<University[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
   const [academicSessions, setAcademicSessions] = useState<AcademicSession[]>([]);
+  const [agents, setAgents] = useState<{ id: number; name: string }[]>([]);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -116,11 +117,12 @@ const DirectStudents = () => {
       }
       // Admin users see all students (no additional filtering needed)
       
-      const [studentsData, universitiesData, coursesData, sessionsData] = await Promise.all([
+      const [studentsData, universitiesData, coursesData, sessionsData, agentsData] = await Promise.all([
         studentsQuery,
         universitiesAPI.getAll(),
         coursesAPI.getAll(),
         academicSessionsAPI.getAll(),
+        supabase.from('agents').select('id, name'),
       ]);
 
       if (studentsData.error) throw studentsData.error;
@@ -129,6 +131,7 @@ const DirectStudents = () => {
       setUniversities(universitiesData);
       setCourses(coursesData);
       setAcademicSessions(sessionsData);
+      setAgents((agentsData.data as any[])?.map(a => ({ id: a.id, name: a.name })) ?? []);
     } catch (error) {
       console.error('Error loading data:', error);
       toast({
@@ -289,6 +292,11 @@ const DirectStudents = () => {
     return academicSessions.find(s => s.id === id)?.session_name || 'Unknown';
   };
 
+  const getAgentName = (id?: number) => {
+    if (!id) return 'Direct';
+    return agents.find(a => a.id === id)?.name || 'Unknown Agent';
+  };
+
   const getStatusBadge = (status: string) => {
     const statusConfig = {
       active: { variant: "default" as const, color: "text-green-600" },
@@ -304,13 +312,25 @@ const DirectStudents = () => {
     );
   };
 
+  // Dashboard-like aggregates
+  const totalStudents = students.length;
+  const activeStudents = students.filter(s => (s.status || '').toLowerCase() === 'active').length;
+  const completedStudents = students.filter(s => (s.status || '').toLowerCase() === 'completed').length;
+  const universityBreakdown = React.useMemo(() => {
+    const counts = new Map<number, number>();
+    for (const s of students) {
+      counts.set(s.university_id, (counts.get(s.university_id) || 0) + 1);
+    }
+    const arr = Array.from(counts.entries()).map(([id, count]) => ({ id, name: getUniversityName(id), count }));
+    arr.sort((a, b) => b.count - a.count);
+    return arr;
+  }, [students, universities]);
+
   const columns: Column<Student>[] = [
     { 
-      header: "Student ID", 
-      accessorKey: "id",
-      cell: (student: Student) => (
-        <span className="font-mono text-sm">#{student.id}</span>
-      )
+      header: "Admission No.", 
+      accessorKey: "admission_number",
+      cell: (student: Student) => student.admission_number || '-'
     },
     { 
       header: "Name", 
@@ -332,6 +352,11 @@ const DirectStudents = () => {
       header: "University", 
       accessorKey: "university_id",
       cell: (student: Student) => getUniversityName(student.university_id)
+    },
+    {
+      header: "Agent",
+      accessorKey: "agent_id",
+      cell: (student: Student) => getAgentName(student.agent_id)
     },
     { 
       header: "Course", 
@@ -420,7 +445,55 @@ const DirectStudents = () => {
         title="All Students"
         description="All enrolled students in the system"
       />
-      
+      {/* Dashboard-like summary */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-4">
+        <Card>
+          <CardHeader>
+            <CardDescription>Total Students</CardDescription>
+            <CardTitle className="text-3xl">{totalStudents}</CardTitle>
+          </CardHeader>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardDescription>Active</CardDescription>
+            <CardTitle className="text-3xl">{activeStudents}</CardTitle>
+          </CardHeader>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardDescription>Completed</CardDescription>
+            <CardTitle className="text-3xl">{completedStudents}</CardTitle>
+          </CardHeader>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardDescription>Universities</CardDescription>
+            <CardTitle className="text-3xl">{universityBreakdown.length}</CardTitle>
+          </CardHeader>
+        </Card>
+      </div>
+
+      <Card className="mb-4">
+        <CardHeader>
+          <CardTitle>Students by University</CardTitle>
+          <CardDescription>Distribution of students across universities</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {universityBreakdown.length === 0 ? (
+            <div className="text-sm text-muted-foreground">No students found.</div>
+          ) : (
+            <div className="grid md:grid-cols-2 gap-3">
+              {universityBreakdown.map((u) => (
+                <div key={u.id} className="flex items-center justify-between rounded border p-3">
+                  <div className="truncate pr-3">{u.name}</div>
+                  <Badge variant="secondary">{u.count}</Badge>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <div className="flex justify-between items-center gap-3">
